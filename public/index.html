@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nafs API</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0b1f1c;
+        --panel: rgba(232, 245, 240, 0.08);
+        --ink: #eef7f3;
+        --muted: #a7c4bb;
+        --accent: #f0c27a;
+        --line: rgba(238, 247, 243, 0.14);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Source Sans 3", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 20%, rgba(240, 194, 122, 0.18), transparent 40%),
+          radial-gradient(circle at 85% 0%, rgba(56, 148, 122, 0.35), transparent 45%),
+          linear-gradient(160deg, #071512 0%, #0f2e28 55%, #163f36 100%);
+      }
+      main {
+        width: min(920px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 3.5rem 0 4rem;
+      }
+      .brand {
+        font-family: Fraunces, Georgia, serif;
+        font-size: clamp(2.8rem, 8vw, 4.6rem);
+        line-height: 0.95;
+        margin: 0 0 0.75rem;
+        letter-spacing: -0.03em;
+      }
+      .lead {
+        max-width: 38rem;
+        color: var(--muted);
+        font-size: 1.1rem;
+        margin: 0 0 1.75rem;
+      }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2.5rem; }
+      a.btn {
+        text-decoration: none;
+        color: #13201c;
+        background: var(--accent);
+        padding: 0.8rem 1.15rem;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      a.btn.secondary {
+        color: var(--ink);
+        background: transparent;
+        border: 1px solid var(--line);
+      }
+      section {
+        border-top: 1px solid var(--line);
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+      }
+      h2 {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.45rem;
+        margin: 0 0 0.5rem;
+      }
+      p { color: var(--muted); margin: 0 0 1rem; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.85rem;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        padding: 1rem 1.1rem;
+      }
+      .card h3 {
+        margin: 0 0 0.35rem;
+        font-size: 1rem;
+      }
+      code, pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.85rem;
+      }
+      pre {
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid var(--line);
+        border-radius: 0.85rem;
+        padding: 1rem;
+        overflow: auto;
+        color: #d9efe7;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 50%;
+        background: #86efac;
+        box-shadow: 0 0 0 4px rgba(134, 239, 172, 0.15);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="status"><span class="dot"></span> <span id="health">Checking API…</span></p>
+      <h1 class="brand">Nafs</h1>
+      <p class="lead">
+        Mobile backend for prayer tracking, dhikr, journals, habits, challenges, and Qur’an progress —
+        Node.js + MySQL REST APIs ready for the Nafs mobile client.
+      </p>
+      <div class="actions">
+        <a class="btn" href="/api/docs">Open API docs</a>
+        <a class="btn secondary" href="/api/openapi.json">OpenAPI JSON</a>
+        <a class="btn secondary" href="/api/v1/health">Health endpoint</a>
+      </div>
+
+      <section>
+        <h2>Demo credentials</h2>
+        <p>Use these after <code>npm run db:setup</code>.</p>
+        <pre>email: demo@nafs.app
+password: Password123!</pre>
+      </section>
+
+      <section>
+        <h2>API surface</h2>
+        <div class="grid">
+          <div class="card"><h3>Auth</h3><p>Register, login, OTP verify, password reset</p></div>
+          <div class="card"><h3>Onboarding</h3><p>Steps + complete profile goals</p></div>
+          <div class="card"><h3>Home</h3><p>Dashboard aggregate for today</p></div>
+          <div class="card"><h3>Prayer</h3><p>Daily logs + monthly calendar</p></div>
+          <div class="card"><h3>Dhikr</h3><p>Presets, sessions, counters</p></div>
+          <div class="card"><h3>Journal</h3><p>Mood entries CRUD</p></div>
+          <div class="card"><h3>Habits</h3><p>Create, log, streaks</p></div>
+          <div class="card"><h3>Challenges</h3><p>Join + complete daily tasks</p></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Quick login test</h2>
+        <pre id="loginSample">curl -s http://127.0.0.1:43125/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@nafs.app","password":"Password123!"}'</pre>
+      </section>
+    </main>
+    <script>
+      fetch('/api/v1/health')
+        .then((r) => r.json())
+        .then((j) => {
+          document.getElementById('health').textContent = j.success
+            ? 'API online'
+            : 'API responded unexpectedly';
+        })
+        .catch(() => {
+          document.getElementById('health').textContent = 'API offline';
+        });
+    </script>
+  </body>
+</html>
