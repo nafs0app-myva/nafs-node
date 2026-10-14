@@ -1,6 +1,29 @@
-# Nafs API
+# Nafs
 
 Node.js + MySQL REST backend for the **Nafs** mobile app (auth, onboarding, home dashboard, prayer logs, dhikr, journals, habits, challenges, Qur’an progress, fasting, notifications).
+
+## Where is this code?
+
+This project lives in the **Cursor cloud agent workspace**, not yet inside your local `C:\xampp\htdocs`.
+
+That folder is empty of Nafs until you copy/clone the project there:
+
+1. Click **Create repo** in Cursor (if you have not linked a GitHub/GitLab repo yet).
+2. On your PC, clone it into XAMPP as a folder named **`nafs`**:
+
+```bat
+cd C:\xampp\htdocs
+git clone <your-repo-url> nafs
+cd nafs
+npm install
+copy .env.example .env
+npm run db:setup
+npm run dev
+```
+
+Then open: `http://127.0.0.1:43125/`
+
+> This is a **Node.js** API. It does **not** run as PHP under Apache. Use XAMPP only for **MySQL**; run the API with Node (`npm run dev`).
 
 > **Figma note:** The linked design file (`tkBoHPyvyuhwBW3rvjPMtN` / Nafs-mobile) could not be read in this environment (Figma MCP auth unavailable; REST needs `FIGMA_ACCESS_TOKEN`). APIs below follow the common Nafs companion product flow. After you add a token, run `npm run figma:fetch` and we can reshape endpoints to match exact screens.
 

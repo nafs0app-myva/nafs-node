@@ -1,7 +1,7 @@
 {
-  "name": "nafs-api",
+  "name": "nafs",
   "version": "1.0.0",
-  "description": "Nafs mobile backend — Node.js + MySQL REST APIs",
+  "description": "Nafs — mobile backend (Node.js + MySQL REST APIs)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
