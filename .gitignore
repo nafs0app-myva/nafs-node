@@ -10,3 +10,4 @@ tmp/
 .idea/
 .vscode/
 agent-tools/
+hostinger.local.env
