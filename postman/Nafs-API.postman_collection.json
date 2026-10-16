@@ -1,0 +1,607 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Nafs API",
+    "description": "Full REST collection for the Nafs mobile backend (`/api/v1`).\n\n1. Run **Auth > Login** (demo: `demo@nafs.app` / `Password123!`).\n2. The test script saves `token` automatically.\n3. Authenticated requests use `Authorization: Bearer {{token}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:43125/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "email", "value": "demo@nafs.app" },
+    { "key": "password", "value": "Password123!" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@nafs.app\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"New User\",\n  \"phone\": \"+10000000001\",\n  \"gender\": \"unspecified\",\n  \"timezone\": \"Asia/Karachi\",\n  \"locale\": \"en\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/verify-email"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"123456\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/reset-password"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "item": [
+        {
+          "name": "List Steps",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/onboarding/steps"
+          }
+        },
+        {
+          "name": "Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/onboarding/status"
+          }
+        },
+        {
+          "name": "Complete",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goals\": [\"pray_on_time\", \"daily_quran\"],\n  \"interests\": [\"quran\", \"prayer\", \"journal\"],\n  \"city\": \"Lahore\",\n  \"country\": \"Pakistan\",\n  \"calculation_method\": \"MWL\",\n  \"madhab\": \"hanafi\",\n  \"reminder_prefs\": { \"prayer\": true, \"dhikr\": true, \"journal\": true }\n}"
+            },
+            "url": "{{baseUrl}}/onboarding/complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Home",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/home/dashboard"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/profile"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Demo User\",\n  \"city\": \"Lahore\",\n  \"country\": \"Pakistan\",\n  \"madhab\": \"hanafi\"\n}"
+            },
+            "url": "{{baseUrl}}/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Prayers",
+      "item": [
+        {
+          "name": "Log Prayer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prayer_name\": \"fajr\",\n  \"prayed_on\": \"2026-10-16\",\n  \"status\": \"on_time\",\n  \"notes\": null\n}"
+            },
+            "url": "{{baseUrl}}/prayers/log"
+          }
+        },
+        {
+          "name": "Prayers Day",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/prayers/day?date=2026-10-16",
+              "host": ["{{baseUrl}}"],
+              "path": ["prayers", "day"],
+              "query": [{ "key": "date", "value": "2026-10-16" }]
+            }
+          }
+        },
+        {
+          "name": "Prayers Calendar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/prayers/calendar?month=2026-10",
+              "host": ["{{baseUrl}}"],
+              "path": ["prayers", "calendar"],
+              "query": [{ "key": "month", "value": "2026-10" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dhikr",
+      "item": [
+        {
+          "name": "List Presets",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/dhikr/presets"
+          }
+        },
+        {
+          "name": "Start Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preset_id\": 1\n}"
+            },
+            "url": "{{baseUrl}}/dhikr/sessions"
+          }
+        },
+        {
+          "name": "Tick Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"increment\": 1\n}"
+            },
+            "url": "{{baseUrl}}/dhikr/sessions/1/tick"
+          }
+        },
+        {
+          "name": "Session History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/dhikr/sessions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Journals",
+      "item": [
+        {
+          "name": "Create Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Morning reflection\",\n  \"body\": \"Grateful for another day.\",\n  \"mood\": \"grateful\",\n  \"tags\": [\"gratitude\"],\n  \"is_private\": true,\n  \"entry_date\": \"2026-10-16\"\n}"
+            },
+            "url": "{{baseUrl}}/journals"
+          }
+        },
+        {
+          "name": "List Entries",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/journals"
+          }
+        },
+        {
+          "name": "Get Entry",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/journals/1"
+          }
+        },
+        {
+          "name": "Update Entry",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Morning reflection\",\n  \"body\": \"Updated notes.\",\n  \"mood\": \"calm\",\n  \"tags\": [\"gratitude\"],\n  \"is_private\": true,\n  \"entry_date\": \"2026-10-16\"\n}"
+            },
+            "url": "{{baseUrl}}/journals/1"
+          }
+        },
+        {
+          "name": "Delete Entry",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/journals/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Habits",
+      "item": [
+        {
+          "name": "Create Habit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Fajr on time\",\n  \"description\": \"Wake without snooze\",\n  \"icon\": \"sunrise\",\n  \"color\": \"#0F766E\",\n  \"frequency\": \"daily\",\n  \"target_per_period\": 1\n}"
+            },
+            "url": "{{baseUrl}}/habits"
+          }
+        },
+        {
+          "name": "List Habits",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/habits"
+          }
+        },
+        {
+          "name": "Log Habit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"logged_on\": \"2026-10-16\",\n  \"count\": 1,\n  \"note\": null\n}"
+            },
+            "url": "{{baseUrl}}/habits/1/log"
+          }
+        },
+        {
+          "name": "Habit Streak",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/habits/1/streak"
+          }
+        },
+        {
+          "name": "Archive Habit",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/habits/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Challenges",
+      "item": [
+        {
+          "name": "List Challenges",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/challenges"
+          }
+        },
+        {
+          "name": "Challenge Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/challenges/1"
+          }
+        },
+        {
+          "name": "Join Challenge",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/challenges/1/join"
+          }
+        },
+        {
+          "name": "My Challenges",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/me/challenges"
+          }
+        },
+        {
+          "name": "Complete Challenge Task",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/me/challenges/1/tasks/1/complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quran",
+      "item": [
+        {
+          "name": "Get Progress",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/quran/progress"
+          }
+        },
+        {
+          "name": "Update Progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"surah\": 1,\n  \"ayah\": 7,\n  \"notes\": \"Finished Al-Fatiha\"\n}"
+            },
+            "url": "{{baseUrl}}/quran/progress"
+          }
+        },
+        {
+          "name": "Create Reflection",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"surah\": 2,\n  \"ayah\": 153,\n  \"prompt\": \"Patience\",\n  \"body\": \"Allah is with the patient.\"\n}"
+            },
+            "url": "{{baseUrl}}/quran/reflections"
+          }
+        },
+        {
+          "name": "List Reflections",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/quran/reflections"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fasting",
+      "item": [
+        {
+          "name": "Log Fast",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fast_date\": \"2026-10-16\",\n  \"fast_type\": \"sunnah\",\n  \"status\": \"completed\",\n  \"notes\": null\n}"
+            },
+            "url": "{{baseUrl}}/fasting/log"
+          }
+        },
+        {
+          "name": "List Fasts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/fasting?month=2026-10",
+              "host": ["{{baseUrl}}"],
+              "path": ["fasting"],
+              "query": [{ "key": "month", "value": "2026-10" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Content",
+      "item": [
+        {
+          "name": "List Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content?kind=ayah",
+              "host": ["{{baseUrl}}"],
+              "path": ["content"],
+              "query": [{ "key": "kind", "value": "ayah" }]
+            }
+          }
+        },
+        {
+          "name": "Daily Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/content/daily"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/notifications"
+          }
+        },
+        {
+          "name": "Mark Read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/notifications/1/read"
+          }
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/notifications/read-all"
+          }
+        },
+        {
+          "name": "Register Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"device-push-token-example\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": "{{baseUrl}}/devices"
+          }
+        }
+      ]
+    }
+  ]
+}
