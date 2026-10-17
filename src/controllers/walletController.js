@@ -100,6 +100,15 @@ const billingHistory = asyncHandler(async (req, res) => {
   return ok(res, { billing: rows });
 });
 
+const deletePaymentMethod = asyncHandler(async (req, res) => {
+  const result = await query(
+    `DELETE FROM payment_methods WHERE id = :id AND user_id = :uid`,
+    { id: req.params.id, uid: req.user.id }
+  );
+  if (!result.affectedRows) return fail(res, 'Payment method not found', 404);
+  return ok(res, null, 'Payment method removed');
+});
+
 const withdraw = asyncHandler(async (req, res) => {
   const amount = Number(req.body.amount);
   if (!amount || amount <= 0) return fail(res, 'Invalid amount', 422);
@@ -124,6 +133,7 @@ module.exports = {
   overview,
   listPaymentMethods,
   addPaymentMethod,
+  deletePaymentMethod,
   billingHistory,
   withdraw,
 };

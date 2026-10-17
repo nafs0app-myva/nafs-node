@@ -144,6 +144,20 @@ const update = asyncHandler(async (req, res) => {
   return ok(res, { session: rows[0] }, 'Session updated');
 });
 
+const cancel = asyncHandler(async (req, res) => {
+  const rows = await query(`SELECT * FROM sessions WHERE id = :id AND therapist_id = :uid`, {
+    id: req.params.id,
+    uid: req.user.id,
+  });
+  if (!rows.length) return fail(res, 'Session not found', 404);
+  if (['completed', 'cancelled'].includes(rows[0].status)) {
+    return fail(res, `Cannot cancel a ${rows[0].status} session`, 400);
+  }
+  await query(`UPDATE sessions SET status = 'cancelled' WHERE id = :id`, { id: req.params.id });
+  const updated = await query(`SELECT * FROM sessions WHERE id = :id`, { id: req.params.id });
+  return ok(res, { session: updated[0] }, 'Session cancelled');
+});
+
 const join = asyncHandler(async (req, res) => {
   const rows = await query(`SELECT * FROM sessions WHERE id = :id AND therapist_id = :uid`, {
     id: req.params.id,
@@ -239,6 +253,7 @@ module.exports = {
   create,
   update,
   join,
+  cancel,
   addNote,
   getAvailability,
   setAvailability,

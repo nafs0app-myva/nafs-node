@@ -24,6 +24,53 @@
   ],
   "item": [
     {
+      "name": "App Bootstrap Settings",
+      "item": [
+        {
+          "name": "Bootstrap",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/app/bootstrap"
+          }
+        },
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/settings"
+          }
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/settings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locale\": \"ar\",\n  \"push_enabled\": true\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Health",
       "item": [
         {
@@ -421,6 +468,23 @@
               "raw": "{\n  \"slots\": [\n    {\n      \"weekday\": 1,\n      \"start_time\": \"09:00:00\",\n      \"end_time\": \"17:00:00\",\n      \"is_active\": true\n    }\n  ]\n}"
             }
           }
+        },
+        {
+          "name": "Cancel Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sessions/1/cancel"
+          }
         }
       ]
     },
@@ -605,6 +669,19 @@
               }
             ],
             "url": "{{baseUrl}}/billing-history"
+          }
+        },
+        {
+          "name": "Delete Payment Method",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/payment-methods/1"
           }
         }
       ]

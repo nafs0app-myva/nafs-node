@@ -13,12 +13,18 @@ const chat = require('../controllers/chatController');
 const support = require('../controllers/supportController');
 const profile = require('../controllers/profileController');
 const notification = require('../controllers/notificationController');
+const appCtrl = require('../controllers/appController');
 
 const router = express.Router();
 
 router.get('/health', (_req, res) => {
   res.json({ success: true, message: 'Nafs API healthy', data: { time: new Date().toISOString() } });
 });
+
+// Splash / language / app config (Figma first pages)
+router.get('/app/bootstrap', appCtrl.bootstrap);
+router.get('/settings', authenticate, appCtrl.getSettings);
+router.patch('/settings', authenticate, validate(appCtrl.settingsSchema), appCtrl.updateSettings);
 
 // Auth
 router.post('/auth/register', validate(auth.registerSchema), auth.register);
@@ -90,6 +96,7 @@ router.post('/sessions', authenticate, validate(sessions.createSchema), sessions
 router.get('/sessions/:id', authenticate, sessions.getOne);
 router.patch('/sessions/:id', authenticate, validate(sessions.updateSchema), sessions.update);
 router.post('/sessions/:id/join', authenticate, sessions.join);
+router.post('/sessions/:id/cancel', authenticate, sessions.cancel);
 router.post(
   '/sessions/:id/notes',
   authenticate,
@@ -127,6 +134,7 @@ router.post(
   validate(wallet.paymentMethodSchema),
   wallet.addPaymentMethod
 );
+router.delete('/payment-methods/:id', authenticate, wallet.deletePaymentMethod);
 router.get('/billing-history', authenticate, wallet.billingHistory);
 
 // Chat
