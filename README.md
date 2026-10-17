@@ -1,17 +1,14 @@
 # Nafs
 
-Node.js + MySQL REST backend for the **Nafs** mobile app — therapist consultation platform (from Figma Nafs-mobile).
+Node.js + MySQL REST backend for the **Nafs** mobile app — therapist + client mental-health platform (from Figma **NAFS-backup**).
 
 ## Product flows covered
 
-- Therapist registration / multi-step application (identity, experience, admin/tech, submitted)
-- Home dashboard (next video session + Join)
-- Calendar & sessions
-- Clients list + client detail
-- Wallet / earnings / payment methods / billing
-- Chat threads
-- Profile, change password, FAQ, policies, contact, report a problem
-- EN/AR content fields for FAQ & policies
+**Consultant:** registration / multi-step application, home dashboard, calendar & sessions, clients, wallet & payouts, vacation/time off, chat, profile & settings.
+
+**Client:** mood check-ins & detector, journal, assessments & goals, browse specialists, book + checkout.
+
+**Shared:** notifications, devices, privacy consents / media / data export, FAQ, policies, contact, report a problem (EN/AR).
 
 ## Quick start
 
@@ -26,12 +23,12 @@ npm run dev
 - Swagger: http://127.0.0.1:43125/api/docs
 - API base: http://127.0.0.1:43125/api/v1
 
-### Demo therapist
+### Demo accounts
 
-| Field | Value |
-| --- | --- |
-| Email | `demo@nafs.app` |
-| Password | `Password123!` |
+| Role | Email | Password |
+| --- | --- | --- |
+| Therapist | `demo@nafs.app` | `Password123!` |
+| Client | `client@nafs.app` | `Password123!` |
 
 ## Postman
 
@@ -47,4 +44,6 @@ Use `hostinger.env` with **Import .env**, then after deploy run `npm run db:setu
 
 ## Docs
 
-See `docs/API.md` and `docs/figma-screen-map.md`.
+- `docs/figma-all-pages-apis.md` — screen → endpoint map
+- `docs/figma-screen-map.md` — Figma screen overview
+- `docs/API.md` — API reference

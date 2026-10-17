@@ -1,8 +1,9 @@
-# Nafs Therapist API (from Figma)
+# Nafs API (from NAFS-backup Figma)
 
 Base URL: `/api/v1`  
 Auth: `Authorization: Bearer <jwt>`  
-Demo: `demo@nafs.app` / `Password123!`
+Demo therapist: `demo@nafs.app` / `Password123!`  
+Demo client: `client@nafs.app` / `Password123!`
 
 ## Auth
 | Method | Path |
@@ -43,7 +44,7 @@ Demo: `demo@nafs.app` / `Password123!`
 | GET/POST | `/clients` |
 | GET/PATCH | `/clients/:id` |
 
-## Wallet / Billing
+## Wallet / Billing / Payouts
 | Method | Path |
 | --- | --- |
 | GET | `/wallet` |
@@ -52,6 +53,7 @@ Demo: `demo@nafs.app` / `Password123!`
 | POST | `/wallet/withdraw` |
 | GET/POST | `/payment-methods` |
 | GET | `/billing-history` |
+| GET/POST | `/payouts` |
 
 ## Chat
 | Method | Path |
@@ -60,7 +62,33 @@ Demo: `demo@nafs.app` / `Password123!`
 | GET | `/chats/:id/messages` |
 | POST | `/chats/:id/messages` |
 
-## Profile / Support
+## Consultant vacation
+| Method | Path |
+| --- | --- |
+| GET/POST | `/vacations` |
+| DELETE | `/vacations/:id` |
+
+## Client mood / journal / assessments
+| Method | Path |
+| --- | --- |
+| POST/GET | `/mood/checkins` |
+| POST | `/mood/detector` |
+| GET/POST | `/journals` |
+| GET/PUT/DELETE | `/journals/:id` |
+| POST | `/assessments` |
+| POST | `/assessments/:id/answers` |
+| GET | `/assessments` |
+| GET/PUT | `/goals` |
+
+## Client specialists / booking
+| Method | Path |
+| --- | --- |
+| GET | `/specialists` |
+| GET | `/specialists/:id` |
+| POST/GET | `/bookings` |
+| POST | `/bookings/:id/checkout` |
+
+## Profile / Support / Privacy
 | Method | Path |
 | --- | --- |
 | GET/PATCH | `/profile` |
@@ -69,4 +97,11 @@ Demo: `demo@nafs.app` / `Password123!`
 | POST | `/contact` |
 | POST | `/report-problem` |
 | GET | `/notifications` |
-| POST | `/devices` |
+| GET/PATCH | `/notifications/preferences` |
+| POST/GET | `/devices` |
+| DELETE | `/devices/:id` |
+| GET/PUT | `/privacy/consents` |
+| GET/POST | `/privacy/media` |
+| DELETE | `/privacy/media/:id` |
+| POST/GET | `/privacy/export(s)` |
+| GET | `/privacy/retention` |

@@ -14,6 +14,13 @@ const support = require('../controllers/supportController');
 const profile = require('../controllers/profileController');
 const notification = require('../controllers/notificationController');
 const appCtrl = require('../controllers/appController');
+const mood = require('../controllers/moodController');
+const journal = require('../controllers/journalController');
+const assessment = require('../controllers/assessmentController');
+const booking = require('../controllers/bookingController');
+const vacation = require('../controllers/vacationController');
+const payout = require('../controllers/payoutController');
+const privacy = require('../controllers/privacyController');
 
 const router = express.Router();
 
@@ -155,10 +162,68 @@ router.post(
   support.reportProblem
 );
 
-// Notifications
+// Notifications & devices
 router.get('/notifications', authenticate, notification.list);
 router.post('/notifications/:id/read', authenticate, notification.markRead);
 router.post('/notifications/read-all', authenticate, notification.markAllRead);
+router.get('/notifications/preferences', authenticate, notification.getPrefs);
+router.patch(
+  '/notifications/preferences',
+  authenticate,
+  validate(notification.prefsSchema),
+  notification.updatePrefs
+);
 router.post('/devices', authenticate, validate(notification.deviceSchema), notification.registerDevice);
+router.get('/devices', authenticate, notification.listDevices);
+router.delete('/devices/:id', authenticate, notification.revokeDevice);
+
+// Client: mood / journal / assessments / goals
+router.post('/mood/checkins', authenticate, validate(mood.checkinSchema), mood.createCheckin);
+router.get('/mood/checkins', authenticate, mood.listCheckins);
+router.post('/mood/detector', authenticate, validate(mood.detectorSchema), mood.saveDetector);
+router.post('/journals', authenticate, validate(journal.entrySchema), journal.create);
+router.get('/journals', authenticate, journal.list);
+router.get('/journals/:id', authenticate, journal.getOne);
+router.put('/journals/:id', authenticate, validate(journal.entrySchema), journal.update);
+router.delete('/journals/:id', authenticate, journal.remove);
+router.post('/assessments', authenticate, validate(assessment.startSchema), assessment.start);
+router.post(
+  '/assessments/:id/answers',
+  authenticate,
+  validate(assessment.answerSchema),
+  assessment.saveAnswers
+);
+router.get('/assessments', authenticate, assessment.list);
+router.get('/goals', authenticate, assessment.getGoals);
+router.put('/goals', authenticate, validate(assessment.goalsSchema), assessment.saveGoals);
+
+// Client: specialists & booking
+router.get('/specialists', authenticate, booking.listSpecialists);
+router.get('/specialists/:id', authenticate, booking.getSpecialist);
+router.post('/bookings', authenticate, validate(booking.createSchema), booking.createBooking);
+router.post(
+  '/bookings/:id/checkout',
+  authenticate,
+  validate(Joi.object({ payment_method: Joi.string().allow('', null) })),
+  booking.checkout
+);
+router.get('/bookings', authenticate, booking.myBookings);
+
+// Consultant: vacation & payouts
+router.get('/vacations', authenticate, vacation.list);
+router.post('/vacations', authenticate, validate(vacation.createSchema), vacation.create);
+router.delete('/vacations/:id', authenticate, vacation.remove);
+router.get('/payouts', authenticate, payout.list);
+router.post('/payouts', authenticate, validate(payout.requestSchema), payout.create);
+
+// Privacy / data
+router.get('/privacy/consents', authenticate, privacy.listConsents);
+router.put('/privacy/consents', authenticate, validate(privacy.consentsSchema), privacy.updateConsents);
+router.get('/privacy/media', authenticate, privacy.listMedia);
+router.post('/privacy/media', authenticate, validate(privacy.mediaSchema), privacy.addMedia);
+router.delete('/privacy/media/:id', authenticate, privacy.deleteMedia);
+router.post('/privacy/export', authenticate, validate(privacy.exportSchema), privacy.requestExport);
+router.get('/privacy/exports', authenticate, privacy.listExports);
+router.get('/privacy/retention', authenticate, privacy.retentionPolicy);
 
 module.exports = router;

@@ -1,6 +1,24 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- Legacy prayer-app leftovers (safe to drop; not used by Nafs therapist/client APIs)
+DROP TABLE IF EXISTS user_challenge_task_logs;
+DROP TABLE IF EXISTS challenge_tasks;
+DROP TABLE IF EXISTS user_challenges;
+DROP TABLE IF EXISTS challenges;
+DROP TABLE IF EXISTS content_items;
+DROP TABLE IF EXISTS dhikr_sessions;
+DROP TABLE IF EXISTS dhikr_presets;
+DROP TABLE IF EXISTS fasting_logs;
+DROP TABLE IF EXISTS habit_logs;
+DROP TABLE IF EXISTS habits;
+DROP TABLE IF EXISTS journals;
+DROP TABLE IF EXISTS onboarding_steps;
+DROP TABLE IF EXISTS prayer_logs;
+DROP TABLE IF EXISTS quran_progress;
+DROP TABLE IF EXISTS reflections;
+DROP TABLE IF EXISTS user_profiles;
+
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS chat_threads;
 DROP TABLE IF EXISTS session_notes;
@@ -22,6 +40,19 @@ DROP TABLE IF EXISTS faqs;
 DROP TABLE IF EXISTS policies;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS device_tokens;
+DROP TABLE IF EXISTS mood_checkins;
+DROP TABLE IF EXISTS mood_detector_results;
+DROP TABLE IF EXISTS journal_entries;
+DROP TABLE IF EXISTS assessment_answers;
+DROP TABLE IF EXISTS assessments;
+DROP TABLE IF EXISTS user_goals;
+DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS vacation_blocks;
+DROP TABLE IF EXISTS payout_requests;
+DROP TABLE IF EXISTS user_consents;
+DROP TABLE IF EXISTS media_recordings;
+DROP TABLE IF EXISTS data_export_requests;
+DROP TABLE IF EXISTS notification_preferences;
 DROP TABLE IF EXISTS otp_codes;
 DROP TABLE IF EXISTS users;
 
@@ -309,9 +340,166 @@ CREATE TABLE device_tokens (
   user_id BIGINT UNSIGNED NOT NULL,
   token VARCHAR(255) NOT NULL,
   platform ENUM('ios','android','web') NOT NULL,
+  device_name VARCHAR(120) NULL,
+  last_active_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_device_token (token),
   CONSTRAINT fk_device_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE mood_checkins (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  mood VARCHAR(40) NOT NULL,
+  intensity TINYINT UNSIGNED NULL,
+  note TEXT NULL,
+  audio_url VARCHAR(500) NULL,
+  tags JSON NULL,
+  checked_in_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_mood_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE mood_detector_results (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  detected_mood VARCHAR(40) NOT NULL,
+  confidence DECIMAL(5,2) NULL,
+  consent_accepted TINYINT(1) NOT NULL DEFAULT 0,
+  image_url VARCHAR(500) NULL,
+  raw_payload JSON NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_md_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE journal_entries (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  entry_type ENUM('text','audio','image','gratitude') NOT NULL DEFAULT 'text',
+  title VARCHAR(200) NULL,
+  body TEXT NULL,
+  mood_tag VARCHAR(40) NULL,
+  media_url VARCHAR(500) NULL,
+  is_pinned TINYINT(1) NOT NULL DEFAULT 0,
+  is_locked TINYINT(1) NOT NULL DEFAULT 0,
+  entry_date DATE NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_journal_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE assessments (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  assessment_type VARCHAR(64) NOT NULL,
+  status ENUM('in_progress','completed') NOT NULL DEFAULT 'in_progress',
+  score DECIMAL(8,2) NULL,
+  summary JSON NULL,
+  completed_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_assess_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE assessment_answers (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  assessment_id BIGINT UNSIGNED NOT NULL,
+  question_key VARCHAR(80) NOT NULL,
+  answer_value TEXT NOT NULL,
+  CONSTRAINT fk_ans_assess FOREIGN KEY (assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE user_goals (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  goals JSON NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_goals_user (user_id),
+  CONSTRAINT fk_goals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE bookings (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  client_user_id BIGINT UNSIGNED NOT NULL,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  session_id BIGINT UNSIGNED NULL,
+  booking_date DATE NOT NULL,
+  booking_time TIME NOT NULL,
+  session_type ENUM('video','audio','in_person') NOT NULL DEFAULT 'video',
+  beneficiary VARCHAR(120) NULL,
+  note TEXT NULL,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  currency VARCHAR(8) NOT NULL DEFAULT 'SAR',
+  payment_method VARCHAR(40) NULL,
+  status ENUM('pending_payment','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending_payment',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_book_client FOREIGN KEY (client_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_book_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE vacation_blocks (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  reason VARCHAR(120) NULL,
+  conflicts_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_vac_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE payout_requests (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  amount DECIMAL(14,2) NOT NULL,
+  currency VARCHAR(8) NOT NULL DEFAULT 'SAR',
+  bank_name VARCHAR(120) NULL,
+  iban VARCHAR(64) NULL,
+  status ENUM('pending','processing','paid','rejected') NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  processed_at DATETIME NULL,
+  CONSTRAINT fk_payout_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE user_consents (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  consent_key VARCHAR(80) NOT NULL,
+  enabled TINYINT(1) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_consent (user_id, consent_key),
+  CONSTRAINT fk_consent_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE media_recordings (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  media_type ENUM('audio','photo','video') NOT NULL,
+  title VARCHAR(160) NULL,
+  url VARCHAR(500) NOT NULL,
+  duration_seconds INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE data_export_requests (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  format ENUM('pdf','json','zip') NOT NULL DEFAULT 'pdf',
+  include_flags JSON NULL,
+  status ENUM('queued','ready','failed') NOT NULL DEFAULT 'queued',
+  download_url VARCHAR(500) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_export_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notification_preferences (
+  user_id BIGINT UNSIGNED PRIMARY KEY,
+  client_bookings TINYINT(1) NOT NULL DEFAULT 1,
+  clinical_alerts TINYINT(1) NOT NULL DEFAULT 1,
+  financial TINYINT(1) NOT NULL DEFAULT 1,
+  push_channel TINYINT(1) NOT NULL DEFAULT 1,
+  email_channel TINYINT(1) NOT NULL DEFAULT 1,
+  sms_channel TINYINT(1) NOT NULL DEFAULT 0,
+  CONSTRAINT fk_np_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

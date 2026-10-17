@@ -190,7 +190,75 @@ async function seed() {
      ON DUPLICATE KEY UPDATE title_en = VALUES(title_en)`
   );
 
-  console.log('Seed complete. Demo therapist: demo@nafs.app / Password123!');
+  // Demo client (patient) for mood / journal / booking flows
+  await query(
+    `INSERT INTO users (email, phone, password_hash, full_name, role, locale, is_verified)
+     VALUES (:email, :phone, :password_hash, :full_name, 'client', 'en', 1)
+     ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), role = 'client'`,
+    {
+      email: 'client@nafs.app',
+      phone: '+966504444444',
+      password_hash: passwordHash,
+      full_name: 'Noura Client',
+    }
+  );
+  const clientUsers = await query(`SELECT id FROM users WHERE email = :email`, {
+    email: 'client@nafs.app',
+  });
+  const clientUserId = clientUsers[0].id;
+
+  const moodCount = await query(`SELECT COUNT(*) AS c FROM mood_checkins WHERE user_id = :uid`, {
+    uid: clientUserId,
+  });
+  if (!moodCount[0].c) {
+    await query(
+      `INSERT INTO mood_checkins (user_id, mood, intensity, note, tags)
+       VALUES (:uid, 'calm', 7, 'Feeling steady after walk', :tags)`,
+      { uid: clientUserId, tags: JSON.stringify(['walk', 'morning']) }
+    );
+  }
+
+  const journalCount = await query(`SELECT COUNT(*) AS c FROM journal_entries WHERE user_id = :uid`, {
+    uid: clientUserId,
+  });
+  if (!journalCount[0].c) {
+    await query(
+      `INSERT INTO journal_entries (user_id, entry_type, title, body, mood_tag, is_pinned, entry_date)
+       VALUES (:uid, 'gratitude', 'Three good things', 'Family call, tea, finished work early.', 'grateful', 1, CURDATE())`,
+      { uid: clientUserId }
+    );
+  }
+
+  await query(
+    `INSERT INTO user_goals (user_id, goals)
+     VALUES (:uid, :goals)
+     ON DUPLICATE KEY UPDATE goals = VALUES(goals)`,
+    { uid: clientUserId, goals: JSON.stringify(['Sleep better', 'Reduce anxiety', 'Weekly check-in']) }
+  );
+
+  await query(
+    `INSERT INTO notification_preferences (user_id)
+     VALUES (:uid)
+     ON DUPLICATE KEY UPDATE user_id = user_id`,
+    { uid: clientUserId }
+  );
+  await query(
+    `INSERT INTO notification_preferences (user_id)
+     VALUES (:uid)
+     ON DUPLICATE KEY UPDATE user_id = user_id`,
+    { uid: therapistId }
+  );
+
+  await query(
+    `INSERT INTO user_consents (user_id, consent_key, enabled)
+     VALUES (:uid, 'mood_detector', 1), (:uid, 'session_recording', 0)
+     ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)`,
+    { uid: clientUserId }
+  );
+
+  console.log('Seed complete.');
+  console.log('  Therapist: demo@nafs.app / Password123!');
+  console.log('  Client:    client@nafs.app / Password123!');
   await pool.end();
 }
 
