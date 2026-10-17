@@ -1,43 +1,17 @@
 # Nafs
 
-Node.js + MySQL REST backend for the **Nafs** mobile app (auth, onboarding, home dashboard, prayer logs, dhikr, journals, habits, challenges, Qur’an progress, fasting, notifications).
+Node.js + MySQL REST backend for the **Nafs** mobile app — therapist consultation platform (from Figma Nafs-mobile).
 
-## Where is this code?
+## Product flows covered
 
-This project lives in the **Cursor cloud agent workspace**, not yet inside your local `C:\xampp\htdocs`.
-
-That folder is empty of Nafs until you copy/clone the project there:
-
-1. Click **Create repo** in Cursor (if you have not linked a GitHub/GitLab repo yet).
-2. On your PC, clone it into XAMPP as a folder named **`nafs`**:
-
-```bat
-cd C:\xampp\htdocs
-git clone <your-repo-url> nafs
-cd nafs
-npm install
-copy .env.example .env
-npm run db:setup
-npm run dev
-```
-
-Then open: `http://127.0.0.1:43125/`
-
-> This is a **Node.js** API. It does **not** run as PHP under Apache. Use XAMPP only for **MySQL**; run the API with Node (`npm run dev`).
-
-> **Figma note:** The linked design file (`tkBoHPyvyuhwBW3rvjPMtN` / Nafs-mobile) could not be read in this environment (Figma MCP auth unavailable; REST needs `FIGMA_ACCESS_TOKEN`). APIs below follow the common Nafs companion product flow. After you add a token, run `npm run figma:fetch` and we can reshape endpoints to match exact screens.
-
-## Stack
-
-- Node.js 22 + Express
-- MySQL 8
-- JWT auth, Joi validation, Swagger UI
-
-This cloud environment does **not** use XAMPP. Node runs standalone; MySQL is a local MySQL 8 server. On your own machine with XAMPP:
-
-1. Start **MySQL** from the XAMPP control panel (Apache optional — this API does not need PHP/Apache).
-2. Install Node.js from [nodejs.org](https://nodejs.org/) (Node is not installed “inside” XAMPP).
-3. Create DB/user in phpMyAdmin or MySQL shell, then point `.env` at `localhost:3306`.
+- Therapist registration / multi-step application (identity, experience, admin/tech, submitted)
+- Home dashboard (next video session + Join)
+- Calendar & sessions
+- Clients list + client detail
+- Wallet / earnings / payment methods / billing
+- Chat threads
+- Profile, change password, FAQ, policies, contact, report a problem
+- EN/AR content fields for FAQ & policies
 
 ## Quick start
 
@@ -48,53 +22,29 @@ npm run db:setup
 npm run dev
 ```
 
-- App explorer: http://127.0.0.1:43125/
-- Swagger docs: http://127.0.0.1:43125/api/docs
+- Explorer: http://127.0.0.1:43125/
+- Swagger: http://127.0.0.1:43125/api/docs
 - API base: http://127.0.0.1:43125/api/v1
 
-### Demo user
+### Demo therapist
 
 | Field | Value |
 | --- | --- |
 | Email | `demo@nafs.app` |
 | Password | `Password123!` |
 
-## MySQL (this environment)
+## Postman
 
-```bash
-# already created during setup
-# database: nafs
-# user: nafs / nafs_pass
-# root: nafs_root_pass
-```
+Import from `postman/`:
 
-Connect with TCP (`127.0.0.1`), not the Unix socket, if you hit permission errors.
+- `Nafs-API.postman_collection.json`
+- `Nafs-Local.postman_environment.json`
+- `Nafs-Hostinger.postman_environment.json`
 
-## API map
+## Hostinger
 
-| Area | Methods |
-| --- | --- |
-| Auth | `POST /auth/register`, `/login`, `/verify-email`, `/forgot-password`, `/reset-password`, `GET /auth/me` |
-| Onboarding | `GET /onboarding/steps`, `GET /onboarding/status`, `POST /onboarding/complete` |
-| Home | `GET /home/dashboard` |
-| Profile | `GET/PATCH /profile` |
-| Prayers | `POST /prayers/log`, `GET /prayers/day`, `GET /prayers/calendar` |
-| Dhikr | `GET /dhikr/presets`, `POST/GET /dhikr/sessions`, `POST /dhikr/sessions/:id/tick` |
-| Journals | `CRUD /journals` |
-| Habits | `POST/GET /habits`, `POST /habits/:id/log`, `GET /habits/:id/streak` |
-| Challenges | `GET /challenges`, `POST /challenges/:id/join`, `GET /me/challenges`, complete task |
-| Qur’an | `GET/PUT /quran/progress`, reflections |
-| Fasting | `POST /fasting/log`, `GET /fasting` |
-| Content | `GET /content`, `/content/daily` |
-| Notifications | list / mark read / register device |
+Use `hostinger.env` with **Import .env**, then after deploy run `npm run db:setup`.
 
-All authenticated routes use `Authorization: Bearer <token>`.
+## Docs
 
-## Figma sync
-
-```bash
-export FIGMA_ACCESS_TOKEN=figd_xxx
-npm run figma:fetch
-```
-
-Writes `docs/figma-inventory.json` with page/frame names from the design file.
+See `docs/API.md` and `docs/figma-screen-map.md`.

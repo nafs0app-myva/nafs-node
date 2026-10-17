@@ -1,23 +1,46 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE TABLE IF NOT EXISTS users (
+DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS chat_threads;
+DROP TABLE IF EXISTS session_notes;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS availability_slots;
+DROP TABLE IF EXISTS therapist_clients;
+DROP TABLE IF EXISTS wallet_transactions;
+DROP TABLE IF EXISTS payment_methods;
+DROP TABLE IF EXISTS wallets;
+DROP TABLE IF EXISTS therapist_degrees;
+DROP TABLE IF EXISTS therapist_licenses;
+DROP TABLE IF EXISTS therapist_specializations;
+DROP TABLE IF EXISTS specializations;
+DROP TABLE IF EXISTS therapist_applications;
+DROP TABLE IF EXISTS therapist_profiles;
+DROP TABLE IF EXISTS problem_reports;
+DROP TABLE IF EXISTS contact_messages;
+DROP TABLE IF EXISTS faqs;
+DROP TABLE IF EXISTS policies;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS device_tokens;
+DROP TABLE IF EXISTS otp_codes;
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(190) NOT NULL UNIQUE,
   phone VARCHAR(32) NULL,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(120) NOT NULL,
   avatar_url VARCHAR(500) NULL,
-  gender ENUM('male','female','unspecified') NOT NULL DEFAULT 'unspecified',
-  timezone VARCHAR(64) NOT NULL DEFAULT 'UTC',
-  locale VARCHAR(16) NOT NULL DEFAULT 'en',
+  role ENUM('therapist','client','admin') NOT NULL DEFAULT 'therapist',
+  locale ENUM('en','ar') NOT NULL DEFAULT 'en',
   is_verified TINYINT(1) NOT NULL DEFAULT 0,
-  onboarding_completed TINYINT(1) NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS otp_codes (
+CREATE TABLE otp_codes (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NULL,
   email VARCHAR(190) NOT NULL,
@@ -30,203 +53,246 @@ CREATE TABLE IF NOT EXISTS otp_codes (
   CONSTRAINT fk_otp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS user_profiles (
+CREATE TABLE therapist_profiles (
   user_id BIGINT UNSIGNED PRIMARY KEY,
+  identity_number VARCHAR(64) NULL,
+  gender ENUM('male','female','unspecified') NOT NULL DEFAULT 'unspecified',
+  date_of_birth DATE NULL,
   bio TEXT NULL,
+  working_capacity ENUM('individual','team') NOT NULL DEFAULT 'individual',
+  years_experience INT NOT NULL DEFAULT 0,
   city VARCHAR(120) NULL,
   country VARCHAR(120) NULL,
-  latitude DECIMAL(10,7) NULL,
-  longitude DECIMAL(10,7) NULL,
-  calculation_method VARCHAR(40) NOT NULL DEFAULT 'MWL',
-  madhab ENUM('shafi','hanafi') NOT NULL DEFAULT 'shafi',
-  goals JSON NULL,
-  interests JSON NULL,
-  reminder_prefs JSON NULL,
+  address TEXT NULL,
+  timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Riyadh',
+  video_provider VARCHAR(40) NOT NULL DEFAULT 'custom',
+  video_meeting_url VARCHAR(500) NULL,
+  admin_notes TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_profile_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_tp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS onboarding_steps (
+CREATE TABLE therapist_applications (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  status ENUM('draft','submitted','under_review','approved','rejected') NOT NULL DEFAULT 'draft',
+  step ENUM('identity','experience','admin_tech','submitted') NOT NULL DEFAULT 'identity',
+  identity_payload JSON NULL,
+  experience_payload JSON NULL,
+  admin_tech_payload JSON NULL,
+  submitted_at DATETIME NULL,
+  reviewed_at DATETIME NULL,
+  reviewed_by BIGINT UNSIGNED NULL,
+  review_notes TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_app_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_app_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE specializations (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  slug VARCHAR(64) NOT NULL UNIQUE,
-  title VARCHAR(160) NOT NULL,
-  subtitle VARCHAR(255) NULL,
-  image_url VARCHAR(500) NULL,
+  slug VARCHAR(80) NOT NULL UNIQUE,
+  name_en VARCHAR(120) NOT NULL,
+  name_ar VARCHAR(120) NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE therapist_specializations (
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  specialization_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (therapist_id, specialization_id),
+  CONSTRAINT fk_ts_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ts_spec FOREIGN KEY (specialization_id) REFERENCES specializations(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE therapist_licenses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  license_number VARCHAR(120) NOT NULL,
+  expiry_date DATE NULL,
+  issuer VARCHAR(160) NULL,
+  document_url VARCHAR(500) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_license_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE therapist_degrees (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  degree_title VARCHAR(160) NOT NULL,
+  institution VARCHAR(160) NOT NULL,
+  year_awarded INT NULL,
+  document_url VARCHAR(500) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_degree_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE therapist_clients (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  client_user_id BIGINT UNSIGNED NULL,
+  full_name VARCHAR(120) NOT NULL,
+  email VARCHAR(190) NULL,
+  phone VARCHAR(32) NULL,
+  avatar_url VARCHAR(500) NULL,
+  notes TEXT NULL,
+  status ENUM('active','inactive','archived') NOT NULL DEFAULT 'active',
+  last_session_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_tc_therapist (therapist_id),
+  CONSTRAINT fk_tc_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tc_client FOREIGN KEY (client_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE availability_slots (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  weekday TINYINT UNSIGNED NOT NULL COMMENT '0=Sun .. 6=Sat',
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  CONSTRAINT fk_avail_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE sessions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  client_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(160) NULL,
+  session_type ENUM('video','audio','in_person') NOT NULL DEFAULT 'video',
+  status ENUM('scheduled','in_progress','completed','cancelled','no_show') NOT NULL DEFAULT 'scheduled',
+  starts_at DATETIME NOT NULL,
+  ends_at DATETIME NOT NULL,
+  duration_minutes INT NOT NULL DEFAULT 50,
+  fee_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  currency VARCHAR(8) NOT NULL DEFAULT 'SAR',
+  join_url VARCHAR(500) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_sessions_therapist_time (therapist_id, starts_at),
+  CONSTRAINT fk_session_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_session_client FOREIGN KEY (client_id) REFERENCES therapist_clients(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE session_notes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  session_id BIGINT UNSIGNED NOT NULL,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  body TEXT NOT NULL,
+  is_private TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_note_session FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_note_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wallets (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  balance DECIMAL(14,2) NOT NULL DEFAULT 0,
+  currency VARCHAR(8) NOT NULL DEFAULT 'SAR',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_wallet_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wallet_transactions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  wallet_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  type ENUM('credit','debit','payout','refund','session_fee') NOT NULL,
+  amount DECIMAL(14,2) NOT NULL,
+  currency VARCHAR(8) NOT NULL DEFAULT 'SAR',
+  status ENUM('pending','completed','failed') NOT NULL DEFAULT 'completed',
+  description VARCHAR(255) NULL,
+  reference_type VARCHAR(40) NULL,
+  reference_id BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_wt_user_time (user_id, created_at),
+  CONSTRAINT fk_wt_wallet FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_wt_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE payment_methods (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  brand VARCHAR(40) NOT NULL,
+  last4 VARCHAR(4) NOT NULL,
+  exp_month TINYINT UNSIGNED NULL,
+  exp_year SMALLINT UNSIGNED NULL,
+  is_default TINYINT(1) NOT NULL DEFAULT 0,
+  provider_token VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_pm_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE chat_threads (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  client_id BIGINT UNSIGNED NOT NULL,
+  last_message_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_thread (therapist_id, client_id),
+  CONSTRAINT fk_thread_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_thread_client FOREIGN KEY (client_id) REFERENCES therapist_clients(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE chat_messages (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  thread_id BIGINT UNSIGNED NOT NULL,
+  sender_user_id BIGINT UNSIGNED NOT NULL,
+  body TEXT NOT NULL,
+  is_read TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_msg_thread FOREIGN KEY (thread_id) REFERENCES chat_threads(id) ON DELETE CASCADE,
+  CONSTRAINT fk_msg_sender FOREIGN KEY (sender_user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE faqs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  question_en VARCHAR(255) NOT NULL,
+  answer_en TEXT NOT NULL,
+  question_ar VARCHAR(255) NULL,
+  answer_ar TEXT NULL,
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS prayer_logs (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
-  prayer_name ENUM('fajr','dhuhr','asr','maghrib','isha') NOT NULL,
-  prayed_on DATE NOT NULL,
-  status ENUM('on_time','late','missed','qada') NOT NULL DEFAULT 'on_time',
-  notes VARCHAR(500) NULL,
-  logged_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_user_prayer_day (user_id, prayer_name, prayed_on),
-  CONSTRAINT fk_prayer_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS dhikr_presets (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(160) NOT NULL,
-  arabic_text VARCHAR(500) NOT NULL,
-  transliteration VARCHAR(500) NULL,
-  translation VARCHAR(500) NULL,
-  target_count INT NOT NULL DEFAULT 33,
-  category VARCHAR(64) NOT NULL DEFAULT 'general',
-  is_active TINYINT(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS dhikr_sessions (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
-  preset_id INT UNSIGNED NULL,
-  title VARCHAR(160) NOT NULL,
-  target_count INT NOT NULL,
-  current_count INT NOT NULL DEFAULT 0,
-  completed TINYINT(1) NOT NULL DEFAULT 0,
-  started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  completed_at TIMESTAMP NULL,
-  CONSTRAINT fk_dhikr_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT fk_dhikr_preset FOREIGN KEY (preset_id) REFERENCES dhikr_presets(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS journals (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
-  title VARCHAR(200) NOT NULL,
-  body TEXT NOT NULL,
-  mood ENUM('grateful','calm','anxious','sad','hopeful','angry','neutral') NOT NULL DEFAULT 'neutral',
-  tags JSON NULL,
-  is_private TINYINT(1) NOT NULL DEFAULT 1,
-  entry_date DATE NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_journal_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS habits (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
-  title VARCHAR(160) NOT NULL,
-  description VARCHAR(500) NULL,
-  icon VARCHAR(64) NULL,
-  color VARCHAR(16) NULL,
-  frequency ENUM('daily','weekly') NOT NULL DEFAULT 'daily',
-  target_per_period INT NOT NULL DEFAULT 1,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_habit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS habit_logs (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  habit_id BIGINT UNSIGNED NOT NULL,
-  user_id BIGINT UNSIGNED NOT NULL,
-  logged_on DATE NOT NULL,
-  count INT NOT NULL DEFAULT 1,
-  note VARCHAR(500) NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_habit_day (habit_id, logged_on),
-  CONSTRAINT fk_habit_log_habit FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE,
-  CONSTRAINT fk_habit_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS challenges (
+CREATE TABLE policies (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   slug VARCHAR(80) NOT NULL UNIQUE,
-  title VARCHAR(160) NOT NULL,
-  description TEXT NULL,
-  duration_days INT NOT NULL DEFAULT 30,
-  cover_image VARCHAR(500) NULL,
-  is_active TINYINT(1) NOT NULL DEFAULT 1
+  title_en VARCHAR(160) NOT NULL,
+  body_en TEXT NOT NULL,
+  title_ar VARCHAR(160) NULL,
+  body_ar TEXT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS challenge_tasks (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  challenge_id INT UNSIGNED NOT NULL,
-  day_number INT NOT NULL,
-  title VARCHAR(200) NOT NULL,
-  description TEXT NULL,
-  task_type ENUM('prayer','quran','dhikr','journal','habit','custom') NOT NULL DEFAULT 'custom',
-  UNIQUE KEY uq_challenge_day_title (challenge_id, day_number, title),
-  CONSTRAINT fk_challenge_task FOREIGN KEY (challenge_id) REFERENCES challenges(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS user_challenges (
+CREATE TABLE contact_messages (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
-  challenge_id INT UNSIGNED NOT NULL,
-  started_on DATE NOT NULL,
-  current_day INT NOT NULL DEFAULT 1,
-  status ENUM('active','completed','abandoned') NOT NULL DEFAULT 'active',
-  completed_at DATETIME NULL,
-  UNIQUE KEY uq_user_challenge_active (user_id, challenge_id, status),
-  CONSTRAINT fk_uc_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT fk_uc_challenge FOREIGN KEY (challenge_id) REFERENCES challenges(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS user_challenge_task_logs (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_challenge_id BIGINT UNSIGNED NOT NULL,
-  challenge_task_id INT UNSIGNED NOT NULL,
-  completed_on DATE NOT NULL,
+  user_id BIGINT UNSIGNED NULL,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  subject VARCHAR(160) NOT NULL,
+  message TEXT NOT NULL,
+  status ENUM('new','in_progress','closed') NOT NULL DEFAULT 'new',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_uct (user_challenge_id, challenge_task_id),
-  CONSTRAINT fk_uct_uc FOREIGN KEY (user_challenge_id) REFERENCES user_challenges(id) ON DELETE CASCADE,
-  CONSTRAINT fk_uct_task FOREIGN KEY (challenge_task_id) REFERENCES challenge_tasks(id) ON DELETE CASCADE
+  CONSTRAINT fk_contact_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS quran_progress (
+CREATE TABLE problem_reports (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
-  surah INT NOT NULL,
-  ayah INT NOT NULL,
-  notes TEXT NULL,
-  last_read_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_quran_user (user_id),
-  CONSTRAINT fk_quran_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS reflections (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
-  surah INT NULL,
-  ayah INT NULL,
-  prompt VARCHAR(255) NULL,
-  body TEXT NOT NULL,
+  category VARCHAR(80) NOT NULL,
+  description TEXT NOT NULL,
+  attachment_url VARCHAR(500) NULL,
+  status ENUM('open','resolved','closed') NOT NULL DEFAULT 'open',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_reflection_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_problem_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS fasting_logs (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
-  fast_date DATE NOT NULL,
-  fast_type ENUM('ramadan','sunnah','qada','kafarah','other') NOT NULL DEFAULT 'sunnah',
-  status ENUM('completed','missed','planned') NOT NULL DEFAULT 'completed',
-  notes VARCHAR(500) NULL,
-  UNIQUE KEY uq_fast (user_id, fast_date),
-  CONSTRAINT fk_fast_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS content_items (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  kind ENUM('ayah','dua','hadith','tip','onboarding') NOT NULL,
-  title VARCHAR(200) NULL,
-  arabic_text TEXT NULL,
-  body TEXT NOT NULL,
-  source VARCHAR(160) NULL,
-  tags JSON NULL,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE notifications (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
   title VARCHAR(160) NOT NULL,
@@ -238,7 +304,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS device_tokens (
+CREATE TABLE device_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
   token VARCHAR(255) NOT NULL,

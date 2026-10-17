@@ -9,7 +9,7 @@ function authenticate(req, res, next) {
 
   try {
     const payload = jwt.verify(token, env.jwt.secret);
-    req.user = { id: payload.sub, email: payload.email };
+    req.user = { id: payload.sub, email: payload.email, role: payload.role };
     return next();
   } catch {
     return fail(res, 'Invalid or expired token', 401);
@@ -22,7 +22,7 @@ function optionalAuth(req, _res, next) {
   if (token) {
     try {
       const payload = jwt.verify(token, env.jwt.secret);
-      req.user = { id: payload.sub, email: payload.email };
+      req.user = { id: payload.sub, email: payload.email, role: payload.role };
     } catch {
       /* ignore */
     }
@@ -30,4 +30,13 @@ function optionalAuth(req, _res, next) {
   next();
 }
 
-module.exports = { authenticate, optionalAuth };
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return fail(res, 'Forbidden', 403);
+    }
+    return next();
+  };
+}
+
+module.exports = { authenticate, optionalAuth, requireRole };

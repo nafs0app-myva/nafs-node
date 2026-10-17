@@ -1,22 +1,19 @@
 const express = require('express');
+const Joi = require('joi');
 const validate = require('../middleware/validate');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
 const auth = require('../controllers/authController');
-const onboarding = require('../controllers/onboardingController');
-const home = require('../controllers/homeController');
-const prayer = require('../controllers/prayerController');
-const dhikr = require('../controllers/dhikrController');
-const journal = require('../controllers/journalController');
-const habit = require('../controllers/habitController');
-const challenge = require('../controllers/challengeController');
-const quran = require('../controllers/quranController');
-const fasting = require('../controllers/fastingController');
+const application = require('../controllers/applicationController');
+const dashboard = require('../controllers/dashboardController');
+const sessions = require('../controllers/sessionController');
+const clients = require('../controllers/clientController');
+const wallet = require('../controllers/walletController');
+const chat = require('../controllers/chatController');
+const support = require('../controllers/supportController');
 const profile = require('../controllers/profileController');
-const content = require('../controllers/contentController');
 const notification = require('../controllers/notificationController');
 
-const Joi = require('joi');
 const router = express.Router();
 
 router.get('/health', (_req, res) => {
@@ -28,9 +25,7 @@ router.post('/auth/register', validate(auth.registerSchema), auth.register);
 router.post('/auth/login', validate(auth.loginSchema), auth.login);
 router.post(
   '/auth/verify-email',
-  validate(
-    Joi.object({ email: Joi.string().email().required(), code: Joi.string().length(6).required() })
-  ),
+  validate(Joi.object({ email: Joi.string().email().required(), code: Joi.string().length(6).required() })),
   auth.verifyEmail
 );
 router.post(
@@ -49,90 +44,113 @@ router.post(
   ),
   auth.resetPassword
 );
+router.post(
+  '/auth/change-password',
+  authenticate,
+  validate(auth.changePasswordSchema),
+  auth.changePassword
+);
 router.get('/auth/me', authenticate, auth.me);
 
-// Onboarding
-router.get('/onboarding/steps', onboarding.listSteps);
-router.get('/onboarding/status', authenticate, onboarding.status);
-router.post(
-  '/onboarding/complete',
+// Therapist application / onboarding
+router.get('/specializations', application.listSpecializations);
+router.get('/application', authenticate, application.getApplication);
+router.get('/application/status', authenticate, application.getStatus);
+router.put(
+  '/application/identity',
   authenticate,
-  validate(onboarding.completeSchema),
-  onboarding.complete
+  validate(application.identitySchema),
+  application.saveIdentity
 );
+router.put(
+  '/application/experience',
+  authenticate,
+  validate(application.experienceSchema),
+  application.saveExperience
+);
+router.put(
+  '/application/admin-tech',
+  authenticate,
+  validate(application.adminTechSchema),
+  application.saveAdminTech
+);
+router.post('/application/submit', authenticate, application.submit);
 
-// Home
-router.get('/home/dashboard', authenticate, home.dashboard);
+// Home dashboard
+router.get('/home/dashboard', authenticate, dashboard.dashboard);
 
 // Profile
 router.get('/profile', authenticate, profile.getProfile);
 router.patch('/profile', authenticate, validate(profile.updateSchema), profile.updateProfile);
 
-// Prayers
-router.post('/prayers/log', authenticate, validate(prayer.logSchema), prayer.logPrayer);
-router.get('/prayers/day', authenticate, prayer.listDay);
-router.get('/prayers/calendar', authenticate, prayer.calendar);
-
-// Dhikr
-router.get('/dhikr/presets', authenticate, dhikr.listPresets);
-router.post('/dhikr/sessions', authenticate, validate(dhikr.startSchema), dhikr.startSession);
+// Calendar & sessions
+router.get('/calendar', authenticate, sessions.calendar);
+router.get('/sessions', authenticate, sessions.list);
+router.post('/sessions', authenticate, validate(sessions.createSchema), sessions.create);
+router.get('/sessions/:id', authenticate, sessions.getOne);
+router.patch('/sessions/:id', authenticate, validate(sessions.updateSchema), sessions.update);
+router.post('/sessions/:id/join', authenticate, sessions.join);
 router.post(
-  '/dhikr/sessions/:id/tick',
+  '/sessions/:id/notes',
   authenticate,
-  validate(dhikr.tickSchema),
-  dhikr.tick
+  validate(Joi.object({ body: Joi.string().required(), is_private: Joi.boolean().default(true) })),
+  sessions.addNote
 );
-router.get('/dhikr/sessions', authenticate, dhikr.history);
+router.get('/availability', authenticate, sessions.getAvailability);
+router.put(
+  '/availability',
+  authenticate,
+  validate(sessions.availabilitySchema),
+  sessions.setAvailability
+);
 
-// Journal
-router.post('/journals', authenticate, validate(journal.entrySchema), journal.create);
-router.get('/journals', authenticate, journal.list);
-router.get('/journals/:id', authenticate, journal.getOne);
-router.put('/journals/:id', authenticate, validate(journal.entrySchema), journal.update);
-router.delete('/journals/:id', authenticate, journal.remove);
+// Clients
+router.get('/clients', authenticate, clients.list);
+router.post('/clients', authenticate, validate(clients.createSchema), clients.create);
+router.get('/clients/:id', authenticate, clients.getOne);
+router.patch('/clients/:id', authenticate, validate(clients.updateSchema), clients.update);
 
-// Habits
-router.post('/habits', authenticate, validate(habit.habitSchema), habit.create);
-router.get('/habits', authenticate, habit.list);
-router.post('/habits/:id/log', authenticate, validate(habit.logSchema), habit.log);
-router.get('/habits/:id/streak', authenticate, habit.streak);
-router.delete('/habits/:id', authenticate, habit.remove);
-
-// Challenges
-router.get('/challenges', authenticate, challenge.list);
-router.get('/challenges/:id', authenticate, challenge.detail);
-router.post('/challenges/:id/join', authenticate, challenge.join);
-router.get('/me/challenges', authenticate, challenge.myChallenges);
-router.post('/me/challenges/:id/tasks/:taskId/complete', authenticate, challenge.completeTask);
-
-// Qur’an
-router.get('/quran/progress', authenticate, quran.getProgress);
-router.put('/quran/progress', authenticate, validate(quran.progressSchema), quran.upsertProgress);
+// Wallet / earnings / billing
+router.get('/wallet', authenticate, wallet.getWallet);
+router.get('/wallet/transactions', authenticate, wallet.transactions);
+router.get('/wallet/overview', authenticate, wallet.overview);
 router.post(
-  '/quran/reflections',
+  '/wallet/withdraw',
   authenticate,
-  validate(quran.reflectionSchema),
-  quran.createReflection
+  validate(Joi.object({ amount: Joi.number().positive().required() })),
+  wallet.withdraw
 );
-router.get('/quran/reflections', authenticate, quran.listReflections);
+router.get('/payment-methods', authenticate, wallet.listPaymentMethods);
+router.post(
+  '/payment-methods',
+  authenticate,
+  validate(wallet.paymentMethodSchema),
+  wallet.addPaymentMethod
+);
+router.get('/billing-history', authenticate, wallet.billingHistory);
 
-// Fasting
-router.post('/fasting/log', authenticate, validate(fasting.logSchema), fasting.upsert);
-router.get('/fasting', authenticate, fasting.list);
+// Chat
+router.get('/chats', authenticate, chat.listThreads);
+router.post('/chats', authenticate, validate(chat.startSchema), chat.startThread);
+router.get('/chats/:id/messages', authenticate, chat.getMessages);
+router.post('/chats/:id/messages', authenticate, validate(chat.messageSchema), chat.sendMessage);
 
-// Content
-router.get('/content', content.list);
-router.get('/content/daily', content.daily);
+// Support / content
+router.get('/faqs', support.faqs);
+router.get('/policies', support.listPolicies);
+router.get('/policies/:slug', support.getPolicy);
+router.post('/contact', optionalAuth, validate(support.contactSchema), support.contact);
+router.post(
+  '/report-problem',
+  authenticate,
+  validate(support.problemSchema),
+  support.reportProblem
+);
 
 // Notifications
 router.get('/notifications', authenticate, notification.list);
 router.post('/notifications/:id/read', authenticate, notification.markRead);
 router.post('/notifications/read-all', authenticate, notification.markAllRead);
-router.post(
-  '/devices',
-  authenticate,
-  validate(notification.deviceSchema),
-  notification.registerDevice
-);
+router.post('/devices', authenticate, validate(notification.deviceSchema), notification.registerDevice);
 
 module.exports = router;
