@@ -1,8 +1,19 @@
 {
   "info": {
-    "name": "Nafs API",
-    "description": "Nafs mobile backend \u2014 therapist + client APIs mapped from NAFS-backup Figma",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Nafs API \u2014 All Endpoints",
+    "description": "Complete Nafs therapist + client API collection (NAFS-backup Figma). Base: {{baseUrl}}. After Login, token is saved to the environment automatically.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
     {
@@ -16,34 +27,122 @@
     {
       "key": "clientToken",
       "value": ""
+    },
+    {
+      "key": "id",
+      "value": "1"
+    },
+    {
+      "key": "sessionId",
+      "value": "1"
+    },
+    {
+      "key": "clientId",
+      "value": "1"
+    },
+    {
+      "key": "bookingId",
+      "value": "1"
+    },
+    {
+      "key": "journalId",
+      "value": "1"
+    },
+    {
+      "key": "assessmentId",
+      "value": "1"
+    },
+    {
+      "key": "vacationId",
+      "value": "1"
+    },
+    {
+      "key": "deviceId",
+      "value": "1"
+    },
+    {
+      "key": "mediaId",
+      "value": "1"
+    },
+    {
+      "key": "chatId",
+      "value": "1"
+    },
+    {
+      "key": "notificationId",
+      "value": "1"
+    },
+    {
+      "key": "paymentMethodId",
+      "value": "1"
+    },
+    {
+      "key": "therapistId",
+      "value": "1"
     }
   ],
   "item": [
     {
-      "name": "App",
+      "name": "00 App",
       "item": [
         {
           "name": "Health",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/health"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
         },
         {
           "name": "Bootstrap",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/app/bootstrap"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/app/bootstrap",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "app",
+                "bootstrap"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
         },
         {
           "name": "Get settings",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/settings",
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -54,7 +153,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update settings",
@@ -66,7 +166,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/settings",
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -79,14 +188,20 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"locale\": \"en\"\n}"
+              "raw": "{\n  \"locale\": \"en\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Auth",
+      "name": "01 Auth",
       "item": [
         {
           "name": "Register therapist",
@@ -98,12 +213,31 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/register",
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"new.therapist@nafs.app\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"New Therapist\",\n  \"role\": \"therapist\",\n  \"locale\": \"en\"\n}"
+              "raw": "{\n  \"email\": \"new.therapist@nafs.app\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"New Therapist\",\n  \"phone\": \"+966500000001\",\n  \"role\": \"therapist\",\n  \"locale\": \"en\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Register client",
@@ -115,12 +249,31 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/register",
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"new.client@nafs.app\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"New Client\",\n  \"role\": \"client\",\n  \"locale\": \"en\"\n}"
+              "raw": "{\n  \"email\": \"new.client@nafs.app\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"New Client\",\n  \"phone\": \"+966500000002\",\n  \"role\": \"client\",\n  \"locale\": \"en\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Login therapist",
@@ -132,12 +285,45 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/login",
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"demo@nafs.app\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data && j.data.token) pm.environment.set('token', j.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login client",
@@ -149,12 +335,45 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/login",
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"client@nafs.app\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"{{clientEmail}}\",\n  \"password\": \"{{clientPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data && j.data.token) pm.environment.set('clientToken', j.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Verify email",
@@ -166,12 +385,31 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/verify-email",
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"new.client@nafs.app\",\n  \"code\": \"123456\"\n}"
+              "raw": "{\n  \"email\": \"new.client@nafs.app\",\n  \"code\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Forgot password",
@@ -183,12 +421,31 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/forgot-password",
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"demo@nafs.app\"\n}"
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Reset password",
@@ -200,12 +457,31 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/reset-password",
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"demo@nafs.app\",\n  \"code\": \"123456\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"123456\",\n  \"password\": \"Password123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Change password",
@@ -217,7 +493,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/change-password",
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -230,16 +516,32 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"Password123!\"\n}"
+              "raw": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"Password123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Me",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/auth/me",
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -250,27 +552,50 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Application Onboarding",
+      "name": "02 Application Onboarding",
       "item": [
         {
           "name": "List specializations",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/specializations"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/specializations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "specializations"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
         },
         {
           "name": "Get application",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/application",
+            "url": {
+              "raw": "{{baseUrl}}/application",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "application"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -281,14 +606,25 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Application status",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/application/status",
+            "url": {
+              "raw": "{{baseUrl}}/application/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "application",
+                "status"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -299,7 +635,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Save identity",
@@ -311,7 +648,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/application/identity",
+            "url": {
+              "raw": "{{baseUrl}}/application/identity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "application",
+                "identity"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -324,9 +671,15 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Dr. Sara Alami\",\n  \"identity_number\": \"ID-998877\",\n  \"gender\": \"female\",\n  \"date_of_birth\": \"1988-04-12\",\n  \"bio\": \"Clinical psychologist\"\n}"
+              "raw": "{\n  \"full_name\": \"Dr. Sara Alami\",\n  \"identity_number\": \"ID-998877\",\n  \"gender\": \"female\",\n  \"date_of_birth\": \"1988-04-12\",\n  \"bio\": \"Clinical psychologist\",\n  \"working_capacity\": \"individual\",\n  \"years_experience\": 12\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Save experience",
@@ -338,7 +691,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/application/experience",
+            "url": {
+              "raw": "{{baseUrl}}/application/experience",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "application",
+                "experience"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -351,9 +714,15 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"years_experience\": 12,\n  \"specialization_ids\": [\n    1,\n    2\n  ]\n}"
+              "raw": "{\n  \"years_experience\": 12,\n  \"specialization_ids\": [\n    1,\n    2,\n    3\n  ],\n  \"licenses\": [\n    {\n      \"license_number\": \"SCFHS-445566\",\n      \"expiry_date\": \"2028-12-31\",\n      \"issuer\": \"SCFHS\"\n    }\n  ],\n  \"degrees\": [\n    {\n      \"degree_title\": \"PhD Clinical Psychology\",\n      \"institution\": \"KSU\",\n      \"year_awarded\": 2016\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Save admin tech",
@@ -365,7 +734,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/application/admin-tech",
+            "url": {
+              "raw": "{{baseUrl}}/application/admin-tech",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "application",
+                "admin-tech"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -378,9 +757,15 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"city\": \"Riyadh\",\n  \"country\": \"Saudi Arabia\",\n  \"video_provider\": \"custom\"\n}"
+              "raw": "{\n  \"city\": \"Riyadh\",\n  \"country\": \"Saudi Arabia\",\n  \"address\": \"Olaya\",\n  \"timezone\": \"Asia/Riyadh\",\n  \"video_provider\": \"custom\",\n  \"video_meeting_url\": \"https://meet.nafs.app/demo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Submit application",
@@ -392,7 +777,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/application/submit",
+            "url": {
+              "raw": "{{baseUrl}}/application/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "application",
+                "submit"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -405,21 +800,37 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{}"
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Home Calendar Sessions",
+      "name": "03 Home Calendar Sessions",
       "item": [
         {
           "name": "Dashboard",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/home/dashboard",
+            "url": {
+              "raw": "{{baseUrl}}/home/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "home",
+                "dashboard"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -430,14 +841,30 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Calendar",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/calendar?month=2026-10",
+            "url": {
+              "raw": "{{baseUrl}}/calendar?month=2026-10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calendar"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2026-10"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -448,14 +875,24 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List sessions",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/sessions",
+            "url": {
+              "raw": "{{baseUrl}}/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -466,7 +903,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create session",
@@ -478,7 +916,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/sessions",
+            "url": {
+              "raw": "{{baseUrl}}/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -491,16 +938,38 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"client_id\": 1,\n  \"title\": \"Follow-up\",\n  \"session_type\": \"video\",\n  \"starts_at\": \"2026-10-20T10:00:00\",\n  \"duration_minutes\": 50,\n  \"fee_amount\": 350\n}"
+              "raw": "{\n  \"client_id\": 1,\n  \"title\": \"Follow-up\",\n  \"session_type\": \"video\",\n  \"starts_at\": \"2026-10-25T10:00:00\",\n  \"duration_minutes\": 50,\n  \"fee_amount\": 350,\n  \"currency\": \"SAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get session",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/sessions/1",
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -511,7 +980,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update session",
@@ -523,7 +993,23 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/sessions/1",
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -536,9 +1022,15 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated session\"\n}"
+              "raw": "{\n  \"title\": \"Updated session\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Join session",
@@ -550,7 +1042,24 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/sessions/1/join",
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{id}}/join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{id}}",
+                "join"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -563,9 +1072,15 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{}"
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Cancel session",
@@ -577,7 +1092,24 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/sessions/1/cancel",
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{id}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{id}}",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -590,12 +1122,18 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{}"
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Add note",
+          "name": "Add session note",
           "request": {
             "method": "POST",
             "header": [
@@ -604,7 +1142,24 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/sessions/1/notes",
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{id}}/notes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{id}}",
+                "notes"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -617,16 +1172,31 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"body\": \"Client progress noted\",\n  \"is_private\": true\n}"
+              "raw": "{\n  \"body\": \"Client making progress\",\n  \"is_private\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get availability",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/availability",
+            "url": {
+              "raw": "{{baseUrl}}/availability",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "availability"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -637,7 +1207,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Set availability",
@@ -649,7 +1220,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/availability",
+            "url": {
+              "raw": "{{baseUrl}}/availability",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "availability"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -662,21 +1242,42 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"slots\": [\n    {\n      \"weekday\": 1,\n      \"start_time\": \"09:00\",\n      \"end_time\": \"17:00\"\n    }\n  ]\n}"
+              "raw": "{\n  \"slots\": [\n    {\n      \"weekday\": 0,\n      \"start_time\": \"09:00\",\n      \"end_time\": \"17:00\"\n    },\n    {\n      \"weekday\": 1,\n      \"start_time\": \"09:00\",\n      \"end_time\": \"17:00\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Clients",
+      "name": "04 Clients",
       "item": [
         {
           "name": "List clients",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/clients",
+            "url": {
+              "raw": "{{baseUrl}}/clients?q=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -687,7 +1288,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create client",
@@ -699,7 +1301,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/clients",
+            "url": {
+              "raw": "{{baseUrl}}/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -712,16 +1323,38 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"New Client\",\n  \"email\": \"newclient@example.com\",\n  \"phone\": \"+966505555555\"\n}"
+              "raw": "{\n  \"full_name\": \"New Client\",\n  \"email\": \"patient@example.com\",\n  \"phone\": \"+966505555555\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get client",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/clients/1",
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -732,7 +1365,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update client",
@@ -744,7 +1378,23 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/clients/1",
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -757,21 +1407,36 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Updated Name\"\n}"
+              "raw": "{\n  \"full_name\": \"Updated Client\",\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Wallet Billing",
+      "name": "05 Wallet Billing Payouts",
       "item": [
         {
           "name": "Wallet",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/wallet",
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -782,14 +1447,25 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Transactions",
+          "name": "Wallet transactions",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/wallet/transactions",
+            "url": {
+              "raw": "{{baseUrl}}/wallet/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "transactions"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -800,14 +1476,25 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Overview",
+          "name": "Wallet overview",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/wallet/overview",
+            "url": {
+              "raw": "{{baseUrl}}/wallet/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "overview"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -818,7 +1505,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Withdraw",
@@ -830,7 +1518,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/wallet/withdraw",
+            "url": {
+              "raw": "{{baseUrl}}/wallet/withdraw",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "withdraw"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -843,16 +1541,31 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 100\n}"
+              "raw": "{\n  \"amount\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Payment methods",
+          "name": "List payment methods",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/payment-methods",
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -863,7 +1576,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Add payment method",
@@ -875,7 +1589,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/payment-methods",
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -888,16 +1611,38 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"brand\": \"visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2028\n}"
+              "raw": "{\n  \"brand\": \"visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2028,\n  \"is_default\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete payment method",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": "{{baseUrl}}/payment-methods/1",
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -908,14 +1653,24 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Billing history",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/billing-history",
+            "url": {
+              "raw": "{{baseUrl}}/billing-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "billing-history"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -926,14 +1681,24 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List payouts",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/payouts",
+            "url": {
+              "raw": "{{baseUrl}}/payouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payouts"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -944,7 +1709,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Request payout",
@@ -956,7 +1722,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/payouts",
+            "url": {
+              "raw": "{{baseUrl}}/payouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payouts"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -969,21 +1744,36 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 200,\n  \"bank_name\": \"Al Rajhi\",\n  \"iban\": \"SA0380000000608010167519\"\n}"
+              "raw": "{\n  \"amount\": 200,\n  \"bank_name\": \"Al Rajhi\",\n  \"iban\": \"SA0380000000608010167519\",\n  \"currency\": \"SAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Chat",
+      "name": "06 Chat",
       "item": [
         {
-          "name": "List threads",
+          "name": "List chat threads",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/chats",
+            "url": {
+              "raw": "{{baseUrl}}/chats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -994,10 +1784,11 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Start thread",
+          "name": "Start chat",
           "request": {
             "method": "POST",
             "header": [
@@ -1006,7 +1797,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/chats",
+            "url": {
+              "raw": "{{baseUrl}}/chats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1019,16 +1819,39 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"client_id\": 1\n}"
+              "raw": "{\n  \"client_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get messages",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/chats/1/messages",
+            "url": {
+              "raw": "{{baseUrl}}/chats/{{id}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats",
+                "{{id}}",
+                "messages"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1039,7 +1862,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Send message",
@@ -1051,7 +1875,24 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/chats/1/messages",
+            "url": {
+              "raw": "{{baseUrl}}/chats/{{id}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats",
+                "{{id}}",
+                "messages"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1064,21 +1905,36 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"body\": \"Hello\"\n}"
+              "raw": "{\n  \"body\": \"Hello, how are you?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Profile Support Notifications",
+      "name": "07 Profile Support Notifications Devices",
       "item": [
         {
           "name": "Get profile",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/profile",
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1089,7 +1945,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update profile",
@@ -1101,7 +1958,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/profile",
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1114,36 +1980,101 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Dr. Sara Alami\"\n}"
+              "raw": "{\n  \"full_name\": \"Dr. Sara Alami\",\n  \"locale\": \"en\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "FAQs",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/faqs?locale=en"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/faqs?locale=en",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "faqs"
+              ],
+              "query": [
+                {
+                  "key": "locale",
+                  "value": "en"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
         },
         {
-          "name": "Policies",
+          "name": "List policies",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/policies"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/policies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "policies"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
         },
         {
-          "name": "Policy by slug",
+          "name": "Get policy",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/policies/privacy"
-          }
+            "url": {
+              "raw": "{{baseUrl}}/policies/{{slug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "policies",
+                "{{slug}}"
+              ],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
-          "name": "Contact",
+          "name": "Contact Us",
           "request": {
             "method": "POST",
             "header": [
@@ -1152,15 +2083,33 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/contact",
+            "url": {
+              "raw": "{{baseUrl}}/contact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contact"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Sara\",\n  \"email\": \"demo@nafs.app\",\n  \"message\": \"Need help\"\n}"
+              "raw": "{\n  \"name\": \"Sara\",\n  \"email\": \"demo@nafs.app\",\n  \"message\": \"Need help with payouts\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Report problem",
+          "name": "Report a Problem",
           "request": {
             "method": "POST",
             "header": [
@@ -1169,7 +2118,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/report-problem",
+            "url": {
+              "raw": "{{baseUrl}}/report-problem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-problem"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1182,16 +2140,31 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"subject\": \"Bug\",\n  \"description\": \"Something broke\"\n}"
+              "raw": "{\n  \"subject\": \"Bug\",\n  \"description\": \"Something is not working\",\n  \"category\": \"technical\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Notifications",
+          "name": "List notifications",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/notifications",
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1202,10 +2175,11 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Mark read",
+          "name": "Mark notification read",
           "request": {
             "method": "POST",
             "header": [
@@ -1214,7 +2188,24 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/notifications/1/read",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{id}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{id}}",
+                "read"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1227,12 +2218,18 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{}"
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Mark all read",
+          "name": "Mark all notifications read",
           "request": {
             "method": "POST",
             "header": [
@@ -1241,7 +2238,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/notifications/read-all",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1254,16 +2261,32 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{}"
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Get notif prefs",
+          "name": "Get notification preferences",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/notifications/preferences",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "preferences"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1274,10 +2297,11 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Update notif prefs",
+          "name": "Update notification preferences",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1286,7 +2310,17 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/notifications/preferences",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "preferences"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1299,9 +2333,15 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"push_channel\": true,\n  \"sms_channel\": false\n}"
+              "raw": "{\n  \"client_bookings\": true,\n  \"clinical_alerts\": true,\n  \"financial\": true,\n  \"push_channel\": true,\n  \"email_channel\": true,\n  \"sms_channel\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Register device",
@@ -1313,7 +2353,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/devices",
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1326,16 +2375,31 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"demo-device-token\",\n  \"platform\": \"ios\",\n  \"device_name\": \"iPhone\"\n}"
+              "raw": "{\n  \"token\": \"postman-device-token\",\n  \"platform\": \"ios\",\n  \"device_name\": \"iPhone 15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List devices",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/devices",
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1346,14 +2410,31 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Revoke device",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": "{{baseUrl}}/devices/1",
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1364,15 +2445,16 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Client Mood Journal Assessments",
+      "name": "08 Client Mood Journal Assessments",
       "item": [
         {
-          "name": "Mood checkin",
+          "name": "Create mood check-in",
           "request": {
             "method": "POST",
             "header": [
@@ -1381,40 +2463,67 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/mood/checkins",
+            "url": {
+              "raw": "{{baseUrl}}/mood/checkins",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mood",
+                "checkins"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"mood\": \"anxious\",\n  \"intensity\": 6,\n  \"note\": \"Busy day\",\n  \"tags\": [\n    \"work\"\n  ]\n}"
+              "raw": "{\n  \"mood\": \"calm\",\n  \"intensity\": 7,\n  \"note\": \"Feeling okay\",\n  \"tags\": [\n    \"morning\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "List mood checkins",
+          "name": "List mood check-ins",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/mood/checkins",
+            "url": {
+              "raw": "{{baseUrl}}/mood/checkins",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mood",
+                "checkins"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Mood detector",
@@ -1426,25 +2535,41 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/mood/detector",
+            "url": {
+              "raw": "{{baseUrl}}/mood/detector",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mood",
+                "detector"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"detected_mood\": \"calm\",\n  \"confidence\": 82.5,\n  \"consent_accepted\": true\n}"
+              "raw": "{\n  \"detected_mood\": \"happy\",\n  \"confidence\": 85.5,\n  \"consent_accepted\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Create journal",
+          "name": "Create journal entry",
           "request": {
             "method": "POST",
             "header": [
@@ -1453,58 +2578,106 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/journals",
+            "url": {
+              "raw": "{{baseUrl}}/journals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Today\",\n  \"body\": \"Reflecting on progress\",\n  \"mood_tag\": \"hopeful\",\n  \"entry_date\": \"2026-10-17\"\n}"
+              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Today\",\n  \"body\": \"Reflecting on progress\",\n  \"mood_tag\": \"hopeful\",\n  \"entry_date\": \"2026-10-19\",\n  \"is_pinned\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List journals",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/journals",
+            "url": {
+              "raw": "{{baseUrl}}/journals?q=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get journal",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/journals/1",
+            "url": {
+              "raw": "{{baseUrl}}/journals/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update journal",
@@ -1516,40 +2689,79 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/journals/1",
+            "url": {
+              "raw": "{{baseUrl}}/journals/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Today updated\",\n  \"body\": \"Updated entry\",\n  \"mood_tag\": \"calm\",\n  \"entry_date\": \"2026-10-17\"\n}"
+              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Today updated\",\n  \"body\": \"Updated reflection\",\n  \"mood_tag\": \"calm\",\n  \"entry_date\": \"2026-10-19\",\n  \"is_pinned\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete journal",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": "{{baseUrl}}/journals/1",
+            "url": {
+              "raw": "{{baseUrl}}/journals/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Start assessment",
@@ -1561,22 +2773,37 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/assessments",
+            "url": {
+              "raw": "{{baseUrl}}/assessments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assessments"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"assessment_type\": \"anxiety_stress\"\n}"
+              "raw": "{\n  \"assessment_type\": \"anxiety_stress\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Save assessment answers",
@@ -1588,58 +2815,101 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/assessments/1/answers",
+            "url": {
+              "raw": "{{baseUrl}}/assessments/{{id}}/answers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assessments",
+                "{{id}}",
+                "answers"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"answers\": [\n    {\n      \"question_key\": \"q1\",\n      \"answer_value\": \"sometimes\"\n    },\n    {\n      \"question_key\": \"q2\",\n      \"answer_value\": 3\n    }\n  ],\n  \"complete\": true,\n  \"score\": 12,\n  \"summary\": {\n    \"level\": \"mild\"\n  }\n}"
+              "raw": "{\n  \"answers\": [\n    {\n      \"question_key\": \"q1\",\n      \"answer_value\": \"sometimes\"\n    },\n    {\n      \"question_key\": \"q2\",\n      \"answer_value\": 3\n    }\n  ],\n  \"complete\": true,\n  \"score\": 12,\n  \"summary\": {\n    \"level\": \"mild\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List assessments",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/assessments",
+            "url": {
+              "raw": "{{baseUrl}}/assessments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assessments"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get goals",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/goals",
+            "url": {
+              "raw": "{{baseUrl}}/goals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "goals"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Save goals",
@@ -1651,63 +2921,111 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/goals",
+            "url": {
+              "raw": "{{baseUrl}}/goals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "goals"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"goals\": [\n    \"Sleep better\",\n    \"Weekly check-in\"\n  ]\n}"
+              "raw": "{\n  \"goals\": [\n    \"Sleep better\",\n    \"Reduce anxiety\",\n    \"Weekly check-in\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Client Specialists Booking",
+      "name": "09 Client Specialists Booking",
       "item": [
         {
           "name": "List specialists",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/specialists",
+            "url": {
+              "raw": "{{baseUrl}}/specialists?q=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "specialists"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get specialist",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/specialists/1",
+            "url": {
+              "raw": "{{baseUrl}}/specialists/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "specialists",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create booking",
@@ -1719,22 +3037,37 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/bookings",
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"therapist_id\": 1,\n  \"booking_date\": \"2026-10-25\",\n  \"booking_time\": \"14:00:00\",\n  \"session_type\": \"video\",\n  \"beneficiary\": \"Myself\",\n  \"amount\": 350,\n  \"currency\": \"SAR\"\n}"
+              "raw": "{\n  \"therapist_id\": 1,\n  \"booking_date\": \"2026-10-25\",\n  \"booking_time\": \"14:00:00\",\n  \"session_type\": \"video\",\n  \"beneficiary\": \"Myself\",\n  \"note\": \"First session\",\n  \"amount\": 350,\n  \"currency\": \"SAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Checkout booking",
@@ -1746,52 +3079,94 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/bookings/1/checkout",
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{id}}/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{id}}",
+                "checkout"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"payment_method\": \"card\"\n}"
+              "raw": "{\n  \"payment_method\": \"card\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "My bookings",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/bookings",
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Consultant Vacation",
+      "name": "10 Consultant Vacation",
       "item": [
         {
           "name": "List vacations",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/vacations",
+            "url": {
+              "raw": "{{baseUrl}}/vacations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacations"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1802,7 +3177,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create vacation",
@@ -1814,7 +3190,16 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/vacations",
+            "url": {
+              "raw": "{{baseUrl}}/vacations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacations"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1827,16 +3212,38 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"start_date\": \"2026-11-01\",\n  \"end_date\": \"2026-11-05\",\n  \"reason\": \"Family travel\"\n}"
+              "raw": "{\n  \"start_date\": \"2026-11-01\",\n  \"end_date\": \"2026-11-05\",\n  \"reason\": \"Family travel\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete vacation",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": "{{baseUrl}}/vacations/1",
+            "url": {
+              "raw": "{{baseUrl}}/vacations/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacations",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1847,30 +3254,42 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Privacy Data",
+      "name": "11 Privacy Data",
       "item": [
         {
           "name": "List consents",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/privacy/consents",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/consents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "consents"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update consents",
@@ -1882,43 +3301,70 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/privacy/consents",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/consents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "consents"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"consents\": [\n    {\n      \"consent_key\": \"mood_detector\",\n      \"enabled\": true\n    },\n    {\n      \"consent_key\": \"session_recording\",\n      \"enabled\": false\n    }\n  ]\n}"
+              "raw": "{\n  \"consents\": [\n    {\n      \"consent_key\": \"mood_detector\",\n      \"enabled\": true\n    },\n    {\n      \"consent_key\": \"session_recording\",\n      \"enabled\": false\n    },\n    {\n      \"consent_key\": \"research\",\n      \"enabled\": false\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "List media",
+          "name": "List media recordings",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/privacy/media",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "media"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Add media",
+          "name": "Add media recording",
           "request": {
             "method": "POST",
             "header": [
@@ -1927,43 +3373,77 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/privacy/media",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "media"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"media_type\": \"audio\",\n  \"title\": \"Voice note\",\n  \"url\": \"https://cdn.nafs.app/demo/audio1.mp3\",\n  \"duration_seconds\": 42\n}"
+              "raw": "{\n  \"media_type\": \"audio\",\n  \"title\": \"Morning reflection\",\n  \"url\": \"https://cdn.nafs.app/demo/audio1.mp3\",\n  \"duration_seconds\": 42\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Delete media",
+          "name": "Delete media recording",
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": "{{baseUrl}}/privacy/media/1",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/media/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "media",
+                "{{id}}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Request export",
+          "name": "Request data export",
           "request": {
             "method": "POST",
             "header": [
@@ -1972,58 +3452,96 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/privacy/export",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "export"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"format\": \"pdf\",\n  \"include_flags\": {\n    \"journals\": true,\n    \"mood\": true\n  }\n}"
+              "raw": "{\n  \"format\": \"pdf\",\n  \"include_flags\": {\n    \"journals\": true,\n    \"mood\": true,\n    \"assessments\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List exports",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/privacy/exports",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/exports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "exports"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Retention policy",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/privacy/retention",
+            "url": {
+              "raw": "{{baseUrl}}/privacy/retention",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "retention"
+              ]
+            },
+            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{clientToken}}",
                   "type": "string"
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     }
