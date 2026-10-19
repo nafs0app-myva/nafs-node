@@ -32,15 +32,28 @@ npm run dev
 
 ## Postman
 
-Import from `postman/`:
+Synced to **My Workspace** (cloud):
 
-- `Nafs-API.postman_collection.json`
-- `Nafs-Local.postman_environment.json`
-- `Nafs-Hostinger.postman_environment.json`
+- Collection **nafse-api** — all 94 endpoints
+- Collection **Nafs API** — same full set
+- Environments **Nafs Hostinger** (`https://myva.ae/api/v1`) and **Nafs Local**
 
-## Hostinger
+Repo copies under `postman/` if you prefer file import.
 
-Use `hostinger.env` with **Import .env**, then after deploy run `npm run db:setup`.
+## Hostinger / live
+
+Live API: https://myva.ae/api/v1  
+
+Use `hostinger.env` with **Import .env** (includes `DB_NAME=u809513268_nafs` and `SETUP_KEY`). After deploy, migrate + seed remotely:
+
+```bash
+curl -X POST https://myva.ae/api/v1/admin/db-setup \
+  -H 'Content-Type: application/json' \
+  -H 'X-Setup-Key: YOUR_SETUP_KEY' \
+  -d '{"migrate_only":false}'
+```
+
+Or on the Hostinger Node terminal: `npm run db:setup`.
 
 ## Docs
 
