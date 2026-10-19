@@ -4,7 +4,9 @@ const env = require('../config/env');
 const { ok, fail } = require('../utils/response');
 
 function assertSetupKey(req, res) {
-  const expected = env.setupKey;
+  // Prefer SETUP_KEY; fall back to JWT_SECRET so existing Hostinger env works
+  // without requiring a panel update before first migrate/seed.
+  const expected = env.setupKey || env.jwt.secret;
   if (!expected) {
     fail(res, 'SETUP_KEY is not configured on this server', 503);
     return false;
