@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { pool, query } = require('../config/db');
 
-async function seed() {
+async function runSeed() {
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
   await query(
@@ -256,14 +256,26 @@ async function seed() {
     { uid: clientUserId }
   );
 
-  console.log('Seed complete.');
-  console.log('  Therapist: demo@nafs.app / Password123!');
-  console.log('  Client:    client@nafs.app / Password123!');
-  await pool.end();
+  return {
+    therapist: { email: 'demo@nafs.app', password: 'Password123!' },
+    client: { email: 'client@nafs.app', password: 'Password123!' },
+  };
 }
 
-seed().catch(async (err) => {
-  console.error(err);
-  await pool.end();
-  process.exit(1);
-});
+if (require.main === module) {
+  runSeed()
+    .then((accounts) => {
+      console.log('Seed complete.');
+      console.log(`  Therapist: ${accounts.therapist.email} / ${accounts.therapist.password}`);
+      console.log(`  Client:    ${accounts.client.email} / ${accounts.client.password}`);
+    })
+    .catch((err) => {
+      console.error(err);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await pool.end();
+    });
+}
+
+module.exports = { runSeed };

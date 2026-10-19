@@ -18,6 +18,7 @@ const env = {
     name: process.env.APP_NAME || 'Nafs',
     url: process.env.APP_URL || 'http://127.0.0.1:43125',
   },
+  setupKey: process.env.SETUP_KEY || '',
 };
 
 module.exports = env;

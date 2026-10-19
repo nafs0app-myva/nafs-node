@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "name": "Nafs API \u2014 All Endpoints",
+    "name": "Nafs API — All Endpoints",
     "description": "Complete Nafs therapist + client API collection (NAFS-backup Figma). Base: {{baseUrl}}. After Login, token is saved to the environment automatically.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -18,7 +18,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://127.0.0.1:43125/api/v1"
+      "value": "https://myva.ae/api/v1"
     },
     {
       "key": "token",
@@ -79,9 +79,45 @@
     {
       "key": "therapistId",
       "value": "1"
+    },
+    {
+      "key": "setupKey",
+      "value": "nafs_setup_myva_7kR9pL2mX4qW8nV1"
     }
   ],
   "item": [
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "DB Setup (migrate + seed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Setup-Key",
+                "value": "{{setupKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"migrate_only\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/db-setup",
+            "description": "Remote migrate + seed. Requires SETUP_KEY env on server and X-Setup-Key header."
+          }
+        }
+      ]
+    },
     {
       "name": "00 App",
       "item": [

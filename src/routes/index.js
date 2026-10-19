@@ -21,12 +21,16 @@ const booking = require('../controllers/bookingController');
 const vacation = require('../controllers/vacationController');
 const payout = require('../controllers/payoutController');
 const privacy = require('../controllers/privacyController');
+const admin = require('../controllers/adminController');
 
 const router = express.Router();
 
 router.get('/health', (_req, res) => {
   res.json({ success: true, message: 'Nafs API healthy', data: { time: new Date().toISOString() } });
 });
+
+// One-time / secured remote migrate+seed (Hostinger). Requires X-Setup-Key header.
+router.post('/admin/db-setup', admin.dbSetup);
 
 // Splash / language / app config (Figma first pages)
 router.get('/app/bootstrap', appCtrl.bootstrap);
