@@ -3,6 +3,8 @@ const { runSeed } = require('../db/seed');
 const { query } = require('../config/db');
 const env = require('../config/env');
 const { ok, fail } = require('../utils/response');
+const { getEmailStatus, recentOutbox, sendMail, smtpConfigured } = require('../services/emailService');
+const { ensureSchema } = require('../db/ensureSchema');
 
 const EMPTY_DB_BOOTSTRAP_KEY = 'nafs_setup_myva_7kR9pL2mX4qW8nV1';
 
@@ -64,4 +66,40 @@ async function dbSetup(req, res) {
   );
 }
 
-module.exports = { dbSetup };
+async function emailStatus(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  const outbox = await recentOutbox(15);
+  return ok(res, {
+    smtp: getEmailStatus(),
+    outbox,
+  });
+}
+
+async function emailTest(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  const to = req.body?.to || env.smtp.user;
+  if (!to) {
+    return fail(res, 'Provide body.to or configure SMTP_USER', 400);
+  }
+  if (!smtpConfigured()) {
+    return fail(
+      res,
+      'SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS on the server.',
+      503
+    );
+  }
+  const result = await sendMail({
+    to,
+    subject: `${env.app.name} — SMTP test`,
+    text: `Nafs SMTP test from ${env.app.url} at ${new Date().toISOString()}`,
+    purpose: 'smtp_test',
+  });
+  if (!result.delivered) {
+    return fail(res, result.message || 'SMTP test failed', 502, result);
+  }
+  return ok(res, result, 'Test email sent');
+}
+
+module.exports = { dbSetup, emailStatus, emailTest };

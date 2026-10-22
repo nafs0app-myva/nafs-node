@@ -32,6 +32,8 @@ router.get('/health', (_req, res) => {
 
 // One-time / secured remote migrate+seed (Hostinger). Requires X-Setup-Key header.
 router.post('/admin/db-setup', admin.dbSetup);
+router.get('/admin/email-status', admin.emailStatus);
+router.post('/admin/email-test', admin.emailTest);
 
 // Splash / language / app config (Figma first pages)
 router.get('/app/bootstrap', appCtrl.bootstrap);

@@ -19,14 +19,26 @@ const env = {
     url: process.env.APP_URL || 'http://127.0.0.1:43125',
   },
   setupKey: process.env.SETUP_KEY || '',
-  smtp: {
-    host: process.env.SMTP_HOST || '',
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: String(process.env.SMTP_SECURE || 'false') === 'true',
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-    from: process.env.SMTP_FROM || process.env.SMTP_USER || 'Nafs <noreply@nafs.app>',
-  },
+  smtp: (() => {
+    const user = process.env.SMTP_USER || '';
+    // Hostinger default when mailbox user is set but host omitted
+    const host =
+      process.env.SMTP_HOST || (user ? 'smtp.hostinger.com' : '');
+    const secureEnv = process.env.SMTP_SECURE;
+    const secure =
+      secureEnv != null
+        ? String(secureEnv) === 'true'
+        : host.includes('hostinger.com'); // Hostinger typically uses 465/SSL
+    const port = Number(process.env.SMTP_PORT || (secure ? 465 : 587));
+    return {
+      host,
+      port,
+      secure,
+      user,
+      pass: process.env.SMTP_PASS || '',
+      from: process.env.SMTP_FROM || (user ? `Nafs <${user}>` : 'Nafs <noreply@nafs.app>'),
+    };
+  })(),
 };
 
 module.exports = env;

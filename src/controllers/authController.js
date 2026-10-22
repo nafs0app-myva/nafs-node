@@ -130,19 +130,24 @@ const register = asyncHandler(async (req, res) => {
     purpose: 'verify_email',
   });
 
+  const delivery = {
+    delivered: !!emailResult.delivered,
+    mode: emailResult.mode,
+    message: emailResult.message || null,
+  };
+
   return ok(
     res,
     {
       user: publicUser(result.user),
       token: signToken(result.user),
-      email_delivery: {
-        delivered: emailResult.delivered,
-        mode: emailResult.mode,
-      },
+      email_delivery: delivery,
       // Dev/local convenience only — never expose OTP in production responses.
       verification_otp: env.nodeEnv === 'production' ? undefined : result.otp,
     },
-    'Registered successfully. Verification code sent to email.',
+    delivery.delivered
+      ? 'Registered successfully. Verification code sent to email.'
+      : 'Registered successfully. Verification code was generated but email was not delivered — check SMTP config.',
     201
   );
 });
@@ -188,19 +193,27 @@ const resendVerification = asyncHandler(async (req, res) => {
     { user_id: users[0].id, email, code, expires_at: expires }
   );
   const emailResult = await sendOtpEmail({ email, code, purpose: 'verify_email' });
+  const delivery = {
+    delivered: !!emailResult.delivered,
+    mode: emailResult.mode,
+    message: emailResult.message || null,
+  };
   return ok(
     res,
     {
-      email_delivery: { delivered: emailResult.delivered, mode: emailResult.mode },
+      email_delivery: delivery,
       verification_otp: env.nodeEnv === 'production' ? undefined : code,
     },
-    'If that email exists, a verification code was sent'
+    delivery.delivered
+      ? 'If that email exists, a verification code was sent'
+      : 'Account found but verification email was not delivered — SMTP is missing or failing'
   );
 });
 
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const users = await query(`SELECT id, email FROM users WHERE email = :email`, { email });
+  // Same outer message for unknown emails (anti-enumeration). data:null = not found.
   if (!users.length) return ok(res, null, 'If that email exists, an OTP was sent');
   const code = makeOtp();
   const expires = new Date(Date.now() + 15 * 60 * 1000);
@@ -210,13 +223,20 @@ const forgotPassword = asyncHandler(async (req, res) => {
     { user_id: users[0].id, email, code, expires_at: expires }
   );
   const emailResult = await sendOtpEmail({ email, code, purpose: 'reset_password' });
+  const delivery = {
+    delivered: !!emailResult.delivered,
+    mode: emailResult.mode,
+    message: emailResult.message || null,
+  };
   return ok(
     res,
     {
-      email_delivery: { delivered: emailResult.delivered, mode: emailResult.mode },
+      email_delivery: delivery,
       reset_otp: env.nodeEnv === 'production' ? undefined : code,
     },
-    'If that email exists, an OTP was sent'
+    delivery.delivered
+      ? 'If that email exists, an OTP was sent'
+      : 'Account found but OTP email was not delivered — SMTP is missing or failing on the server'
   );
 });
 
