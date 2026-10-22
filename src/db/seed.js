@@ -207,6 +207,32 @@ async function runSeed() {
   });
   const clientUserId = clientUsers[0].id;
 
+  await query(
+    `INSERT INTO client_profiles
+      (user_id, gender, city, country, preferred_language, preferred_therapist_gender, concerns, about, onboarding_completed)
+     VALUES
+      (:uid, 'female', 'Riyadh', 'Saudi Arabia', 'en', 'any', :concerns, 'Demo client account', 1)
+     ON DUPLICATE KEY UPDATE
+       city = VALUES(city),
+       onboarding_completed = 1`,
+    { uid: clientUserId, concerns: JSON.stringify(['anxiety', 'sleep']) }
+  );
+  await query(
+    `INSERT INTO user_onboarding (user_id, role, step, completed, completed_at, payload)
+     VALUES (:uid, 'client', 'done', 1, NOW(), :payload)
+     ON DUPLICATE KEY UPDATE completed = 1, step = 'done'`,
+    {
+      uid: clientUserId,
+      payload: JSON.stringify({ goals: ['Sleep better', 'Reduce anxiety'], completed: true }),
+    }
+  );
+  await query(
+    `INSERT INTO user_onboarding (user_id, role, step, completed, completed_at)
+     VALUES (:uid, 'therapist', 'done', 1, NOW())
+     ON DUPLICATE KEY UPDATE completed = 1, step = 'done'`,
+    { uid: therapistId }
+  );
+
   const moodCount = await query(`SELECT COUNT(*) AS c FROM mood_checkins WHERE user_id = :uid`, {
     uid: clientUserId,
   });

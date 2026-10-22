@@ -19,6 +19,14 @@ const env = {
     url: process.env.APP_URL || 'http://127.0.0.1:43125',
   },
   setupKey: process.env.SETUP_KEY || '',
+  smtp: {
+    host: process.env.SMTP_HOST || '',
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: String(process.env.SMTP_SECURE || 'false') === 'true',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || process.env.SMTP_USER || 'Nafs <noreply@nafs.app>',
+  },
 };
 
 module.exports = env;

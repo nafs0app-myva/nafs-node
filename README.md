@@ -30,6 +30,17 @@ npm run dev
 | Therapist | `demo@nafs.app` | `Password123!` |
 | Client | `client@nafs.app` | `Password123!` |
 
+### Mobile app contract (v2.2)
+
+| Need | Endpoint |
+| --- | --- |
+| Email verification OTP | `POST /auth/register` sends code; confirm with `POST /auth/verify-email`; resend via `POST /auth/resend-verification`. Forgot-password uses the same mailer. |
+| Onboarding (both roles) | Shared `GET/PUT /onboarding` — role from JWT (not body). Therapist licensing still uses `/application/*`. |
+| Client profile | `GET /auth/me` and `GET/PATCH /profile` return/update `client_profiles`. |
+| Dashboard | `GET /home/dashboard` is role-aware (client + therapist summaries). |
+
+Set `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` for real email. Without SMTP, OTPs are written to `email_outbox` (and returned in non-production responses).
+
 ## Postman
 
 Synced to **My Workspace** (cloud):

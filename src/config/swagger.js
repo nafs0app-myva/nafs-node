@@ -4,9 +4,9 @@ module.exports = {
   openapi: '3.0.3',
   info: {
     title: 'Nafs API',
-    version: '2.1.0',
+    version: '2.2.0',
     description:
-      'REST APIs for the Nafs mobile therapist + client platform. Mapped from Figma NAFS-backup screens (mood, journal, assessments, booking, vacation, payouts, privacy).',
+      'REST APIs for the Nafs mobile therapist + client platform. Includes email OTP verification, shared onboarding, role-aware profiles, and dashboard summaries.',
   },
   servers: [{ url: `${env.app.url}/api/v1`, description: 'Local' }],
   components: {
@@ -19,10 +19,44 @@ module.exports = {
     '/health': { get: { security: [], summary: 'Health', responses: { 200: { description: 'OK' } } } },
     '/app/bootstrap': { get: { security: [], summary: 'App bootstrap / language', responses: { 200: { description: 'OK' } } } },
     '/auth/login': { post: { security: [], summary: 'Login', responses: { 200: { description: 'OK' } } } },
-    '/auth/register': { post: { security: [], summary: 'Register therapist or client', responses: { 201: { description: 'Created' } } } },
-    '/application/identity': { put: { summary: 'Onboarding identity step', responses: { 200: { description: 'OK' } } } },
+    '/auth/register': {
+      post: {
+        security: [],
+        summary: 'Register therapist or client (sends email verification OTP)',
+        responses: { 201: { description: 'Created' } },
+      },
+    },
+    '/auth/verify-email': {
+      post: { security: [], summary: 'Verify email with OTP', responses: { 200: { description: 'OK' } } },
+    },
+    '/auth/resend-verification': {
+      post: { security: [], summary: 'Resend email verification OTP', responses: { 200: { description: 'OK' } } },
+    },
+    '/auth/forgot-password': {
+      post: { security: [], summary: 'Send password-reset OTP email', responses: { 200: { description: 'OK' } } },
+    },
+    '/auth/me': {
+      get: {
+        summary: 'Current user + role profile (therapist_profiles or client_profiles) + onboarding',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/onboarding': {
+      get: { summary: 'Get onboarding state (client or therapist)', responses: { 200: { description: 'OK' } } },
+      put: { summary: 'Save onboarding/setup data (role from JWT)', responses: { 200: { description: 'OK' } } },
+    },
+    '/profile': {
+      get: { summary: 'Get profile for current role', responses: { 200: { description: 'OK' } } },
+      patch: { summary: 'Update profile for current role', responses: { 200: { description: 'OK' } } },
+    },
+    '/application/identity': { put: { summary: 'Therapist application identity step', responses: { 200: { description: 'OK' } } } },
     '/application/submit': { post: { summary: 'Submit therapist application', responses: { 200: { description: 'OK' } } } },
-    '/home/dashboard': { get: { summary: 'Therapist home', responses: { 200: { description: 'OK' } } } },
+    '/home/dashboard': {
+      get: {
+        summary: 'Role-aware home dashboard (client or therapist summary)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
     '/sessions': {
       get: { summary: 'List sessions', responses: { 200: { description: 'OK' } } },
       post: { summary: 'Book session', responses: { 201: { description: 'Created' } } },

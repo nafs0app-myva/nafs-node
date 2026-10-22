@@ -1,12 +1,15 @@
 const app = require('./app');
 const env = require('./config/env');
 const { pool } = require('./config/db');
+const { ensureSchema } = require('./db/ensureSchema');
 
 async function start() {
   // Fail fast if DB is unreachable
   const conn = await pool.getConnection();
   await conn.ping();
   conn.release();
+
+  await ensureSchema();
 
   app.listen(env.port, '0.0.0.0', () => {
     console.log(`Nafs API listening on http://127.0.0.1:${env.port}`);

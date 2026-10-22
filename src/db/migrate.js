@@ -28,6 +28,11 @@ async function runMigrate() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   await conn.query(schema);
   await conn.end();
+
+  // Apply additive patches (safe on fresh + existing DBs)
+  const { ensureSchema } = require('./ensureSchema');
+  await ensureSchema();
+
   return { database: env.db.database };
 }
 

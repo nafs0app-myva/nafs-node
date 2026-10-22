@@ -5,6 +5,7 @@ const { query, withTransaction } = require('../config/db');
 const env = require('../config/env');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
+const { sendOtpEmail } = require('../services/emailService');
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -23,6 +24,10 @@ const loginSchema = Joi.object({
 const changePasswordSchema = Joi.object({
   current_password: Joi.string().required(),
   new_password: Joi.string().min(8).required(),
+});
+
+const resendVerificationSchema = Joi.object({
+  email: Joi.string().email().required(),
 });
 
 function signToken(user) {
@@ -50,8 +55,28 @@ function makeOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+function parseJsonField(value) {
+  if (value == null) return value;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function shapeClientProfile(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    concerns: parseJsonField(row.concerns),
+    onboarding_completed: !!row.onboarding_completed,
+  };
+}
+
 const register = asyncHandler(async (req, res) => {
   const payload = req.body;
+  const role = payload.role || 'therapist';
   const existing = await query(`SELECT id FROM users WHERE email = :email`, { email: payload.email });
   if (existing.length) return fail(res, 'Email already registered', 409);
 
@@ -65,16 +90,30 @@ const register = asyncHandler(async (req, res) => {
         payload.phone || null,
         password_hash,
         payload.full_name,
-        payload.role || 'therapist',
+        role,
         payload.locale || 'en',
       ]
     );
     const userId = insert.insertId;
-    if ((payload.role || 'therapist') === 'therapist') {
+    if (role === 'therapist') {
       await conn.execute(`INSERT INTO therapist_profiles (user_id) VALUES (?)`, [userId]);
       await conn.execute(`INSERT INTO therapist_applications (user_id) VALUES (?)`, [userId]);
-      await conn.execute(`INSERT INTO wallets (user_id, balance, currency) VALUES (?, 0, 'SAR')`, [userId]);
+      await conn.execute(`INSERT INTO wallets (user_id, balance, currency) VALUES (?, 0, 'SAR')`, [
+        userId,
+      ]);
+    } else {
+      await conn.execute(
+        `INSERT INTO client_profiles (user_id, preferred_language) VALUES (?, ?)`,
+        [userId, payload.locale || 'en']
+      );
     }
+    await conn.execute(`INSERT INTO user_onboarding (user_id, role) VALUES (?, ?)`, [userId, role]);
+    await conn.execute(
+      `INSERT INTO notification_preferences (user_id) VALUES (?)
+       ON DUPLICATE KEY UPDATE user_id = user_id`,
+      [userId]
+    );
+
     const code = makeOtp();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
     await conn.execute(
@@ -85,14 +124,25 @@ const register = asyncHandler(async (req, res) => {
     return { user: users[0], otp: code };
   });
 
+  const emailResult = await sendOtpEmail({
+    email: payload.email,
+    code: result.otp,
+    purpose: 'verify_email',
+  });
+
   return ok(
     res,
     {
       user: publicUser(result.user),
       token: signToken(result.user),
+      email_delivery: {
+        delivered: emailResult.delivered,
+        mode: emailResult.mode,
+      },
+      // Dev/local convenience only — never expose OTP in production responses.
       verification_otp: env.nodeEnv === 'production' ? undefined : result.otp,
     },
-    'Registered successfully',
+    'Registered successfully. Verification code sent to email.',
     201
   );
 });
@@ -122,6 +172,32 @@ const verifyEmail = asyncHandler(async (req, res) => {
   return ok(res, null, 'Email verified');
 });
 
+const resendVerification = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const users = await query(`SELECT id, email, is_verified FROM users WHERE email = :email`, { email });
+  if (!users.length) {
+    return ok(res, null, 'If that email exists, a verification code was sent');
+  }
+  if (users[0].is_verified) return ok(res, { already_verified: true }, 'Email already verified');
+
+  const code = makeOtp();
+  const expires = new Date(Date.now() + 15 * 60 * 1000);
+  await query(
+    `INSERT INTO otp_codes (user_id, email, code, purpose, expires_at)
+     VALUES (:user_id, :email, :code, 'verify_email', :expires_at)`,
+    { user_id: users[0].id, email, code, expires_at: expires }
+  );
+  const emailResult = await sendOtpEmail({ email, code, purpose: 'verify_email' });
+  return ok(
+    res,
+    {
+      email_delivery: { delivered: emailResult.delivered, mode: emailResult.mode },
+      verification_otp: env.nodeEnv === 'production' ? undefined : code,
+    },
+    'If that email exists, a verification code was sent'
+  );
+});
+
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const users = await query(`SELECT id, email FROM users WHERE email = :email`, { email });
@@ -133,9 +209,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
      VALUES (:user_id, :email, :code, 'reset_password', :expires_at)`,
     { user_id: users[0].id, email, code, expires_at: expires }
   );
+  const emailResult = await sendOtpEmail({ email, code, purpose: 'reset_password' });
   return ok(
     res,
-    { reset_otp: env.nodeEnv === 'production' ? undefined : code },
+    {
+      email_delivery: { delivered: emailResult.delivered, mode: emailResult.mode },
+      reset_otp: env.nodeEnv === 'production' ? undefined : code,
+    },
     'If that email exists, an OTP was sent'
   );
 });
@@ -174,9 +254,23 @@ const changePassword = asyncHandler(async (req, res) => {
 const me = asyncHandler(async (req, res) => {
   const rows = await query(`SELECT * FROM users WHERE id = :id`, { id: req.user.id });
   if (!rows.length) return fail(res, 'User not found', 404);
+  const user = rows[0];
   let application = null;
   let profile = null;
-  if (rows[0].role === 'therapist') {
+  let onboarding = null;
+
+  const onboardingRows = await query(`SELECT * FROM user_onboarding WHERE user_id = :id`, {
+    id: req.user.id,
+  });
+  if (onboardingRows[0]) {
+    onboarding = {
+      ...onboardingRows[0],
+      payload: parseJsonField(onboardingRows[0].payload),
+      completed: !!onboardingRows[0].completed,
+    };
+  }
+
+  if (user.role === 'therapist') {
     const apps = await query(`SELECT * FROM therapist_applications WHERE user_id = :id`, {
       id: req.user.id,
     });
@@ -185,17 +279,25 @@ const me = asyncHandler(async (req, res) => {
       id: req.user.id,
     });
     profile = profiles[0] || null;
+  } else if (user.role === 'client') {
+    const profiles = await query(`SELECT * FROM client_profiles WHERE user_id = :id`, {
+      id: req.user.id,
+    });
+    profile = shapeClientProfile(profiles[0] || null);
   }
-  return ok(res, { user: publicUser(rows[0]), profile, application });
+
+  return ok(res, { user: publicUser(user), profile, application, onboarding });
 });
 
 module.exports = {
   registerSchema,
   loginSchema,
   changePasswordSchema,
+  resendVerificationSchema,
   register,
   login,
   verifyEmail,
+  resendVerification,
   forgotPassword,
   resetPassword,
   changePassword,

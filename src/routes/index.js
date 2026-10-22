@@ -22,6 +22,7 @@ const vacation = require('../controllers/vacationController');
 const payout = require('../controllers/payoutController');
 const privacy = require('../controllers/privacyController');
 const admin = require('../controllers/adminController');
+const onboarding = require('../controllers/onboardingController');
 
 const router = express.Router();
 
@@ -51,6 +52,11 @@ router.post(
   auth.forgotPassword
 );
 router.post(
+  '/auth/resend-verification',
+  validate(auth.resendVerificationSchema),
+  auth.resendVerification
+);
+router.post(
   '/auth/reset-password',
   validate(
     Joi.object({
@@ -69,7 +75,11 @@ router.post(
 );
 router.get('/auth/me', authenticate, auth.me);
 
-// Therapist application / onboarding
+// Shared onboarding (role from JWT — client + therapist)
+router.get('/onboarding', authenticate, onboarding.getOnboarding);
+router.put('/onboarding', authenticate, validate(onboarding.saveSchema), onboarding.saveOnboarding);
+
+// Therapist application (detailed licensing flow)
 router.get('/specializations', application.listSpecializations);
 router.get('/application', authenticate, application.getApplication);
 router.get('/application/status', authenticate, application.getStatus);

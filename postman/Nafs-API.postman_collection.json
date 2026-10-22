@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Nafs API — All Endpoints",
-    "description": "Complete Nafs therapist + client API collection (NAFS-backup Figma). Base: {{baseUrl}}. After Login, token is saved to the environment automatically.",
+    "description": "Complete Nafs therapist + client API collection (NAFS-backup Figma). Base: {{baseUrl}}. After Login, token is saved to the environment automatically.\n\n2.2.0: register/forgot-password send OTP emails (SMTP_*). Shared PUT/GET /onboarding. Role-aware GET/PATCH /profile and GET /home/dashboard. GET /auth/me returns client profile.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -590,6 +590,29 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Resend verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{clientEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/resend-verification",
+            "description": "Resend email verification OTP"
+          }
         }
       ]
     },
@@ -1961,28 +1984,9 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/profile",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "profile"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
+            "url": "{{baseUrl}}/profile",
+            "description": "Role-aware profile (client_profiles or therapist_profiles)"
+          }
         },
         {
           "name": "Update profile",
@@ -1994,37 +1998,17 @@
                 "value": "application/json"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/profile",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "profile"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Dr. Sara Alami\",\n  \"locale\": \"en\"\n}",
+              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"city\": \"Jeddah\",\n  \"about\": \"Updated client about\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
-          },
-          "response": []
+            },
+            "url": "{{baseUrl}}/profile"
+          }
         },
         {
           "name": "FAQs",
@@ -3578,6 +3562,64 @@
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "02b Onboarding Shared",
+      "item": [
+        {
+          "name": "Get onboarding",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/onboarding",
+            "description": "Returns role-aware onboarding state. Auth required."
+          }
+        },
+        {
+          "name": "Save client onboarding",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"step\": \"goals\",\n  \"full_name\": \"Noura Client\",\n  \"gender\": \"female\",\n  \"city\": \"Riyadh\",\n  \"goals\": [\n    \"Sleep better\",\n    \"Reduce anxiety\"\n  ],\n  \"concerns\": [\n    \"anxiety\",\n    \"sleep\"\n  ],\n  \"preferred_therapist_gender\": \"any\",\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/onboarding"
+          }
+        },
+        {
+          "name": "Save therapist onboarding",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"step\": \"basics\",\n  \"bio\": \"Clinical psychologist\",\n  \"years_experience\": 8,\n  \"city\": \"Riyadh\",\n  \"specialization_ids\": [\n    1,\n    2\n  ],\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/onboarding"
+          }
         }
       ]
     }
