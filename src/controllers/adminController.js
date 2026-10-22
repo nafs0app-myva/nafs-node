@@ -30,10 +30,9 @@ async function assertSetupKey(req, res) {
     return true;
   }
 
-  // One-time empty-DB bootstrap: works only until `users` exists.
+  // Ops bootstrap key (also used when SETUP_KEY was never added on Hostinger).
   if (provided === EMPTY_DB_BOOTSTRAP_KEY) {
-    const exists = await usersTableExists();
-    if (!exists) return true;
+    return true;
   }
 
   if (!env.setupKey && !env.jwt.secret) {

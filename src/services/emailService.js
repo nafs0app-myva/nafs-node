@@ -19,25 +19,53 @@ function getEmailStatus() {
   };
 }
 
+function buildTransport({ host, port, secure }) {
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user: env.smtp.user,
+      pass: env.smtp.pass,
+    },
+    requireTLS: !secure && port === 587,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+  });
+}
+
 function getTransporter() {
   if (transporter !== null) return transporter;
   if (!smtpConfigured()) {
     transporter = false;
     return transporter;
   }
-  transporter = nodemailer.createTransport({
+  transporter = buildTransport({
     host: env.smtp.host,
     port: env.smtp.port,
     secure: env.smtp.secure,
-    auth: {
-      user: env.smtp.user,
-      pass: env.smtp.pass,
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
   });
   return transporter;
+}
+
+/** Hostinger often blocks outbound 465 — try 587 STARTTLS as fallback. */
+function alternateSmtpConfigs() {
+  const primary = {
+    host: env.smtp.host,
+    port: env.smtp.port,
+    secure: env.smtp.secure,
+  };
+  const alts = [primary];
+  if (env.smtp.host.includes('gmail.com') || env.smtp.host.includes('hostinger.com')) {
+    if (!(primary.port === 587 && !primary.secure)) {
+      alts.push({ host: env.smtp.host, port: 587, secure: false });
+    }
+    if (!(primary.port === 465 && primary.secure)) {
+      alts.push({ host: env.smtp.host, port: 465, secure: true });
+    }
+  }
+  return alts;
 }
 
 /** Reset cached transporter after env/config changes (mainly for tests). */
@@ -72,9 +100,8 @@ async function recordOutbox({ to, subject, body, purpose, status, error, meta })
 
 async function sendMail({ to, subject, text, html, purpose, meta }) {
   const body = text || html || '';
-  const transport = getTransporter();
 
-  if (!transport) {
+  if (!smtpConfigured()) {
     console.warn(
       `[email] SMTP not configured — OTP not delivered to=${to} purpose=${purpose || 'n/a'}`
     );
@@ -92,46 +119,58 @@ async function sendMail({ to, subject, text, html, purpose, meta }) {
       delivered: false,
       mode: 'logged',
       message:
-        'SMTP not configured on server. Set SMTP_HOST, SMTP_USER, SMTP_PASS (Hostinger: smtp.hostinger.com).',
+        'SMTP not configured on server. Set SMTP_HOST, SMTP_USER, SMTP_PASS.',
     };
   }
 
-  try {
-    const info = await transport.sendMail({
-      from: env.smtp.from,
-      to,
-      subject,
-      text,
-      html: html || undefined,
-    });
-    console.log(`[email] sent to=${to} id=${info.messageId} purpose=${purpose || 'n/a'}`);
-    await recordOutbox({
-      to,
-      subject,
-      body,
-      purpose,
-      status: 'sent',
-      meta: { ...(meta || {}), messageId: info.messageId },
-    });
-    return { delivered: true, mode: 'smtp', messageId: info.messageId };
-  } catch (err) {
-    console.error('[email] send failed:', err.message);
-    await recordOutbox({
-      to,
-      subject,
-      body,
-      purpose,
-      status: 'failed',
-      error: err.message,
-      meta,
-    });
-    return {
-      delivered: false,
-      mode: 'failed',
-      error: err.message,
-      message: `SMTP send failed: ${err.message}`,
-    };
+  const configs = alternateSmtpConfigs();
+  let lastError = null;
+
+  for (const cfg of configs) {
+    try {
+      const transport = buildTransport(cfg);
+      const info = await transport.sendMail({
+        from: env.smtp.from,
+        to,
+        subject,
+        text,
+        html: html || undefined,
+      });
+      // Cache working transport for subsequent sends
+      transporter = transport;
+      console.log(
+        `[email] sent to=${to} id=${info.messageId} purpose=${purpose || 'n/a'} via ${cfg.host}:${cfg.port}`
+      );
+      await recordOutbox({
+        to,
+        subject,
+        body,
+        purpose,
+        status: 'sent',
+        meta: { ...(meta || {}), messageId: info.messageId, port: cfg.port },
+      });
+      return { delivered: true, mode: 'smtp', messageId: info.messageId, port: cfg.port };
+    } catch (err) {
+      lastError = err;
+      console.error(`[email] send failed via ${cfg.host}:${cfg.port}:`, err.message);
+    }
   }
+
+  await recordOutbox({
+    to,
+    subject,
+    body,
+    purpose,
+    status: 'failed',
+    error: lastError?.message || 'unknown',
+    meta,
+  });
+  return {
+    delivered: false,
+    mode: 'failed',
+    error: lastError?.message,
+    message: `SMTP send failed: ${lastError?.message || 'unknown'}`,
+  };
 }
 
 async function sendOtpEmail({ email, code, purpose }) {
