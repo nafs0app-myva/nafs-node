@@ -1,43 +1,29 @@
-# Nafs Figma → API map
+# Figma screen map → API contract
 
-Source: **NAFS-backup** Figma (`WPOo1LyxhjFJjUY7cAdcMx`) — English + Arabic pages (~121 screens).
+## Therapist application screens
 
-## Therapist onboarding / application
+1. **Identity** → `PUT /application/identity`  
+   Collect: name, age (or DOB), gender, license(s), degree(s).  
+   Optional: identity_number, bio, working_capacity.
 
-1. Identity & qualifications — name, ID, gender, DOB, bio, capacity, experience, license, degrees
-2. Experience & specializations — years, specialization tags
-3. Administrative & technical — address/admin/tech fields, submit application
-4. Application received — status pending review → go to dashboard
+2. **Experience** → `GET /specializations` + `PUT /application/experience`  
+   Collect: specialization_ids, years_in_specialization (or years_experience).
 
-## Consultant main app
+3. **Admin** → `PUT /application/admin-tech`  
+   Collect: session_fee_default, weekly availability `slots[]`.  
+   (Same slots also via `PUT /availability`.)  
+   Do **not** expect city/video on this screen.
 
-5. Home/Dashboard — greeting, next video session + Join, stats
-6. Calendar — month grid + day sessions list
-7. Wallet/Earnings — balance, chart, recent transactions, payouts
-8. Clients list — search, avatar, name, last activity
-9. Client detail — profile, book session, history/notes, chat entry
-10. Vacation / time off — date range + conflict count
-11. Chat — threads and messages
+4. **Submit** → `POST /application/submit`
 
-## Client wellness app
+## Client intake / first launch
 
-12. Mood check-in — mood, intensity, tags, optional audio
-13. Mood detector — consent + detected mood result
-14. Journal — text/audio/image/gratitude entries, pin, search
-15. Assessments / intake — anxiety, mood, demographics, sleep, energy
-16. Goals — multi-select wellness goals
-17. Specialists browse + profile
-18. Booking + checkout → creates therapist session
+1. Primary gate: `PUT /onboarding` with `completed: true` when finished.  
+2. Optional quiz data: `/assessments` + `/goals`.  
+3. Optional later: `city`, `preferred_therapist_gender`, `concerns` via `PATCH /profile`.
 
-## Account / privacy / support
+## Launch routing hint (`GET /auth/me`)
 
-- Change Password, Payment Methods, Billing History
-- Notification preferences + registered devices
-- Privacy consents, media recordings, data export, retention
-- FAQ, Platform Policies, Contact Us, Report a Problem
-
-## Roles
-
-- `therapist` (consultant) — practice dashboard, clients, wallet, vacation
-- `client` (patient) — mood, journal, assessments, book specialists
-- `admin` — approve therapist applications (status fields on application)
+- `user.is_verified` → show verify OTP if false  
+- `onboarding.completed` / `profile.onboarding_completed` → show onboarding if false  
+- therapist `application.status` → draft/rejected continue application; submitted/approved go home

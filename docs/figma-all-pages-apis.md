@@ -1,7 +1,7 @@
 # All Figma pages → Nafs APIs
 
 Mapped from **NAFS-backup** (`WPOo1LyxhjFJjUY7cAdcMx`) — English + Arabic.  
-Base: `/api/v1`
+Base: `/api/v1` · Live OpenAPI **2.2.0+**
 
 ## App / auth
 
@@ -9,22 +9,35 @@ Base: `/api/v1`
 | --- | --- |
 | Splash / language | `GET /app/bootstrap` |
 | Login | `POST /auth/login` |
-| Register / Sign up | `POST /auth/register` |
-| Verify email OTP | `POST /auth/verify-email` |
-| Forgot password | `POST /auth/forgot-password` |
+| Register / Sign up | `POST /auth/register` (emails OTP) |
+| Verify email OTP | `POST /auth/verify-email`, `POST /auth/resend-verification` |
+| Forgot password | `POST /auth/forgot-password` (emails OTP) |
 | Reset password | `POST /auth/reset-password` |
 | Change Password | `POST /auth/change-password` |
 | Me / session restore | `GET /auth/me` |
 | Settings / language | `GET/PATCH /settings` |
 
-## Therapist onboarding
+## Shared first-run onboarding
 
 | Figma page / screen | API(s) |
 | --- | --- |
-| Identity & qualifications | `PUT /application/identity` |
-| Experience & specializations | `GET /specializations`, `PUT /application/experience` |
-| Administrative & technical | `PUT /application/admin-tech` |
+| Client / therapist setup after signup | `GET/PUT /onboarding` (`completed: true` when finished) |
+| Optional intake quizzes | `POST /assessments`, `POST /assessments/:id/answers` |
+| Goals | `PUT /goals` and/or `PUT /onboarding` `{ goals }` |
+
+`city` / `preferred_therapist_gender` / `concerns` are optional on `/onboarding` — may be filled later via `PATCH /profile`.
+
+## Therapist application (licensing)
+
+| Figma page / screen | API(s) | Body focus |
+| --- | --- | --- |
+| Identity & qualifications | `PUT /application/identity` | name, gender, age\|DOB, licenses[], degrees[] |
+| Experience & specializations | `GET /specializations`, `PUT /application/experience` | specialization_ids, years_in_specialization\|years_experience |
+| Admin (fees + weekly schedule) | `PUT /application/admin-tech` | session_fee_default, slots[] |
+| (Same schedule later) | `GET/PUT /availability` | slots[] |
 | Application submitted | `POST /application/submit`, `GET /application/status` |
+
+Address / video fields on admin-tech are optional extras (settings / other screen), not required by the Admin fees UI.
 
 ## Consultant home / practice
 
@@ -58,11 +71,10 @@ Base: `/api/v1`
 
 | Figma page / screen | API(s) |
 | --- | --- |
+| Client home | `GET /home/dashboard` (role=`client`: streak, today_tasks, goals, upcoming) |
 | Mood check-in | `POST/GET /mood/checkins` |
 | Mood detector (camera + consent) | `POST /mood/detector` |
 | Journal list / entry | `GET/POST /journals`, `GET/PUT/DELETE /journals/:id` |
-| Intake / assessments | `POST /assessments`, `POST /assessments/:id/answers`, `GET /assessments` |
-| Goals | `GET/PUT /goals` |
 | Find specialists | `GET /specialists`, `GET /specialists/:id` |
 | Book session + checkout | `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings` |
 
@@ -78,14 +90,7 @@ Base: `/api/v1`
 | Media recordings | `GET/POST /privacy/media`, `DELETE /privacy/media/:id` |
 | Data export | `POST /privacy/export`, `GET /privacy/exports` |
 | Retention policy | `GET /privacy/retention` |
-| FAQ | `GET /faqs?locale=en\|ar` |
-| Platform Policies | `GET /policies`, `GET /policies/:slug` |
-| Contact Us | `POST /contact` |
-| Report a Problem | `POST /report-problem` |
-
-Arabic screens use the same APIs; pass `locale=ar` or set user locale via `/settings` / `/profile`.
-
-## Demo accounts (after `npm run db:setup`)
-
-- Therapist: `demo@nafs.app` / `Password123!`
-- Client: `client@nafs.app` / `Password123!`
+| FAQ | `GET /faqs` |
+| Policies | `GET /policies`, `GET /policies/:slug` |
+| Contact us | `POST /contact` |
+| Report a problem | `POST /report-problem` |

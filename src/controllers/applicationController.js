@@ -3,11 +3,25 @@ const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
 
+/**
+ * Screen mapping (app ↔ API):
+ * - Identity screen  → PUT /application/identity
+ *     name, age OR date_of_birth, gender, licenses[], degrees[]
+ *     (identity_number / bio / working_capacity optional)
+ * - Experience screen → PUT /application/experience
+ *     specialization_ids, years_experience and/or years_in_specialization
+ * - Admin screen (fees + weekly schedule) → PUT /application/admin-tech
+ *     session_fee_default + slots[]  (also writable via PUT /availability)
+ *     city/country/address/video_* are optional (other screen / settings)
+ */
+
 const identitySchema = Joi.object({
   full_name: Joi.string().min(2).max(120).required(),
-  identity_number: Joi.string().required(),
   gender: Joi.string().valid('male', 'female', 'unspecified').required(),
-  date_of_birth: Joi.date().iso().required(),
+  // App may send age instead of DOB
+  age: Joi.number().integer().min(18).max(100),
+  date_of_birth: Joi.date().iso().allow(null),
+  identity_number: Joi.string().allow('', null),
   bio: Joi.string().allow('', null),
   working_capacity: Joi.string().valid('individual', 'team').default('individual'),
   years_experience: Joi.number().integer().min(0).default(0),
@@ -16,7 +30,7 @@ const identitySchema = Joi.object({
       Joi.object({
         license_number: Joi.string().required(),
         expiry_date: Joi.date().iso().allow(null),
-        issuer: Joi.string().allow('', null),
+        issuer: Joi.string().allow('', null), // authority
       })
     )
     .default([]),
@@ -29,14 +43,21 @@ const identitySchema = Joi.object({
       })
     )
     .default([]),
-});
+})
+  .or('age', 'date_of_birth')
+  .messages({
+    'object.missing': 'Provide age or date_of_birth',
+  });
 
 const experienceSchema = Joi.object({
-  years_experience: Joi.number().integer().min(0).required(),
+  years_experience: Joi.number().integer().min(0),
+  // Collected on Experience screen — accepted and mapped to years_experience when needed
+  years_in_specialization: Joi.number().integer().min(0),
   specialization_ids: Joi.array().items(Joi.number().integer()).min(1).required(),
-});
+}).or('years_experience', 'years_in_specialization');
 
 const adminTechSchema = Joi.object({
+  // Optional address / video (not on current Admin fees screen)
   city: Joi.string().allow('', null),
   country: Joi.string().allow('', null),
   address: Joi.string().allow('', null),
@@ -45,7 +66,27 @@ const adminTechSchema = Joi.object({
   video_provider: Joi.string().default('custom'),
   video_meeting_url: Joi.string().uri().allow('', null),
   admin_notes: Joi.string().allow('', null),
-});
+  // Admin screen: session fee + weekly availability
+  session_fee_default: Joi.number().min(0).allow(null),
+  currency: Joi.string().default('SAR'),
+  slots: Joi.array()
+    .items(
+      Joi.object({
+        weekday: Joi.number().integer().min(0).max(6).required(),
+        start_time: Joi.string().required(),
+        end_time: Joi.string().required(),
+        is_active: Joi.boolean().default(true),
+      })
+    )
+    .default([]),
+}).min(0);
+
+function ageToDob(age) {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - Number(age));
+  d.setMonth(0, 1);
+  return d.toISOString().slice(0, 10);
+}
 
 async function getOrCreateApp(userId) {
   let rows = await query(`SELECT * FROM therapist_applications WHERE user_id = :id`, { id: userId });
@@ -81,35 +122,37 @@ const getApplication = asyncHandler(async (req, res) => {
 const saveIdentity = asyncHandler(async (req, res) => {
   const p = req.body;
   await getOrCreateApp(req.user.id);
+  const dob = p.date_of_birth || (p.age != null ? ageToDob(p.age) : null);
+
   await query(
     `UPDATE therapist_applications
      SET identity_payload = :payload, step = 'experience', updated_at = NOW()
      WHERE user_id = :uid AND status IN ('draft','rejected')`,
-    { payload: JSON.stringify(p), uid: req.user.id }
+    { payload: JSON.stringify({ ...p, date_of_birth: dob }), uid: req.user.id }
   );
-  await query(
-    `UPDATE users SET full_name = :full_name WHERE id = :uid`,
-    { full_name: p.full_name, uid: req.user.id }
-  );
+  await query(`UPDATE users SET full_name = :full_name WHERE id = :uid`, {
+    full_name: p.full_name,
+    uid: req.user.id,
+  });
   await query(
     `INSERT INTO therapist_profiles
       (user_id, identity_number, gender, date_of_birth, bio, working_capacity, years_experience)
      VALUES (:uid, :identity_number, :gender, :date_of_birth, :bio, :working_capacity, :years_experience)
      ON DUPLICATE KEY UPDATE
-       identity_number = VALUES(identity_number),
+       identity_number = COALESCE(VALUES(identity_number), identity_number),
        gender = VALUES(gender),
-       date_of_birth = VALUES(date_of_birth),
-       bio = VALUES(bio),
+       date_of_birth = COALESCE(VALUES(date_of_birth), date_of_birth),
+       bio = COALESCE(VALUES(bio), bio),
        working_capacity = VALUES(working_capacity),
        years_experience = VALUES(years_experience)`,
     {
       uid: req.user.id,
-      identity_number: p.identity_number,
+      identity_number: p.identity_number || null,
       gender: p.gender,
-      date_of_birth: p.date_of_birth,
+      date_of_birth: dob,
       bio: p.bio || null,
-      working_capacity: p.working_capacity,
-      years_experience: p.years_experience,
+      working_capacity: p.working_capacity || 'individual',
+      years_experience: p.years_experience || 0,
     }
   );
 
@@ -146,6 +189,11 @@ const saveIdentity = asyncHandler(async (req, res) => {
 const saveExperience = asyncHandler(async (req, res) => {
   const p = req.body;
   await getOrCreateApp(req.user.id);
+  const years =
+    p.years_experience != null ? p.years_experience : p.years_in_specialization != null
+      ? p.years_in_specialization
+      : 0;
+
   await query(
     `UPDATE therapist_applications
      SET experience_payload = :payload, step = 'admin_tech'
@@ -153,7 +201,7 @@ const saveExperience = asyncHandler(async (req, res) => {
     { payload: JSON.stringify(p), uid: req.user.id }
   );
   await query(`UPDATE therapist_profiles SET years_experience = :y WHERE user_id = :uid`, {
-    y: p.years_experience,
+    y: years,
     uid: req.user.id,
   });
   await query(`DELETE FROM therapist_specializations WHERE therapist_id = :uid`, { uid: req.user.id });
@@ -164,7 +212,7 @@ const saveExperience = asyncHandler(async (req, res) => {
       { uid: req.user.id, sid }
     );
   }
-  return ok(res, null, 'Experience step saved');
+  return ok(res, { years_experience: years }, 'Experience step saved');
 });
 
 const saveAdminTech = asyncHandler(async (req, res) => {
@@ -178,19 +226,25 @@ const saveAdminTech = asyncHandler(async (req, res) => {
   );
   await query(
     `UPDATE therapist_profiles
-     SET city = :city, country = :country, address = :address, timezone = :timezone,
-         video_provider = :video_provider, video_meeting_url = :video_meeting_url,
-         admin_notes = :admin_notes
+     SET city = COALESCE(:city, city),
+         country = COALESCE(:country, country),
+         address = COALESCE(:address, address),
+         timezone = COALESCE(:timezone, timezone),
+         video_provider = COALESCE(:video_provider, video_provider),
+         video_meeting_url = COALESCE(:video_meeting_url, video_meeting_url),
+         admin_notes = COALESCE(:admin_notes, admin_notes),
+         session_fee_default = COALESCE(:session_fee_default, session_fee_default)
      WHERE user_id = :uid`,
     {
       uid: req.user.id,
-      city: p.city || null,
-      country: p.country || null,
-      address: p.address || null,
-      timezone: p.timezone,
-      video_provider: p.video_provider,
-      video_meeting_url: p.video_meeting_url || null,
-      admin_notes: p.admin_notes || null,
+      city: p.city ?? null,
+      country: p.country ?? null,
+      address: p.address ?? null,
+      timezone: p.timezone || null,
+      video_provider: p.video_provider || null,
+      video_meeting_url: p.video_meeting_url ?? null,
+      admin_notes: p.admin_notes ?? null,
+      session_fee_default: p.session_fee_default ?? null,
     }
   );
   if (p.phone) {
@@ -199,6 +253,25 @@ const saveAdminTech = asyncHandler(async (req, res) => {
       uid: req.user.id,
     });
   }
+
+  // Admin screen weekly schedule — same shape as PUT /availability
+  if (Array.isArray(p.slots) && p.slots.length) {
+    await query(`DELETE FROM availability_slots WHERE therapist_id = :uid`, { uid: req.user.id });
+    for (const slot of p.slots) {
+      await query(
+        `INSERT INTO availability_slots (therapist_id, weekday, start_time, end_time, is_active)
+         VALUES (:uid, :weekday, :start_time, :end_time, :is_active)`,
+        {
+          uid: req.user.id,
+          weekday: slot.weekday,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          is_active: slot.is_active === false ? 0 : 1,
+        }
+      );
+    }
+  }
+
   return ok(res, null, 'Admin/tech step saved');
 });
 

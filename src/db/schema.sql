@@ -101,6 +101,7 @@ CREATE TABLE therapist_profiles (
   timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Riyadh',
   video_provider VARCHAR(40) NOT NULL DEFAULT 'custom',
   video_meeting_url VARCHAR(500) NULL,
+  session_fee_default DECIMAL(12,2) NULL,
   admin_notes TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

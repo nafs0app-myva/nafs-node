@@ -56,6 +56,16 @@ async function ensureSchema() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // Default session fee for therapist Admin screen
+    try {
+      await conn.query(`
+        ALTER TABLE therapist_profiles
+        ADD COLUMN session_fee_default DECIMAL(12,2) NULL AFTER video_meeting_url
+      `);
+    } catch (err) {
+      if (err.code !== 'ER_DUP_FIELDNAME') throw err;
+    }
+
     // Backfill client profiles / onboarding rows for existing users
     await conn.query(`
       INSERT IGNORE INTO client_profiles (user_id, preferred_language)
