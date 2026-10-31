@@ -19,6 +19,32 @@ const env = {
     url: process.env.APP_URL || 'http://127.0.0.1:43125',
   },
   setupKey: process.env.SETUP_KEY || '',
+  // Push via Firebase Cloud Messaging (HTTP v1). Provide the service-account
+  // JSON inline, base64-encoded, or as a file path.
+  fcm: {
+    serviceAccount: process.env.FCM_SERVICE_ACCOUNT || '',
+    serviceAccountFile: process.env.FCM_SERVICE_ACCOUNT_FILE || '',
+  },
+  // Agora RTC. With both set, /sessions/:id/join issues a token bound to that
+  // session's channel; without them it returns no token (app falls back to its test token).
+  agora: {
+    appId: process.env.AGORA_APP_ID || '',
+    appCertificate: process.env.AGORA_APP_CERTIFICATE || '',
+  },
+  // SMS via Twilio.
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+    authToken: process.env.TWILIO_AUTH_TOKEN || '',
+    from: process.env.TWILIO_FROM || '',
+  },
+  // Card payments / refunds through Moyasar. Without a secret key payments are
+  // off and checkout just confirms the booking (development mode).
+  moyasar: {
+    secretKey: process.env.MOYASAR_SECRET_KEY || '',
+  },
+  // Where contact-us messages and problem reports are emailed.
+  supportEmail: process.env.SUPPORT_EMAIL || 'support@nafs.app',
+  defaultTimezone: process.env.APP_TIMEZONE || 'Asia/Riyadh',
   smtp: (() => {
     const user = process.env.SMTP_USER || '';
     // Hostinger default when mailbox user is set but host omitted

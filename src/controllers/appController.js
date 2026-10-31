@@ -19,7 +19,7 @@ const bootstrap = asyncHandler(async (_req, res) => {
       { code: 'ar', label: 'العربية' },
     ],
     roles: ['therapist', 'client'],
-    support_email: 'support@nafs.app',
+    support_email: require('../config/env').supportEmail,
     force_update: false,
     min_version: '1.0.0',
   });

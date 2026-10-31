@@ -2,6 +2,7 @@ const Joi = require('joi');
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
+const { maskIban } = require('../utils/iban');
 
 /**
  * Shared onboarding endpoint for client + therapist.
@@ -102,7 +103,8 @@ async function loadOnboardingPayload(user) {
     const profiles = await query(`SELECT * FROM therapist_profiles WHERE user_id = :id`, {
       id: user.id,
     });
-    profile = profiles[0] || null;
+    // Never return the full IBAN / internal notes from the onboarding payload.
+    profile = profiles[0] ? { ...profiles[0], iban: undefined, iban_masked: maskIban(profiles[0].iban) } : null;
     specializations = await query(
       `SELECT s.id, s.slug, s.name_en, s.name_ar
        FROM therapist_specializations ts

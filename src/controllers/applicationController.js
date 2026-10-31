@@ -99,9 +99,23 @@ async function getOrCreateApp(userId) {
 
 const listSpecializations = asyncHandler(async (_req, res) => {
   const rows = await query(
-    `SELECT id, slug, name_en, name_ar FROM specializations WHERE is_active = 1 ORDER BY name_en`
+    `SELECT id, slug, name_en, name_ar, icon FROM specializations WHERE is_active = 1 ORDER BY name_en`
   );
   return ok(res, { specializations: rows });
+});
+
+const { AGE_GROUPS, FORMATS, localize } = require('../config/practiceScope');
+
+const practiceScopeOptions = asyncHandler(async (req, res) => {
+  const locale = req.query.locale === 'ar' ? 'ar' : 'en';
+  return ok(res, { age_groups: localize(AGE_GROUPS, locale), formats: localize(FORMATS, locale) });
+});
+
+const listModalities = asyncHandler(async (_req, res) => {
+  const rows = await query(
+    `SELECT id, slug, name_en, name_ar FROM modalities WHERE is_active = 1 ORDER BY sort_order, name_en`
+  );
+  return ok(res, { modalities: rows });
 });
 
 const getStatus = asyncHandler(async (req, res) => {
@@ -294,6 +308,8 @@ module.exports = {
   experienceSchema,
   adminTechSchema,
   listSpecializations,
+  listModalities,
+  practiceScopeOptions,
   getStatus,
   getApplication,
   saveIdentity,

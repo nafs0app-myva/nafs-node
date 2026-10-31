@@ -36,6 +36,43 @@ async function moodStreak(userId) {
   return streak;
 }
 
+// Share of the therapist's profile that is filled in, including the
+// credentials / specializations / availability sections that live in their
+// own tables. `missing` lists the unfinished items for the UI.
+async function profileCompletion(uid, user) {
+  const [profile] = await query(
+    `SELECT bio, years_experience, city, country, gender, date_of_birth, identity_number, session_fee_default
+     FROM therapist_profiles WHERE user_id = :uid`,
+    { uid }
+  );
+  const count = async (table, where = '') =>
+    Number((await query(`SELECT COUNT(*) AS c FROM ${table} WHERE therapist_id = :uid ${where}`, { uid }))[0]?.c || 0);
+  const [licenses, degrees, specs, slots] = await Promise.all([
+    count('therapist_licenses'),
+    count('therapist_degrees'),
+    count('therapist_specializations'),
+    count('availability_slots', 'AND is_active = 1'),
+  ]);
+  const has = (v) => v != null && String(v).trim() !== '';
+  const checks = [
+    ['name', has(user.full_name)],
+    ['bio', has(profile?.bio)],
+    ['experience', Number(profile?.years_experience) > 0],
+    ['location', has(profile?.city) && has(profile?.country)],
+    ['gender', has(profile?.gender) && profile.gender !== 'unspecified'],
+    ['date_of_birth', !!profile?.date_of_birth],
+    ['identity', has(profile?.identity_number)],
+    ['fees', Number(profile?.session_fee_default) > 0],
+    ['credentials', licenses + degrees > 0],
+    ['specializations', specs > 0],
+    ['availability', slots > 0],
+  ];
+  return {
+    percent: Math.round((checks.filter(([, done]) => done).length * 100) / checks.length),
+    missing: checks.filter(([, done]) => !done).map(([key]) => key),
+  };
+}
+
 async function therapistDashboard(uid, user) {
   const upcoming = await query(
     `SELECT s.id, s.title, s.session_type, s.status, s.starts_at, s.ends_at, s.join_url, s.fee_amount,
@@ -68,8 +105,36 @@ async function therapistDashboard(uid, user) {
      WHERE user_id = :uid AND type = 'session_fee' AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)`,
     { uid }
   );
+  const prevWeekEarnings = await query(
+    `SELECT COALESCE(SUM(amount),0) AS total FROM wallet_transactions
+     WHERE user_id = :uid AND type = 'session_fee'
+       AND created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+       AND created_at < DATE_SUB(CURDATE(), INTERVAL 7 DAY)`,
+    { uid }
+  );
+  const completedWeek = await query(
+    `SELECT COUNT(*) AS count FROM sessions
+     WHERE therapist_id = :uid AND status = 'completed'
+       AND YEARWEEK(starts_at, 1) = YEARWEEK(CURDATE(), 1)`,
+    { uid }
+  );
   const unread = await query(
     `SELECT COUNT(*) AS count FROM notifications WHERE user_id = :uid AND is_read = 0`,
+    { uid }
+  );
+  const unreadItems = await query(
+    `SELECT id, title, body, created_at FROM notifications
+     WHERE user_id = :uid AND is_read = 0 ORDER BY created_at DESC LIMIT 3`,
+    { uid }
+  );
+  const missingNotes = await query(
+    `SELECT s.id, s.starts_at, c.full_name AS client_name
+     FROM sessions s
+     JOIN therapist_clients c ON c.id = s.client_id
+     WHERE s.therapist_id = :uid AND s.status = 'completed'
+       AND s.starts_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+       AND NOT EXISTS (SELECT 1 FROM session_notes n WHERE n.session_id = s.id)
+     ORDER BY s.starts_at DESC LIMIT 3`,
     { uid }
   );
   const [app] = await query(`SELECT status, step FROM therapist_applications WHERE user_id = :uid`, {
@@ -80,8 +145,41 @@ async function therapistDashboard(uid, user) {
     { uid }
   );
 
+  const completion = await profileCompletion(uid, user);
   const sessionsToday = Number(todayCount[0]?.count || 0);
   const doneToday = Number(completedToday[0]?.count || 0);
+  const earnings7d = Number(weekEarnings[0]?.total || 0);
+  const earningsPrev7d = Number(prevWeekEarnings[0]?.total || 0);
+  // null when there is no previous-period baseline to compare against.
+  const earningsGrowth =
+    earningsPrev7d > 0 ? Math.round(((earnings7d - earningsPrev7d) / earningsPrev7d) * 100) : null;
+
+  const requiresAttention = [];
+  if (app?.status && app.status !== 'approved') {
+    requiresAttention.push({
+      type: 'application',
+      title: `Application ${String(app.status).replace(/_/g, ' ')}`,
+      subtitle: 'Your therapist application is not yet approved',
+    });
+  }
+  missingNotes.forEach((m) =>
+    requiresAttention.push({
+      type: 'session_notes',
+      title: `Add notes for ${m.client_name}`,
+      subtitle: 'Completed session has no notes',
+      time: m.starts_at,
+      ref_id: m.id,
+    })
+  );
+  unreadItems.forEach((n) =>
+    requiresAttention.push({
+      type: 'message',
+      title: n.title,
+      subtitle: n.body,
+      time: n.created_at,
+      ref_id: n.id,
+    })
+  );
 
   return {
     role: 'therapist',
@@ -109,12 +207,17 @@ async function therapistDashboard(uid, user) {
         done: doneToday > 0,
       },
     ],
+    requires_attention: requiresAttention,
+    profile_completion: completion,
     stats: {
       sessions_today: sessionsToday,
       sessions_completed_today: doneToday,
+      sessions_completed_week: Number(completedWeek[0]?.count || 0),
       active_clients: Number(clientsCount[0]?.count || 0),
       wallet_balance: Number(wallet?.balance || 0),
-      earnings_7d: Number(weekEarnings[0]?.total || 0),
+      earnings_7d: earnings7d,
+      earnings_prev_7d: earningsPrev7d,
+      earnings_growth_percent: earningsGrowth,
       currency: wallet?.currency || 'SAR',
       unread_notifications: Number(unread[0]?.count || 0),
     },

@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
 const env = require('../config/env');
+const { pool } = require('../config/db');
 
 async function runMigrate() {
   const conn = await mysql.createConnection({
@@ -43,7 +44,11 @@ if (require.main === module) {
     })
     .catch((err) => {
       console.error(err);
-      process.exit(1);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      // ensureSchema() uses the shared pool; close it or the process never exits
+      await pool.end();
     });
 }
 

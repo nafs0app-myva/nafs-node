@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS user_profiles;
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS chat_threads;
 DROP TABLE IF EXISTS session_notes;
+DROP TABLE IF EXISTS session_calls;
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS availability_slots;
 DROP TABLE IF EXISTS therapist_clients;
@@ -39,6 +40,11 @@ DROP TABLE IF EXISTS user_onboarding;
 DROP TABLE IF EXISTS email_outbox;
 DROP TABLE IF EXISTS problem_reports;
 DROP TABLE IF EXISTS contact_messages;
+DROP TABLE IF EXISTS revoked_tokens;
+DROP TABLE IF EXISTS modalities;
+DROP TABLE IF EXISTS credential_documents;
+DROP TABLE IF EXISTS user_avatars;
+DROP TABLE IF EXISTS session_reviews;
 DROP TABLE IF EXISTS faqs;
 DROP TABLE IF EXISTS policies;
 DROP TABLE IF EXISTS notifications;
@@ -69,6 +75,7 @@ CREATE TABLE users (
   role ENUM('therapist','client','admin') NOT NULL DEFAULT 'therapist',
   locale ENUM('en','ar') NOT NULL DEFAULT 'en',
   is_verified TINYINT(1) NOT NULL DEFAULT 0,
+  password_changed_at TIMESTAMP NULL COMMENT 'tokens issued before this are rejected',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -102,6 +109,12 @@ CREATE TABLE therapist_profiles (
   video_provider VARCHAR(40) NOT NULL DEFAULT 'custom',
   video_meeting_url VARCHAR(500) NULL,
   session_fee_default DECIMAL(12,2) NULL,
+  session_duration_minutes INT NOT NULL DEFAULT 50,
+  bank_name VARCHAR(120) NULL,
+  bank_account_holder VARCHAR(120) NULL,
+  iban VARCHAR(40) NULL,
+  native_language VARCHAR(40) NULL,
+  languages JSON NULL COMMENT 'other languages spoken (max 4)',
   admin_notes TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -175,6 +188,16 @@ CREATE TABLE specializations (
   slug VARCHAR(80) NOT NULL UNIQUE,
   name_en VARCHAR(120) NOT NULL,
   name_ar VARCHAR(120) NULL,
+  icon VARCHAR(40) NULL COMMENT 'UI icon key, e.g. anxiety | trauma | heart | child | clinical',
+  is_active TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE modalities (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(40) NOT NULL UNIQUE,
+  name_en VARCHAR(120) NOT NULL,
+  name_ar VARCHAR(120) NULL,
+  sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -203,6 +226,7 @@ CREATE TABLE therapist_degrees (
   degree_title VARCHAR(160) NOT NULL,
   institution VARCHAR(160) NOT NULL,
   year_awarded INT NULL,
+  certifies_age_group VARCHAR(20) NULL COMMENT 'age group this certification qualifies the therapist for, e.g. children',
   document_url VARCHAR(500) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_degree_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
@@ -249,6 +273,7 @@ CREATE TABLE sessions (
   fee_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
   currency VARCHAR(8) NOT NULL DEFAULT 'SAR',
   join_url VARCHAR(500) NULL,
+  cancelled_by_vacation_id BIGINT UNSIGNED NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_sessions_therapist_time (therapist_id, starts_at),
@@ -334,6 +359,8 @@ CREATE TABLE faqs (
   answer_en TEXT NOT NULL,
   question_ar VARCHAR(255) NULL,
   answer_ar TEXT NULL,
+  category VARCHAR(40) NULL COMMENT 'earnings | bookings | telehealth | compliance',
+  audience ENUM('all','therapist','client') NOT NULL DEFAULT 'all',
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -345,6 +372,8 @@ CREATE TABLE policies (
   body_en TEXT NOT NULL,
   title_ar VARCHAR(160) NULL,
   body_ar TEXT NULL,
+  audience ENUM('all','therapist','client') NOT NULL DEFAULT 'all',
+  sort_order INT NOT NULL DEFAULT 0,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -356,6 +385,8 @@ CREATE TABLE contact_messages (
   subject VARCHAR(160) NOT NULL,
   message TEXT NOT NULL,
   status ENUM('new','in_progress','closed') NOT NULL DEFAULT 'new',
+  reply TEXT NULL,
+  replied_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_contact_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -366,7 +397,12 @@ CREATE TABLE problem_reports (
   category VARCHAR(80) NOT NULL,
   description TEXT NOT NULL,
   attachment_url VARCHAR(500) NULL,
+  device_info JSON NULL,
+  screenshot_mime VARCHAR(40) NULL,
+  screenshot MEDIUMBLOB NULL,
   status ENUM('open','resolved','closed') NOT NULL DEFAULT 'open',
+  resolution TEXT NULL,
+  resolved_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_problem_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -389,6 +425,8 @@ CREATE TABLE device_tokens (
   token VARCHAR(255) NOT NULL,
   platform ENUM('ios','android','web') NOT NULL,
   device_name VARCHAR(120) NULL,
+  session_hash CHAR(64) NULL,
+  session_expires_at DATETIME NULL,
   last_active_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_device_token (token),
@@ -478,6 +516,9 @@ CREATE TABLE bookings (
   currency VARCHAR(8) NOT NULL DEFAULT 'SAR',
   payment_method VARCHAR(40) NULL,
   status ENUM('pending_payment','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending_payment',
+  cancelled_by_vacation_id BIGINT UNSIGNED NULL,
+  payment_invoice_id VARCHAR(64) NULL,
+  payment_id VARCHAR(64) NULL UNIQUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_book_client FOREIGN KEY (client_user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_book_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
@@ -488,10 +529,53 @@ CREATE TABLE vacation_blocks (
   therapist_id BIGINT UNSIGNED NOT NULL,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
+  start_time TIME NULL COMMENT 'with end_time: blocks only these hours of a single day',
+  end_time TIME NULL,
   reason VARCHAR(120) NULL,
   conflicts_count INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_vac_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE revoked_tokens (
+  token_hash CHAR(64) PRIMARY KEY,
+  expires_at DATETIME NOT NULL,
+  INDEX idx_revoked_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE credential_documents (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  owner_type ENUM('license','degree') NOT NULL,
+  owner_id BIGINT UNSIGNED NOT NULL,
+  filename VARCHAR(190) NOT NULL,
+  mime VARCHAR(60) NOT NULL,
+  data MEDIUMBLOB NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_cred_doc_owner (owner_type, owner_id),
+  CONSTRAINT fk_cred_doc_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE session_reviews (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  session_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  therapist_id BIGINT UNSIGNED NOT NULL,
+  client_user_id BIGINT UNSIGNED NOT NULL,
+  rating TINYINT UNSIGNED NOT NULL,
+  comment VARCHAR(500) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_review_therapist (therapist_id),
+  CONSTRAINT fk_review_session FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_review_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_review_client FOREIGN KEY (client_user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE user_avatars (
+  user_id BIGINT UNSIGNED PRIMARY KEY,
+  mime VARCHAR(40) NOT NULL,
+  data MEDIUMBLOB NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_avatar_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE payout_requests (
@@ -524,6 +608,8 @@ CREATE TABLE media_recordings (
   title VARCHAR(160) NULL,
   url VARCHAR(500) NOT NULL,
   duration_seconds INT NULL,
+  file_mime VARCHAR(80) NULL,
+  file_data LONGBLOB NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -535,6 +621,9 @@ CREATE TABLE data_export_requests (
   include_flags JSON NULL,
   status ENUM('queued','ready','failed') NOT NULL DEFAULT 'queued',
   download_url VARCHAR(500) NULL,
+  file_name VARCHAR(190) NULL,
+  file_mime VARCHAR(80) NULL,
+  file_data LONGBLOB NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_export_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -551,3 +640,19 @@ CREATE TABLE notification_preferences (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- Live call signalling (ring / accept / decline) for video and audio sessions
+CREATE TABLE session_calls (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  session_id BIGINT UNSIGNED NOT NULL,
+  caller_id BIGINT UNSIGNED NOT NULL,
+  callee_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('ringing','accepted','declined','missed','cancelled') NOT NULL DEFAULT 'ringing',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  answered_at DATETIME NULL,
+  INDEX idx_call_session (session_id, status),
+  INDEX idx_call_callee (callee_id, status),
+  CONSTRAINT fk_call_session FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_call_caller FOREIGN KEY (caller_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_call_callee FOREIGN KEY (callee_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

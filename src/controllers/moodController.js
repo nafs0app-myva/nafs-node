@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const { query } = require('../config/db');
+const { consentEnabled } = require('./privacyController');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -48,6 +49,8 @@ const listCheckins = asyncHandler(async (req, res) => {
 const saveDetector = asyncHandler(async (req, res) => {
   const p = req.body;
   if (!p.consent_accepted) return fail(res, 'Consent required', 400);
+  // The face image is only kept when the user allowed facial-emotion caching.
+  const keepImage = await consentEnabled(req.user.id, 'facial_emotion_cache');
   const result = await query(
     `INSERT INTO mood_detector_results
       (user_id, detected_mood, confidence, consent_accepted, image_url, raw_payload)
@@ -56,7 +59,7 @@ const saveDetector = asyncHandler(async (req, res) => {
       uid: req.user.id,
       detected_mood: p.detected_mood,
       confidence: p.confidence ?? null,
-      image_url: p.image_url || null,
+      image_url: keepImage ? p.image_url || null : null,
       raw_payload: p.raw_payload ? JSON.stringify(p.raw_payload) : null,
     }
   );

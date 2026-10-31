@@ -21,6 +21,7 @@
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
+    "agora-token": "^2.0.7",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",

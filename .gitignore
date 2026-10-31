@@ -11,3 +11,4 @@ tmp/
 .vscode/
 agent-tools/
 hostinger.local.env
+hostinger.env

@@ -1,12 +1,13 @@
 const express = require('express');
 const Joi = require('joi');
 const validate = require('../middleware/validate');
-const { authenticate, optionalAuth } = require('../middleware/auth');
+const { authenticate, optionalAuth, requireRole } = require('../middleware/auth');
 
 const auth = require('../controllers/authController');
 const application = require('../controllers/applicationController');
 const dashboard = require('../controllers/dashboardController');
 const sessions = require('../controllers/sessionController');
+const calls = require('../controllers/callController');
 const clients = require('../controllers/clientController');
 const wallet = require('../controllers/walletController');
 const chat = require('../controllers/chatController');
@@ -20,9 +21,24 @@ const assessment = require('../controllers/assessmentController');
 const booking = require('../controllers/bookingController');
 const vacation = require('../controllers/vacationController');
 const payout = require('../controllers/payoutController');
+const credentials = require('../controllers/credentialController');
 const privacy = require('../controllers/privacyController');
 const admin = require('../controllers/adminController');
 const onboarding = require('../controllers/onboardingController');
+const exercises = require('../controllers/exerciseController');
+
+const rateLimit = require('express-rate-limit');
+
+// Guessing the current password with a stolen session: 5 attempts per 15 minutes per user.
+const changePasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => `pw:${req.user?.id}`,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { keyGeneratorIpFallback: false },
+  handler: (_req, res) => res.status(429).json({ success: false, message: 'Too many attempts. Try again in 15 minutes.', errors: null }),
+});
 
 const router = express.Router();
 
@@ -42,7 +58,18 @@ router.patch('/settings', authenticate, validate(appCtrl.settingsSchema), appCtr
 
 // Auth
 router.post('/auth/register', validate(auth.registerSchema), auth.register);
-router.post('/auth/login', validate(auth.loginSchema), auth.login);
+// Failed sign-ins only: 8 per 15 minutes per account + IP, so a password can't be brute-forced.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `login:${String(req.body?.email || req.body?.phone || '').toLowerCase()}:${req.ip}`,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { keyGeneratorIpFallback: false },
+  handler: (_req, res) => res.status(429).json({ success: false, message: 'Too many failed sign-in attempts. Try again in 15 minutes.', errors: null }),
+});
+router.post('/auth/login', loginLimiter, validate(auth.loginSchema), auth.login);
 router.post(
   '/auth/verify-email',
   validate(Joi.object({ email: Joi.string().email().required(), code: Joi.string().length(6).required() })),
@@ -64,7 +91,7 @@ router.post(
     Joi.object({
       email: Joi.string().email().required(),
       code: Joi.string().length(6).required(),
-      password: Joi.string().min(8).required(),
+      password: auth.strongPassword.required(),
     })
   ),
   auth.resetPassword
@@ -72,9 +99,12 @@ router.post(
 router.post(
   '/auth/change-password',
   authenticate,
+  changePasswordLimiter,
   validate(auth.changePasswordSchema),
   auth.changePassword
 );
+router.post('/auth/logout', authenticate, validate(auth.logoutSchema), auth.logout);
+router.post('/auth/logout-all', authenticate, auth.logoutAll);
 router.get('/auth/me', authenticate, auth.me);
 
 // Shared onboarding (role from JWT — client + therapist)
@@ -83,6 +113,8 @@ router.put('/onboarding', authenticate, validate(onboarding.saveSchema), onboard
 
 // Therapist application (detailed licensing flow)
 router.get('/specializations', application.listSpecializations);
+router.get('/modalities', application.listModalities);
+router.get('/practice-scope/options', application.practiceScopeOptions);
 router.get('/application', authenticate, application.getApplication);
 router.get('/application/status', authenticate, application.getStatus);
 router.put(
@@ -111,6 +143,12 @@ router.get('/home/dashboard', authenticate, dashboard.dashboard);
 // Profile
 router.get('/profile', authenticate, profile.getProfile);
 router.patch('/profile', authenticate, validate(profile.updateSchema), profile.updateProfile);
+router.post('/profile/avatar', authenticate, profile.uploadAvatar);
+router.get('/profile/avatar/:userId', profile.getAvatar);
+router.post('/credentials/:type/:id/document', authenticate, requireRole('therapist'), credentials.uploadDocument);
+router.get('/credentials/:type/:id/document', authenticate, requireRole('therapist'), credentials.getOwnDocument);
+router.delete('/credentials/:type/:id/document', authenticate, requireRole('therapist'), credentials.removeDocument);
+router.get('/credentials/documents/:docId', authenticate, credentials.getDocument);
 
 // Calendar & sessions
 router.get('/calendar', authenticate, sessions.calendar);
@@ -119,6 +157,12 @@ router.post('/sessions', authenticate, validate(sessions.createSchema), sessions
 router.get('/sessions/:id', authenticate, sessions.getOne);
 router.patch('/sessions/:id', authenticate, validate(sessions.updateSchema), sessions.update);
 router.post('/sessions/:id/join', authenticate, sessions.join);
+router.post('/sessions/:id/call/ring', authenticate, calls.ring);
+router.get('/calls/:id', authenticate, calls.status);
+router.post('/calls/:id/accept', authenticate, calls.accept);
+router.post('/calls/:id/decline', authenticate, calls.decline);
+router.post('/calls/:id/cancel', authenticate, validate(calls.cancelSchema), calls.cancel);
+router.post('/sessions/:id/review', authenticate, validate(sessions.reviewSchema), sessions.review);
 router.post('/sessions/:id/cancel', authenticate, sessions.cancel);
 router.post(
   '/sessions/:id/notes',
@@ -144,6 +188,7 @@ router.patch('/clients/:id', authenticate, validate(clients.updateSchema), clien
 router.get('/wallet', authenticate, wallet.getWallet);
 router.get('/wallet/transactions', authenticate, wallet.transactions);
 router.get('/wallet/overview', authenticate, wallet.overview);
+router.get('/fees/terms', wallet.feeTerms);
 router.post(
   '/wallet/withdraw',
   authenticate,
@@ -170,13 +215,31 @@ router.post('/chats/:id/messages', authenticate, validate(chat.messageSchema), c
 router.get('/faqs', support.faqs);
 router.get('/policies', support.listPolicies);
 router.get('/policies/:slug', support.getPolicy);
-router.post('/contact', optionalAuth, validate(support.contactSchema), support.contact);
-router.post(
-  '/report-problem',
-  authenticate,
-  validate(support.problemSchema),
-  support.reportProblem
-);
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({ success: false, message: 'Too many messages. Please try again later.', errors: null }),
+});
+router.post('/contact', optionalAuth, contactLimiter, validate(support.contactSchema), support.contact);
+router.get('/contact/messages', authenticate, support.myMessages);
+router.patch('/contact/:id', authenticate, requireRole('admin'), validate(support.replySchema), support.replyToMessage);
+const problemLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => `pr:${req.user?.id}`,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { keyGeneratorIpFallback: false },
+  handler: (_req, res) => res.status(429).json({ success: false, message: 'Too many reports. Please try again later.', errors: null }),
+});
+router.get('/report-problem/categories', support.categories);
+router.get('/report-problem', authenticate, support.myProblems);
+router.post('/report-problem', authenticate, problemLimiter, validate(support.problemSchema), support.reportProblem);
+router.post('/report-problem/:id/screenshot', authenticate, support.uploadScreenshot);
+router.get('/report-problem/:id/screenshot', authenticate, support.getScreenshot);
+router.patch('/report-problem/:id', authenticate, requireRole('admin'), validate(support.problemUpdateSchema), support.updateProblem);
 
 // Notifications & devices
 router.get('/notifications', authenticate, notification.list);
@@ -191,6 +254,7 @@ router.patch(
 );
 router.post('/devices', authenticate, validate(notification.deviceSchema), notification.registerDevice);
 router.get('/devices', authenticate, notification.listDevices);
+router.delete('/devices', authenticate, notification.revokeOtherDevices);
 router.delete('/devices/:id', authenticate, notification.revokeDevice);
 
 // Client: mood / journal / assessments / goals
@@ -213,8 +277,13 @@ router.get('/assessments', authenticate, assessment.list);
 router.get('/goals', authenticate, assessment.getGoals);
 router.put('/goals', authenticate, validate(assessment.goalsSchema), assessment.saveGoals);
 
+// Client: exercise library (static catalogue)
+router.get('/exercises', authenticate, exercises.list);
+router.get('/exercises/:id', authenticate, exercises.getOne);
+
 // Client: specialists & booking
 router.get('/specialists', authenticate, booking.listSpecialists);
+router.get('/specialists/:id/availability', authenticate, booking.getSpecialistAvailability);
 router.get('/specialists/:id', authenticate, booking.getSpecialist);
 router.post('/bookings', authenticate, validate(booking.createSchema), booking.createBooking);
 router.post(
@@ -224,22 +293,37 @@ router.post(
   booking.checkout
 );
 router.get('/bookings', authenticate, booking.myBookings);
+router.get('/bookings/:id/cancel-preview', authenticate, booking.cancelPreview);
+router.post('/bookings/:id/pay', authenticate, booking.payBooking);
+router.get('/payments/return', booking.paymentReturn);
+router.post('/bookings/:id/cancel', authenticate, booking.cancelBooking);
 
 // Consultant: vacation & payouts
 router.get('/vacations', authenticate, vacation.list);
 router.post('/vacations', authenticate, validate(vacation.createSchema), vacation.create);
+router.patch('/vacations/:id', authenticate, validate(vacation.updateSchema), vacation.update);
 router.delete('/vacations/:id', authenticate, vacation.remove);
 router.get('/payouts', authenticate, payout.list);
 router.post('/payouts', authenticate, validate(payout.requestSchema), payout.create);
+router.patch(
+  '/payouts/:id/status',
+  authenticate,
+  requireRole('admin'),
+  validate(payout.statusSchema),
+  payout.updateStatus
+);
 
 // Privacy / data
 router.get('/privacy/consents', authenticate, privacy.listConsents);
 router.put('/privacy/consents', authenticate, validate(privacy.consentsSchema), privacy.updateConsents);
 router.get('/privacy/media', authenticate, privacy.listMedia);
 router.post('/privacy/media', authenticate, validate(privacy.mediaSchema), privacy.addMedia);
+router.post('/privacy/media/upload', authenticate, privacy.uploadMedia);
+router.get('/privacy/media/:id/file', authenticate, privacy.getMediaFile);
 router.delete('/privacy/media/:id', authenticate, privacy.deleteMedia);
 router.post('/privacy/export', authenticate, validate(privacy.exportSchema), privacy.requestExport);
 router.get('/privacy/exports', authenticate, privacy.listExports);
+router.get('/privacy/exports/:id/download', authenticate, privacy.downloadExport);
 router.get('/privacy/retention', authenticate, privacy.retentionPolicy);
 
 module.exports = router;

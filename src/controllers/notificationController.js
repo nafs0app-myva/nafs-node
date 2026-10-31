@@ -2,6 +2,29 @@ const Joi = require('joi');
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
+const jwt = require('jsonwebtoken');
+const { hashToken, invalidateUser } = require('../middleware/auth');
+
+/** The signed-in request's own login token, as `{hash, expires}`. */
+function currentSession(req) {
+  const token = (req.headers.authorization || '').slice(7);
+  const exp = jwt.decode(token)?.exp;
+  return { hash: hashToken(token), expires: exp ? new Date(exp * 1000) : new Date(Date.now() + 7 * 86400000) };
+}
+
+/** Ends the login session tied to each of [devices] (rows with session_hash/session_expires_at) and removes them. */
+async function endDeviceSessions(userId, devices) {
+  for (const d of devices) {
+    if (d.session_hash) {
+      await query(`INSERT IGNORE INTO revoked_tokens (token_hash, expires_at) VALUES (:h, :e)`, {
+        h: d.session_hash,
+        e: d.session_expires_at || new Date(Date.now() + 7 * 86400000),
+      });
+    }
+    await query(`DELETE FROM device_tokens WHERE id = :id AND user_id = :uid`, { id: d.id, uid: userId });
+  }
+  invalidateUser(userId); // so the revoked tokens stop working immediately, not after the cache expires
+}
 
 const deviceSchema = Joi.object({
   token: Joi.string().required(),
@@ -45,11 +68,14 @@ const markAllRead = asyncHandler(async (req, res) => {
 
 const registerDevice = asyncHandler(async (req, res) => {
   await query(
-    `INSERT INTO device_tokens (user_id, token, platform, device_name, last_active_at)
-     VALUES (:uid, :token, :platform, :device_name, NOW())
+    `INSERT INTO device_tokens (user_id, token, platform, device_name, session_hash, session_expires_at, last_active_at)
+     VALUES (:uid, :token, :platform, :device_name, :session_hash, :session_expires_at, NOW())
      ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), platform = VALUES(platform),
-       device_name = COALESCE(VALUES(device_name), device_name), last_active_at = NOW()`,
+       device_name = COALESCE(VALUES(device_name), device_name),
+       session_hash = VALUES(session_hash), session_expires_at = VALUES(session_expires_at), last_active_at = NOW()`,
     {
+      session_hash: currentSession(req).hash,
+      session_expires_at: currentSession(req).expires,
       uid: req.user.id,
       token: req.body.token,
       platform: req.body.platform,
@@ -68,13 +94,30 @@ const listDevices = asyncHandler(async (req, res) => {
   return ok(res, { devices: rows });
 });
 
+// DELETE /devices/:id - signs that device out: its login token is revoked, not just its push token.
 const revokeDevice = asyncHandler(async (req, res) => {
-  const result = await query(`DELETE FROM device_tokens WHERE id = :id AND user_id = :uid`, {
-    id: req.params.id,
-    uid: req.user.id,
-  });
-  if (!result.affectedRows) return fail(res, 'Device not found', 404);
-  return ok(res, null, 'Device revoked');
+  const rows = await query(
+    `SELECT id, session_hash, session_expires_at FROM device_tokens WHERE id = :id AND user_id = :uid`,
+    { id: req.params.id, uid: req.user.id }
+  );
+  if (!rows.length) return fail(res, 'Device not found', 404);
+  if (rows[0].session_hash === currentSession(req).hash) {
+    return fail(res, 'Use sign out to end this device\'s session', 400);
+  }
+  await endDeviceSessions(req.user.id, rows);
+  return ok(res, null, 'Device signed out');
+});
+
+// DELETE /devices[?keep_token=<this device's push token>] - signs out every device except the one making the request.
+const revokeOtherDevices = asyncHandler(async (req, res) => {
+  const mine = currentSession(req).hash;
+  const rows = await query(
+    `SELECT id, session_hash, session_expires_at FROM device_tokens
+     WHERE user_id = :uid AND (session_hash IS NULL OR session_hash <> :mine) AND token <> :keep`,
+    { uid: req.user.id, mine, keep: req.query.keep_token || '' }
+  );
+  await endDeviceSessions(req.user.id, rows);
+  return ok(res, { revoked: rows.length }, 'Other devices signed out');
 });
 
 const getPrefs = asyncHandler(async (req, res) => {
@@ -131,6 +174,7 @@ module.exports = {
   registerDevice,
   listDevices,
   revokeDevice,
+  revokeOtherDevices,
   getPrefs,
   updatePrefs,
 };

@@ -98,7 +98,7 @@ async function recordOutbox({ to, subject, body, purpose, status, error, meta })
   }
 }
 
-async function sendMail({ to, subject, text, html, purpose, meta }) {
+async function sendMail({ to, subject, text, html, purpose, meta, replyTo }) {
   const body = text || html || '';
 
   if (!smtpConfigured()) {
@@ -132,6 +132,7 @@ async function sendMail({ to, subject, text, html, purpose, meta }) {
       const info = await transport.sendMail({
         from: env.smtp.from,
         to,
+        replyTo: replyTo || undefined,
         subject,
         text,
         html: html || undefined,

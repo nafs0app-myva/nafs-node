@@ -21,12 +21,13 @@ async function runSeed() {
 
   await query(
     `INSERT INTO therapist_profiles
-      (user_id, identity_number, gender, date_of_birth, bio, working_capacity, years_experience, city, country, address)
+      (user_id, identity_number, gender, date_of_birth, bio, working_capacity, years_experience, city, country, address, session_fee_default)
      VALUES
       (:user_id, 'ID-998877', 'female', '1988-04-12',
        'Licensed clinical psychologist specializing in anxiety, couples, and trauma-informed care.',
-       'individual', 12, 'Riyadh', 'Saudi Arabia', 'Olaya District')
-     ON DUPLICATE KEY UPDATE bio = VALUES(bio), years_experience = VALUES(years_experience)`,
+       'individual', 12, 'Riyadh', 'Saudi Arabia', 'Olaya District', 350.00)
+     ON DUPLICATE KEY UPDATE bio = VALUES(bio), years_experience = VALUES(years_experience),
+       session_fee_default = COALESCE(session_fee_default, VALUES(session_fee_default))`,
     { user_id: therapistId }
   );
 
@@ -175,8 +176,33 @@ async function runSeed() {
       `INSERT INTO faqs (question_en, answer_en, question_ar, answer_ar, sort_order) VALUES
        ('How do I join a video session?', 'Open Home or Calendar and tap Join on the upcoming session card.',
         'كيف أنضم لجلسة فيديو؟', 'افتح الرئيسية أو التقويم واضغط انضمام على بطاقة الجلسة.', 1),
-       ('When do I get paid?', 'Earnings settle to your wallet after completed sessions. Payouts process weekly.',
+       ('When do I get paid?', 'Session earnings are added to your wallet after completed sessions. Request a payout from the Earnings tab; requests are reviewed within 3-5 business days.',
         'متى أحصل على مستحقاتي؟', 'تُضاف الأرباح بعد اكتمال الجلسات ويتم التحويل أسبوعياً.', 2)`
+    );
+  }
+
+  // Categorise the starter FAQs and add therapist-facing ones (idempotent).
+  await query(
+    `UPDATE faqs SET category = 'telehealth' WHERE category IS NULL AND question_en = 'How do I join a video session?'`
+  );
+  await query(
+    `UPDATE faqs SET category = 'earnings' WHERE category IS NULL AND question_en = 'When do I get paid?'`
+  );
+  const therapistFaqs = [
+    ['earnings', 'What is the minimum payout amount?', 'You can request a payout once your available balance reaches the minimum shown on the Earnings tab.', 10],
+    ['earnings', 'What happens if a payout is rejected?', 'The amount is returned to your wallet and you are notified in the app.', 11],
+    ['bookings', 'How do I cancel or reschedule a session?', 'Open the session from the Calendar tab and choose cancel; contact the client to agree a new time.', 12],
+    ['bookings', 'Where do I add notes for a session?', 'On the Calendar tab, tap View Notes on the session card to read or add notes.', 13],
+    ['telehealth', 'What if the video connection drops during a session?', 'Rejoin from the session card. If the problem continues, switch to an audio session and report the issue from Settings.', 14],
+    ['compliance', 'How is client data protected?', 'Client information is confidential and only visible to you and the platform as described in the Privacy Policy.', 15],
+    ['compliance', 'Why is my license marked as pending?', 'Credentials are reviewed by the Nafs team; you will be notified once verification is complete.', 16],
+  ];
+  for (const [category, q, a, order] of therapistFaqs) {
+    await query(
+      `INSERT INTO faqs (question_en, answer_en, category, audience, sort_order)
+       SELECT :q, :a, :category, 'therapist', :order FROM DUAL
+       WHERE NOT EXISTS (SELECT 1 FROM faqs WHERE question_en = :q)`,
+      { q, a, category, order }
     );
   }
 
@@ -189,6 +215,22 @@ async function runSeed() {
       'شروط الاستخدام', 'باستخدام نفس فإنك توافق على شروط المنصة.')
      ON DUPLICATE KEY UPDATE title_en = VALUES(title_en)`
   );
+
+  // Therapist-facing platform policies (idempotent).
+  const therapistPolicies = [
+    ['clinical-conduct', 'Clinical Conduct', 'Therapists must practise within their licensed scope, keep accurate session notes and escalate safeguarding concerns immediately.', 10],
+    ['cancellation', 'Cancellation & No-show Policy', 'Cancel or reschedule at least 24 hours before a session. Sessions missed by the client without notice may be marked as no-show.', 11],
+    ['payouts', 'Payouts & Fees', 'Session fees are credited to your wallet once a session is completed. Payouts are reviewed by the Nafs team and settle to your bank account.', 12],
+    ['telehealth', 'Telehealth Standards', 'Conduct video and audio sessions from a private location with a stable connection and keep recordings only where the client has consented.', 13],
+  ];
+  for (const [slug, title, body, order] of therapistPolicies) {
+    await query(
+      `INSERT INTO policies (slug, title_en, body_en, audience, sort_order)
+       VALUES (:slug, :title, :body, 'therapist', :order)
+       ON DUPLICATE KEY UPDATE audience = 'therapist'`,
+      { slug, title, body, order }
+    );
+  }
 
   // Demo client (patient) for mood / journal / booking flows
   await query(

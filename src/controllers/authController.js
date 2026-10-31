@@ -5,25 +5,50 @@ const { query, withTransaction } = require('../config/db');
 const env = require('../config/env');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
-const { sendOtpEmail } = require('../services/emailService');
+const { sendOtpEmail, sendMail } = require('../services/emailService');
+const { notify } = require('../utils/notify');
+const { maskIban } = require('../utils/iban');
+const { hashToken, invalidateUser } = require('../middleware/auth');
+const { normalisePhone, nationalDigits } = require('../utils/phone');
+
+// A valid bcrypt hash of a random string, compared against when the account doesn't exist.
+const DUMMY_HASH = bcrypt.hashSync('nafs-dummy-password', 10);
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
   full_name: Joi.string().min(2).max(120).required(),
-  phone: Joi.string().allow('', null),
+  phone: Joi.string().max(32).allow('', null),
+  // Dial code the phone was typed with (e.g. +966); the number is stored as E.164.
+  phone_country: Joi.string().pattern(/^\+\d{1,4}$/).allow('', null),
   role: Joi.string().valid('therapist', 'client').default('therapist'),
   locale: Joi.string().valid('en', 'ar').default('en'),
 });
 
 const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
-});
+  email: Joi.string().trim().email(),
+  phone: Joi.string().max(32),
+  phone_country: Joi.string().pattern(/^\+\d{1,4}$/).allow('', null),
+  password: Joi.string().max(200).required(),
+}).xor('email', 'phone');
+
+// 8-72 characters (bcrypt ignores anything past 72) with upper, lower, a digit and a special character.
+const strongPassword = Joi.string()
+  .min(8)
+  .max(72)
+  .pattern(/[A-Z]/, 'uppercase')
+  .pattern(/[a-z]/, 'lowercase')
+  .pattern(/\d/, 'number')
+  .pattern(/[^A-Za-z0-9]/, 'special character')
+  .messages({
+    'string.pattern.name': 'Password must include an uppercase letter, a lowercase letter, a number and a special character',
+    'string.min': 'Password must be at least 8 characters',
+    'string.max': 'Password must be 72 characters or fewer',
+  });
 
 const changePasswordSchema = Joi.object({
   current_password: Joi.string().required(),
-  new_password: Joi.string().min(8).required(),
+  new_password: strongPassword.required(),
 });
 
 const resendVerificationSchema = Joi.object({
@@ -79,6 +104,11 @@ const register = asyncHandler(async (req, res) => {
   const role = payload.role || 'therapist';
   const existing = await query(`SELECT id FROM users WHERE email = :email`, { email: payload.email });
   if (existing.length) return fail(res, 'Email already registered', 409);
+  const phone = payload.phone ? normalisePhone(payload.phone, payload.phone_country) : null;
+  if (payload.phone && !phone) return fail(res, 'Enter a valid phone number', 422);
+  if (phone && (await query(`SELECT id FROM users WHERE phone = :phone`, { phone })).length) {
+    return fail(res, 'Phone number already registered', 409);
+  }
 
   const password_hash = await bcrypt.hash(payload.password, 10);
   const result = await withTransaction(async (conn) => {
@@ -87,7 +117,7 @@ const register = asyncHandler(async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?)`,
       [
         payload.email,
-        payload.phone || null,
+        phone,
         password_hash,
         payload.full_name,
         role,
@@ -153,13 +183,33 @@ const register = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  const rows = await query(`SELECT * FROM users WHERE email = :email`, { email });
-  if (!rows.length) return fail(res, 'Invalid email or password', 401);
-  const user = rows[0];
+  const { email, phone, phone_country: dial, password } = req.body;
+  let user = null;
+  if (email) {
+    [user] = await query(`SELECT * FROM users WHERE email = :email`, { email });
+  } else {
+    const e164 = normalisePhone(phone, dial);
+    if (e164) {
+      [user] = await query(`SELECT * FROM users WHERE phone = :phone`, { phone: e164 });
+      if (!user) {
+        // Older accounts stored the number as typed (no country code): match on the
+        // national digits, but only when exactly one account fits.
+        const national = nationalDigits(phone);
+        if (national.length >= 8) {
+          const candidates = await query(
+            `SELECT * FROM users WHERE phone IS NOT NULL
+               AND REPLACE(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), '(', '') LIKE :tail LIMIT 2`,
+            { tail: `%${national}` }
+          );
+          if (candidates.length === 1) user = candidates[0];
+        }
+      }
+    }
+  }
+  // Always run a bcrypt compare, so an unknown account takes as long as a wrong password.
+  const match = await bcrypt.compare(password, user?.password_hash || DUMMY_HASH);
+  if (!user || !match) return fail(res, email ? 'Invalid email or password' : 'Invalid phone number or password', 401);
   if (!user.is_active) return fail(res, 'Account disabled', 403);
-  const match = await bcrypt.compare(password, user.password_hash);
-  if (!match) return fail(res, 'Invalid email or password', 401);
   return ok(res, { user: publicUser(user), token: signToken(user) }, 'Logged in');
 });
 
@@ -250,7 +300,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   if (!rows.length || rows[0].code !== code) return fail(res, 'Invalid OTP', 400);
   if (new Date(rows[0].expires_at) < new Date()) return fail(res, 'OTP expired', 400);
   const password_hash = await bcrypt.hash(password, 10);
-  await query(`UPDATE users SET password_hash = :password_hash WHERE email = :email`, {
+  await query(`UPDATE users SET password_hash = :password_hash, password_changed_at = NOW() WHERE email = :email`, {
     password_hash,
     email,
   });
@@ -263,12 +313,58 @@ const changePassword = asyncHandler(async (req, res) => {
   if (!rows.length) return fail(res, 'User not found', 404);
   const okPw = await bcrypt.compare(req.body.current_password, rows[0].password_hash);
   if (!okPw) return fail(res, 'Current password is incorrect', 400);
+  if (req.body.new_password === req.body.current_password) {
+    return fail(res, 'Choose a new password that is different from your current one', 400);
+  }
   const password_hash = await bcrypt.hash(req.body.new_password, 10);
-  await query(`UPDATE users SET password_hash = :password_hash WHERE id = :id`, {
+  await query(`UPDATE users SET password_hash = :password_hash, password_changed_at = NOW() WHERE id = :id`, {
     password_hash,
     id: req.user.id,
   });
-  return ok(res, null, 'Password changed');
+  invalidateUser(req.user.id);
+  // Tell the owner (an unexpected change is the first sign of a stolen account).
+  await notify(req.user.id, {
+    title: 'Your password was changed',
+    body: 'If this was not you, reset your password immediately and contact support.',
+    type: 'security',
+  });
+  sendMail({
+    to: rows[0].email,
+    subject: 'Your Nafs password was changed',
+    text: 'Your Nafs password was just changed. If this was not you, reset your password immediately and contact support.',
+    purpose: 'password_changed',
+  }).catch(() => {});
+  // Other devices are signed out (older tokens are rejected); hand this one a fresh token.
+  return ok(res, { token: signToken(rows[0]) }, 'Password changed');
+});
+
+const logoutSchema = Joi.object({
+  // This device's push token; it is unregistered so a signed-out account stops getting pushes here.
+  fcm_token: Joi.string().max(255).allow('', null),
+});
+
+// POST /auth/logout - ends this session on the server: the token is revoked and
+// this device stops receiving the account's push notifications.
+const logout = asyncHandler(async (req, res) => {
+  const token = (req.headers.authorization || '').slice(7);
+  const payload = jwt.decode(token);
+  const expires = payload?.exp ? new Date(payload.exp * 1000) : new Date(Date.now() + 7 * 86400000);
+  await query(`INSERT IGNORE INTO revoked_tokens (token_hash, expires_at) VALUES (:h, :e)`, { h: hashToken(token), e: expires });
+  await query(`DELETE FROM revoked_tokens WHERE expires_at < UTC_TIMESTAMP()`); // keep the table small
+  invalidateUser(req.user.id);
+  if (req.body.fcm_token) {
+    await query(`DELETE FROM device_tokens WHERE user_id = :uid AND token = :t`, { uid: req.user.id, t: req.body.fcm_token });
+  }
+  return ok(res, null, 'Signed out');
+});
+
+// POST /auth/logout-all - signs the account out everywhere: every token issued so
+// far stops working and all registered devices are unregistered.
+const logoutAll = asyncHandler(async (req, res) => {
+  await query(`UPDATE users SET password_changed_at = NOW() WHERE id = :id`, { id: req.user.id });
+  await query(`DELETE FROM device_tokens WHERE user_id = :id`, { id: req.user.id });
+  invalidateUser(req.user.id);
+  return ok(res, null, 'Signed out of all devices');
 });
 
 const me = asyncHandler(async (req, res) => {
@@ -298,7 +394,16 @@ const me = asyncHandler(async (req, res) => {
     const profiles = await query(`SELECT * FROM therapist_profiles WHERE user_id = :id`, {
       id: req.user.id,
     });
-    profile = profiles[0] || null;
+    profile = profiles[0]
+      ? {
+          ...profiles[0],
+          practice_scope: parseJsonField(profiles[0].practice_scope),
+          frameworks: parseJsonField(profiles[0].frameworks),
+          // The full IBAN stays on the server; the app gets a masked copy.
+          iban: undefined,
+          iban_masked: maskIban(profiles[0].iban),
+        }
+      : null;
   } else if (user.role === 'client') {
     const profiles = await query(`SELECT * FROM client_profiles WHERE user_id = :id`, {
       id: req.user.id,
@@ -310,6 +415,10 @@ const me = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  logoutSchema,
+  logout,
+  logoutAll,
+  strongPassword,
   registerSchema,
   loginSchema,
   changePasswordSchema,

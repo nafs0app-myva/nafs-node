@@ -2,6 +2,8 @@ const Joi = require('joi');
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
+const { MIN_PAYOUT } = require('../config/payout');
+const fees = require('../config/fees');
 
 const paymentMethodSchema = Joi.object({
   brand: Joi.string().required(),
@@ -39,6 +41,21 @@ const transactions = asyncHandler(async (req, res) => {
   return ok(res, { wallet_id: wallet.id, transactions: rows });
 });
 
+// Fee terms shown on the Consultation Fees screen.
+const feeTerms = asyncHandler(async (_req, res) =>
+  ok(res, {
+    platform_fee_percent: fees.PLATFORM_FEE_PERCENT,
+    net_payout_percent: 100 - fees.PLATFORM_FEE_PERCENT,
+    payout_frequency: fees.PAYOUT_FREQUENCY,
+    payout_note: fees.PAYOUT_NOTE,
+    min_payout: MIN_PAYOUT,
+    min_session_fee: fees.MIN_SESSION_FEE,
+    max_session_fee: fees.MAX_SESSION_FEE,
+    cancellation_policy: fees.CANCELLATION_POLICY,
+    currency: 'SAR',
+  })
+);
+
 const overview = asyncHandler(async (req, res) => {
   const rows = await query(
     `SELECT DATE_FORMAT(created_at, '%Y-%m') AS month,
@@ -51,7 +68,18 @@ const overview = asyncHandler(async (req, res) => {
     { uid: req.user.id }
   );
   const wallet = await ensureWallet(req.user.id);
-  return ok(res, { balance: wallet.balance, currency: wallet.currency, months: rows });
+  const [total] = await query(
+    `SELECT COALESCE(SUM(amount),0) AS total FROM wallet_transactions
+     WHERE user_id = :uid AND type IN ('credit','session_fee')`,
+    { uid: req.user.id }
+  );
+  return ok(res, {
+    balance: wallet.balance,
+    currency: wallet.currency,
+    total_earned: Number(total.total),
+    min_payout: MIN_PAYOUT,
+    months: rows,
+  });
 });
 
 const listPaymentMethods = asyncHandler(async (req, res) => {
@@ -129,6 +157,7 @@ const withdraw = asyncHandler(async (req, res) => {
 module.exports = {
   paymentMethodSchema,
   getWallet,
+  feeTerms,
   transactions,
   overview,
   listPaymentMethods,

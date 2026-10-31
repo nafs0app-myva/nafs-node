@@ -16,7 +16,8 @@ const answerSchema = Joi.object({
     .required(),
   complete: Joi.boolean().default(false),
   score: Joi.number().allow(null),
-  summary: Joi.object().allow(null),
+  // Mobile sends a plain text summary; allow object for richer payloads too.
+  summary: Joi.alternatives().try(Joi.string(), Joi.object()).allow(null),
 });
 
 const goalsSchema = Joi.object({

@@ -16,7 +16,36 @@ Node.js + MySQL REST backend for the **Nafs** mobile app — therapist + client 
 cp .env.example .env
 npm install
 npm run db:setup
+ npm run db:seed 
 npm run dev
+```
+
+> **Warning:** `npm run db:setup` runs `src/db/schema.sql`, which **drops and recreates every table**, deleting all existing data. Use it only on a fresh or throwaway database. To re-add the demo accounts to an existing database, run just `npm run db:seed`, which inserts or updates the seed rows without dropping anything.
+
+### MySQL via Docker
+
+If you do not have a local MySQL, run one that matches `.env.example`:
+
+```bash
+docker run -d --name nafs-mysql ^
+  -e MYSQL_ROOT_PASSWORD=root ^
+  -e MYSQL_DATABASE=nafs ^
+  -e MYSQL_USER=nafs ^
+  -e MYSQL_PASSWORD=nafs_pass ^
+  -p 3306:3306 ^
+  mysql:8.0 --default-authentication-plugin=mysql_native_password
+```
+
+Wait until the container is ready (`docker exec nafs-mysql mysqladmin ping -uroot -proot`), then `npm run db:setup`.
+
+### API smoke test
+
+With the server running:
+
+```bash
+node scripts/test-all-apis.js
+# or against another host:
+node scripts/test-all-apis.js http://127.0.0.1:43125/api/v1
 ```
 
 - Explorer: http://127.0.0.1:43125/

@@ -15,14 +15,24 @@ const updateSchema = createSchema.fork(['full_name'], (s) => s.optional()).min(1
 
 const list = asyncHandler(async (req, res) => {
   const q = (req.query.q || '').trim();
-  let sql = `SELECT id, full_name, email, phone, avatar_url, status, last_session_at, created_at
-             FROM therapist_clients WHERE therapist_id = :uid`;
+  // last/next session are derived from `sessions` (the stored last_session_at
+  // only tracks the most recently booked session, not the latest past one).
+  let sql = `SELECT c.id, c.full_name, c.email, c.phone, c.avatar_url, c.status, c.created_at,
+                    (SELECT MAX(s.starts_at) FROM sessions s
+                      WHERE s.client_id = c.id
+                        AND (s.status IN ('completed','in_progress','no_show')
+                             OR (s.status = 'scheduled' AND s.starts_at < UTC_TIMESTAMP()))
+                    ) AS last_session_at,
+                    (SELECT MIN(s.starts_at) FROM sessions s
+                      WHERE s.client_id = c.id AND s.status = 'scheduled' AND s.starts_at >= UTC_TIMESTAMP()
+                    ) AS next_session_at
+             FROM therapist_clients c WHERE c.therapist_id = :uid`;
   const params = { uid: req.user.id };
   if (q) {
-    sql += ` AND (full_name LIKE :q OR email LIKE :q OR phone LIKE :q)`;
+    sql += ` AND (c.full_name LIKE :q OR c.email LIKE :q OR c.phone LIKE :q)`;
     params.q = `%${q}%`;
   }
-  sql += ` ORDER BY full_name ASC`;
+  sql += ` ORDER BY c.full_name ASC`;
   const rows = await query(sql, params);
   return ok(res, { clients: rows });
 });

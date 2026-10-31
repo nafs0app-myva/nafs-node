@@ -2,6 +2,7 @@ const app = require('./app');
 const env = require('./config/env');
 const { pool } = require('./config/db');
 const { ensureSchema } = require('./db/ensureSchema');
+const { scheduleLicenseExpiryReminders } = require('./jobs/licenseExpiry');
 
 async function start() {
   // Fail fast if DB is unreachable
@@ -10,6 +11,8 @@ async function start() {
   conn.release();
 
   await ensureSchema();
+
+  scheduleLicenseExpiryReminders();
 
   app.listen(env.port, '0.0.0.0', () => {
     console.log(`Nafs API listening on http://127.0.0.1:${env.port}`);
