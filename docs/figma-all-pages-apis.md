@@ -64,8 +64,17 @@ Address / video fields on admin-tech are optional extras (settings / other scree
 | Earnings analytics chart | `GET /wallet/overview` |
 | Withdraw | `POST /wallet/withdraw` |
 | Payout request | `GET/POST /payouts` |
-| Payment Methods | `GET/POST /payment-methods`, `DELETE /payment-methods/:id` |
+| Payment Methods | `GET/POST /payment-methods`, `PATCH/DELETE /payment-methods/:id` |
 | Billing History | `GET /billing-history` |
+| Consultation Fees | `GET /fees/terms` |
+
+## Payments (client Checkout)
+
+| Figma page / screen | API(s) |
+| --- | --- |
+| Checkout (order + Apple/Google/Card + Confirm & Pay) | `GET /bookings/:id/checkout-summary`, `POST /bookings/:id/pay`, `GET /payments/:bookingId/status`, `POST /bookings/:id/checkout` |
+| Payment method rails | `GET /payments/options` |
+| Moyasar return / webhook | `GET /payments/return`, `POST /payments/webhook` |
 
 ## Client wellness
 
@@ -76,7 +85,7 @@ Address / video fields on admin-tech are optional extras (settings / other scree
 | Mood detector (camera + consent) | `POST /mood/detector` |
 | Journal list / entry | `GET/POST /journals`, `GET/PUT/DELETE /journals/:id` |
 | Find specialists | `GET /specialists`, `GET /specialists/:id` |
-| Book session + checkout | `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings` |
+| Book session + checkout | `POST /bookings`, `GET /bookings/:id/checkout-summary`, `POST /bookings/:id/pay`, `POST /bookings/:id/checkout`, `GET /bookings` |
 
 ## Profile / privacy / support
 

@@ -98,7 +98,14 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | GET | `/wallet/overview` |
 | POST | `/wallet/withdraw` |
 | GET/POST | `/payment-methods` |
+| PATCH/DELETE | `/payment-methods/:id` |
 | GET | `/billing-history` |
+| GET | `/payments/options` |
+| GET | `/bookings/:id/checkout-summary` |
+| POST | `/bookings/:id/pay` |
+| GET | `/payments/:bookingId/status` |
+| POST | `/payments/webhook` |
+| GET | `/payments/return` |
 | GET/POST | `/payouts` |
 
 ## Chat

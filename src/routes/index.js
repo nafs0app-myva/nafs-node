@@ -26,6 +26,7 @@ const privacy = require('../controllers/privacyController');
 const admin = require('../controllers/adminController');
 const onboarding = require('../controllers/onboardingController');
 const exercises = require('../controllers/exerciseController');
+const payments = require('../controllers/paymentController');
 
 const rateLimit = require('express-rate-limit');
 
@@ -202,8 +203,20 @@ router.post(
   validate(wallet.paymentMethodSchema),
   wallet.addPaymentMethod
 );
+router.patch(
+  '/payment-methods/:id',
+  authenticate,
+  validate(wallet.paymentMethodUpdateSchema),
+  wallet.updatePaymentMethod
+);
 router.delete('/payment-methods/:id', authenticate, wallet.deletePaymentMethod);
 router.get('/billing-history', authenticate, wallet.billingHistory);
+
+// Payments (Figma Checkout / Payment Methods / Billing)
+router.get('/payments/options', authenticate, payments.paymentOptions);
+router.get('/payments/return', payments.paymentReturn);
+router.post('/payments/webhook', payments.moyasarWebhook);
+router.get('/payments/:bookingId/status', authenticate, payments.paymentStatus);
 
 // Chat
 router.get('/chats', authenticate, chat.listThreads);
@@ -286,6 +299,7 @@ router.get('/specialists', authenticate, booking.listSpecialists);
 router.get('/specialists/:id/availability', authenticate, booking.getSpecialistAvailability);
 router.get('/specialists/:id', authenticate, booking.getSpecialist);
 router.post('/bookings', authenticate, validate(booking.createSchema), booking.createBooking);
+router.get('/bookings/:id/checkout-summary', authenticate, payments.checkoutSummary);
 router.post(
   '/bookings/:id/checkout',
   authenticate,
@@ -294,8 +308,7 @@ router.post(
 );
 router.get('/bookings', authenticate, booking.myBookings);
 router.get('/bookings/:id/cancel-preview', authenticate, booking.cancelPreview);
-router.post('/bookings/:id/pay', authenticate, booking.payBooking);
-router.get('/payments/return', booking.paymentReturn);
+router.post('/bookings/:id/pay', authenticate, validate(payments.paySchema), payments.startPayment);
 router.post('/bookings/:id/cancel', authenticate, booking.cancelBooking);
 
 // Consultant: vacation & payouts

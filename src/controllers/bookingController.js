@@ -2,12 +2,12 @@ const Joi = require('joi');
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
-const { notify } = require('../utils/notify');
 const { previewCancellation, cancelBooking: settleCancellation } = require('../services/cancellationService');
 const { bookableTimes } = require('../services/availabilityService');
-const env = require('../config/env');
 const moyasar = require('../services/moyasarService');
-const { zonedToUtc, toMysqlUtc } = require('../utils/time');
+const fees = require('../config/fees');
+const { confirmPaidBooking } = require('../services/bookingPaymentService');
+const payment = require('./paymentController');
 
 const createSchema = Joi.object({
   therapist_id: Joi.number().integer().required(),
@@ -134,10 +134,13 @@ const createBooking = asyncHandler(async (req, res) => {
   const open = (await bookableTimes(p.therapist_id, [{ iso: bookingDate, weekday }])).get(bookingDate);
   if (!open.includes(wantedTime)) return fail(res, 'That time is no longer available. Please pick another slot.', 409);
 
+  const breakdown = fees.checkoutBreakdown(price, 'SAR');
   const result = await query(
     `INSERT INTO bookings
-      (client_user_id, therapist_id, booking_date, booking_time, session_type, beneficiary, note, amount, currency, payment_method, status)
-     VALUES (:uid, :tid, :booking_date, :booking_time, :session_type, :beneficiary, :note, :amount, :currency, :payment_method, 'pending_payment')`,
+      (client_user_id, therapist_id, booking_date, booking_time, session_type, beneficiary, note,
+       amount, service_fee, total_amount, currency, payment_method, status)
+     VALUES (:uid, :tid, :booking_date, :booking_time, :session_type, :beneficiary, :note,
+       :amount, :service_fee, :total, :currency, :payment_method, 'pending_payment')`,
     {
       uid: req.user.id,
       tid: p.therapist_id,
@@ -146,44 +149,22 @@ const createBooking = asyncHandler(async (req, res) => {
       session_type: p.session_type,
       beneficiary: p.beneficiary || null,
       note: p.note || null,
-      amount: price,
-      currency: 'SAR',
+      amount: breakdown.session_fee,
+      service_fee: breakdown.service_fee,
+      total: breakdown.total,
+      currency: breakdown.currency,
       payment_method: p.payment_method || null,
     }
   );
   const rows = await query(`SELECT * FROM bookings WHERE id = :id`, { id: result.insertId });
-  return ok(res, { booking: rows[0] }, 'Booking created', 201);
+  return ok(res, { booking: rows[0], price_summary: breakdown }, 'Booking created', 201);
 });
 
-// POST /bookings/:id/pay - starts a card payment on Moyasar's hosted page.
-// `payment_required: false` means payments are switched off (development).
-const payBooking = asyncHandler(async (req, res) => {
-  const [booking] = await query(`SELECT * FROM bookings WHERE id = :id AND client_user_id = :uid`, { id: req.params.id, uid: req.user.id });
-  if (!booking) return fail(res, 'Booking not found', 404);
-  if (booking.status !== 'pending_payment') return fail(res, `This booking is already ${booking.status}`, 409);
-  if (!moyasar.moyasarConfigured() || Number(booking.amount) <= 0) return ok(res, { payment_required: false });
-  try {
-    const invoice = await moyasar.createInvoice({
-      amount: booking.amount,
-      currency: booking.currency,
-      description: `Nafs session booking #${booking.id}`,
-      successUrl: `${env.app.url}/api/v1/payments/return?booking=${booking.id}`,
-      backUrl: `${env.app.url}/api/v1/payments/return?booking=${booking.id}&cancelled=1`,
-      metadata: { booking_id: String(booking.id) },
-    });
-    await query(`UPDATE bookings SET payment_invoice_id = :iid WHERE id = :id`, { iid: invoice.id, id: booking.id });
-    return ok(res, { payment_required: true, pay_url: invoice.url, return_path: '/api/v1/payments/return' });
-  } catch (err) {
-    return fail(res, `Could not start the payment: ${err.message}`, 502);
-  }
-});
+// POST /bookings/:id/pay — Figma "Confirm & Pay" (delegates to payment controller).
+const payBooking = payment.startPayment;
 
-// GET /payments/return - the page Moyasar redirects to after paying; the app's webview watches for it.
-const paymentReturn = (req, res) =>
-  res.type('html').send(
-    `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:sans-serif;text-align:center;padding:48px">` +
-      `<h2>${req.query.cancelled ? 'Payment cancelled' : 'Payment received'}</h2><p>You can return to the Nafs app.</p></body>`
-  );
+// GET /payments/return — Moyasar redirect for the app webview.
+const paymentReturn = payment.paymentReturn;
 
 const checkout = asyncHandler(async (req, res) => {
   const rows = await query(`SELECT * FROM bookings WHERE id = :id AND client_user_id = :uid`, {
@@ -192,11 +173,15 @@ const checkout = asyncHandler(async (req, res) => {
   });
   if (!rows.length) return fail(res, 'Booking not found', 404);
   const booking = rows[0];
+  if (booking.status === 'confirmed' || booking.status === 'completed') {
+    return ok(res, { booking, session_id: booking.session_id, already_confirmed: true }, 'Booking already confirmed');
+  }
   if (booking.status !== 'pending_payment') return fail(res, `This booking is already ${booking.status}`, 409);
 
-  // With payments on, the booking is only confirmed once Moyasar says it was paid in full.
+  // With payments on, confirm only after Moyasar reports the invoice paid in full (incl. service fee).
   let paymentId = null;
-  if (moyasar.moyasarConfigured() && Number(booking.amount) > 0) {
+  const expected = fees.checkoutBreakdown(booking.amount, booking.currency);
+  if (moyasar.moyasarConfigured() && expected.total > 0) {
     if (!booking.payment_invoice_id) return fail(res, 'Pay for this booking before confirming it.', 402);
     let invoice;
     try {
@@ -204,82 +189,23 @@ const checkout = asyncHandler(async (req, res) => {
     } catch (err) {
       return fail(res, `Could not verify the payment: ${err.message}`, 502);
     }
-    const payment = (invoice.payments || []).find((p) => p.status === 'paid');
-    if (invoice.status !== 'paid' || !payment || Number(invoice.amount) !== moyasar.toMinor(booking.amount) || invoice.currency !== booking.currency) {
+    const paid = (invoice.payments || []).find((p) => p.status === 'paid');
+    if (
+      invoice.status !== 'paid' ||
+      !paid ||
+      Number(invoice.amount) !== moyasar.toMinor(expected.total) ||
+      invoice.currency !== expected.currency
+    ) {
       return fail(res, 'Payment not completed yet.', 402);
     }
-    paymentId = payment.id;
+    paymentId = paid.id;
   }
 
-  const dateStr = booking.booking_date instanceof Date
-    ? booking.booking_date.toISOString().slice(0, 10)
-    : String(booking.booking_date).slice(0, 10);
-  const timeStr = String(booking.booking_time).slice(0, 8);
-  // Booking date/time are the therapist's wall clock; sessions are stored in UTC.
-  const [tpz] = await query(`SELECT timezone, session_duration_minutes FROM therapist_profiles WHERE user_id = :id`, { id: booking.therapist_id });
-  const starts = toMysqlUtc(zonedToUtc(dateStr, timeStr, tpz?.timezone || 'Asia/Riyadh'));
-  // ensure therapist has client record
-  let clients = await query(
-    `SELECT id FROM therapist_clients WHERE therapist_id = :tid AND client_user_id = :uid`,
-    { tid: booking.therapist_id, uid: req.user.id }
-  );
-  if (!clients.length) {
-    const [user] = await query(`SELECT full_name, email, phone, avatar_url FROM users WHERE id = :uid`, {
-      uid: req.user.id,
-    });
-    const created = await query(
-      `INSERT INTO therapist_clients (therapist_id, client_user_id, full_name, email, phone, avatar_url)
-       VALUES (:tid, :uid, :full_name, :email, :phone, :avatar_url)`,
-      {
-        tid: booking.therapist_id,
-        uid: req.user.id,
-        full_name: user.full_name,
-        email: user.email,
-        phone: user.phone,
-        avatar_url: user.avatar_url,
-      }
-    );
-    clients = [{ id: created.insertId }];
-  }
-
-  const minutes = Number(tpz?.session_duration_minutes) || 50;
-  const endsSql = await query(`SELECT DATE_ADD(:starts, INTERVAL :minutes MINUTE) AS ends`, { starts, minutes });
-  const session = await query(
-    `INSERT INTO sessions
-      (therapist_id, client_id, title, session_type, status, starts_at, ends_at, duration_minutes, fee_amount, currency, join_url)
-     VALUES (:tid, :cid, 'Booked session', :stype, 'scheduled', :starts, :ends, :minutes, :amount, :currency, NULL)`,
-    {
-      tid: booking.therapist_id,
-      cid: clients[0].id,
-      stype: booking.session_type,
-      starts,
-      ends: endsSql[0].ends,
-      minutes,
-      amount: booking.amount,
-      currency: booking.currency,
-    }
-  );
-
-  await query(
-    `UPDATE bookings SET status = 'confirmed', session_id = :sid, payment_id = :pid, payment_method = COALESCE(:pm, payment_method)
-     WHERE id = :id`,
-    { sid: session.insertId, pid: paymentId, pm: req.body.payment_method || null, id: booking.id }
-  );
-  const updated = await query(`SELECT * FROM bookings WHERE id = :id`, { id: booking.id });
-  const [clientUser] = await query(`SELECT full_name FROM users WHERE id = :uid`, { uid: req.user.id });
-  await notify(booking.therapist_id, {
-    title: 'New booking',
-    body: `${clientUser?.full_name || 'A client'} booked a session on ${dateStr} at ${timeStr.slice(0, 5)}.`,
-    type: 'booking',
-    category: 'client_bookings',
+  const result = await confirmPaidBooking(booking, {
+    paymentId,
+    paymentMethod: req.body.payment_method || booking.payment_method || null,
   });
-  await notify(req.user.id, {
-    title: 'Booking confirmed',
-    body: `Your session on ${dateStr} at ${timeStr.slice(0, 5)} is confirmed.`,
-    type: 'booking',
-    category: 'client_bookings',
-  });
-  return ok(res, { booking: updated[0], session_id: session.insertId }, 'Booking confirmed');
+  return ok(res, { booking: result.booking, session_id: result.session_id }, 'Booking confirmed');
 });
 
 async function ownBooking(req) {

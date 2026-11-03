@@ -66,6 +66,18 @@ module.exports = {
       post: { summary: 'Create client', responses: { 201: { description: 'Created' } } },
     },
     '/wallet': { get: { summary: 'Wallet balance', responses: { 200: { description: 'OK' } } } },
+    '/payment-methods': {
+      get: { summary: 'Saved payment methods (Figma Payment Methods)', responses: { 200: { description: 'OK' } } },
+      post: { summary: 'Add payment method', responses: { 201: { description: 'Created' } } },
+    },
+    '/payment-methods/{id}': {
+      patch: { summary: 'Edit / set default payment method', responses: { 200: { description: 'OK' } } },
+      delete: { summary: 'Remove payment method', responses: { 200: { description: 'OK' } } },
+    },
+    '/billing-history': { get: { summary: 'Billing history (Figma)', responses: { 200: { description: 'OK' } } } },
+    '/payments/options': { get: { summary: 'Checkout payment rails (Apple/Google/Card)', responses: { 200: { description: 'OK' } } } },
+    '/payments/{bookingId}/status': { get: { summary: 'Poll booking payment status', responses: { 200: { description: 'OK' } } } },
+    '/payments/webhook': { post: { security: [], summary: 'Moyasar payment webhook', responses: { 200: { description: 'OK' } } } },
     '/payouts': {
       get: { summary: 'List payout requests', responses: { 200: { description: 'OK' } } },
       post: { summary: 'Request payout', responses: { 201: { description: 'Created' } } },
@@ -97,7 +109,13 @@ module.exports = {
       get: { summary: 'My bookings', responses: { 200: { description: 'OK' } } },
       post: { summary: 'Create booking', responses: { 201: { description: 'Created' } } },
     },
-    '/bookings/{id}/checkout': { post: { summary: 'Checkout booking', responses: { 200: { description: 'OK' } } } },
+    '/bookings/{id}/checkout-summary': {
+      get: { summary: 'Figma Checkout screen payload (summary + methods + price)', responses: { 200: { description: 'OK' } } },
+    },
+    '/bookings/{id}/pay': {
+      post: { summary: 'Confirm & Pay (start Moyasar invoice or confirm in dev)', responses: { 200: { description: 'OK' } } },
+    },
+    '/bookings/{id}/checkout': { post: { summary: 'Confirm booking after payment', responses: { 200: { description: 'OK' } } } },
     '/devices': {
       get: { summary: 'List devices', responses: { 200: { description: 'OK' } } },
       post: { summary: 'Register device', responses: { 201: { description: 'Created' } } },

@@ -41,6 +41,8 @@ const env = {
   // off and checkout just confirms the booking (development mode).
   moyasar: {
     secretKey: process.env.MOYASAR_SECRET_KEY || '',
+    // Optional shared secret for POST /payments/webhook (X-Moyasar-Token header).
+    webhookSecret: process.env.MOYASAR_WEBHOOK_SECRET || '',
   },
   // Where contact-us messages and problem reports are emailed.
   supportEmail: process.env.SUPPORT_EMAIL || 'support@nafs.app',

@@ -290,6 +290,24 @@ async function ensureSchema() {
     } catch (err) {
       if (err.code !== 'ER_DUP_FIELDNAME' && err.code !== 'ER_DUP_KEYNAME') throw err;
     }
+    // Figma Checkout price summary: session fee + client service fee = total.
+    for (const [col, def] of [
+      ['service_fee', 'DECIMAL(12,2) NOT NULL DEFAULT 0'],
+      ['total_amount', 'DECIMAL(12,2) NULL'],
+    ]) {
+      try {
+        await conn.query(`ALTER TABLE bookings ADD COLUMN ${col} ${def}`);
+      } catch (err) {
+        if (err.code !== 'ER_DUP_FIELDNAME') throw err;
+      }
+    }
+    try {
+      await conn.query(
+        `ALTER TABLE payment_methods ADD COLUMN method_type ENUM('card','apple_pay','google_pay') NOT NULL DEFAULT 'card' AFTER brand`
+      );
+    } catch (err) {
+      if (err.code !== 'ER_DUP_FIELDNAME' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
 
     for (const [col, def] of [['reply', 'TEXT'], ['replied_at', 'TIMESTAMP']]) {
       try {

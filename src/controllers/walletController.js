@@ -12,7 +12,19 @@ const paymentMethodSchema = Joi.object({
   exp_year: Joi.number().integer().min(2024).allow(null),
   is_default: Joi.boolean().default(false),
   provider_token: Joi.string().allow('', null),
+  // Figma Payment Methods are cards; wallets (Apple/Google Pay) are selected at checkout.
+  method_type: Joi.string().valid('card', 'apple_pay', 'google_pay').default('card'),
 });
+
+const paymentMethodUpdateSchema = Joi.object({
+  brand: Joi.string(),
+  last4: Joi.string().length(4),
+  exp_month: Joi.number().integer().min(1).max(12).allow(null),
+  exp_year: Joi.number().integer().min(2024).allow(null),
+  is_default: Joi.boolean(),
+  provider_token: Joi.string().allow('', null),
+  method_type: Joi.string().valid('card', 'apple_pay', 'google_pay'),
+}).min(1);
 
 async function ensureWallet(userId) {
   let rows = await query(`SELECT * FROM wallets WHERE user_id = :uid`, { uid: userId });
@@ -84,7 +96,7 @@ const overview = asyncHandler(async (req, res) => {
 
 const listPaymentMethods = asyncHandler(async (req, res) => {
   const rows = await query(
-    `SELECT id, brand, last4, exp_month, exp_year, is_default, created_at
+    `SELECT id, brand, last4, exp_month, exp_year, is_default, method_type, created_at
      FROM payment_methods WHERE user_id = :uid ORDER BY is_default DESC, id DESC`,
     { uid: req.user.id }
   );
@@ -99,8 +111,8 @@ const addPaymentMethod = asyncHandler(async (req, res) => {
     });
   }
   const result = await query(
-    `INSERT INTO payment_methods (user_id, brand, last4, exp_month, exp_year, is_default, provider_token)
-     VALUES (:uid, :brand, :last4, :exp_month, :exp_year, :is_default, :provider_token)`,
+    `INSERT INTO payment_methods (user_id, brand, last4, exp_month, exp_year, is_default, provider_token, method_type)
+     VALUES (:uid, :brand, :last4, :exp_month, :exp_year, :is_default, :provider_token, :method_type)`,
     {
       uid: req.user.id,
       brand: p.brand,
@@ -109,15 +121,88 @@ const addPaymentMethod = asyncHandler(async (req, res) => {
       exp_year: p.exp_year || null,
       is_default: p.is_default ? 1 : 0,
       provider_token: p.provider_token || null,
+      method_type: p.method_type || 'card',
     }
   );
-  const rows = await query(`SELECT id, brand, last4, exp_month, exp_year, is_default FROM payment_methods WHERE id = :id`, {
-    id: result.insertId,
-  });
+  const rows = await query(
+    `SELECT id, brand, last4, exp_month, exp_year, is_default, method_type FROM payment_methods WHERE id = :id`,
+    { id: result.insertId }
+  );
   return ok(res, { payment_method: rows[0] }, 'Payment method added', 201);
 });
 
+/** PATCH /payment-methods/:id — Figma Edit / set Default on a saved card. */
+const updatePaymentMethod = asyncHandler(async (req, res) => {
+  const p = req.body;
+  const [existing] = await query(`SELECT * FROM payment_methods WHERE id = :id AND user_id = :uid`, {
+    id: req.params.id,
+    uid: req.user.id,
+  });
+  if (!existing) return fail(res, 'Payment method not found', 404);
+  if (p.is_default) {
+    await query(`UPDATE payment_methods SET is_default = 0 WHERE user_id = :uid`, { uid: req.user.id });
+  }
+  await query(
+    `UPDATE payment_methods SET
+       brand = COALESCE(:brand, brand),
+       last4 = COALESCE(:last4, last4),
+       exp_month = COALESCE(:exp_month, exp_month),
+       exp_year = COALESCE(:exp_year, exp_year),
+       is_default = COALESCE(:is_default, is_default),
+       provider_token = COALESCE(:provider_token, provider_token),
+       method_type = COALESCE(:method_type, method_type)
+     WHERE id = :id`,
+    {
+      id: existing.id,
+      brand: p.brand ?? null,
+      last4: p.last4 ?? null,
+      exp_month: p.exp_month === undefined ? null : p.exp_month,
+      exp_year: p.exp_year === undefined ? null : p.exp_year,
+      is_default: p.is_default === undefined ? null : p.is_default ? 1 : 0,
+      provider_token: p.provider_token === undefined ? null : p.provider_token,
+      method_type: p.method_type ?? null,
+    }
+  );
+  const [row] = await query(
+    `SELECT id, brand, last4, exp_month, exp_year, is_default, method_type FROM payment_methods WHERE id = :id`,
+    { id: existing.id }
+  );
+  return ok(res, { payment_method: row }, 'Payment method updated');
+});
+
+/**
+ * GET /billing-history — Figma Billing History.
+ * Clients see paid session charges; therapists see wallet debits/payouts/fees.
+ */
 const billingHistory = asyncHandler(async (req, res) => {
+  if (req.user.role === 'client') {
+    const transactions = await query(
+      `SELECT b.id, b.status, b.amount AS session_fee, b.service_fee, b.total_amount, b.currency,
+              b.payment_method, b.created_at, b.booking_date, u.full_name AS therapist_name
+       FROM bookings b
+       JOIN users u ON u.id = b.therapist_id
+       WHERE b.client_user_id = :uid AND b.status IN ('confirmed','completed','cancelled')
+       ORDER BY b.id DESC LIMIT 100`,
+      { uid: req.user.id }
+    );
+    return ok(res, {
+      current_plan: null,
+      transactions: transactions.map((t) => ({
+        id: t.id,
+        title: `Specialist Session ${t.therapist_name}`,
+        amount: Number(t.total_amount != null ? t.total_amount : t.session_fee),
+        session_fee: Number(t.session_fee),
+        service_fee: Number(t.service_fee || 0),
+        currency: t.currency,
+        status: t.status,
+        payment_method: t.payment_method,
+        created_at: t.created_at,
+        booking_date: t.booking_date,
+        type: 'session',
+      })),
+    });
+  }
+
   const rows = await query(
     `SELECT id, type, amount, currency, status, description, created_at
      FROM wallet_transactions
@@ -125,7 +210,19 @@ const billingHistory = asyncHandler(async (req, res) => {
      ORDER BY id DESC LIMIT 100`,
     { uid: req.user.id }
   );
-  return ok(res, { billing: rows });
+  return ok(res, {
+    current_plan: null,
+    billing: rows,
+    transactions: rows.map((r) => ({
+      id: r.id,
+      title: r.description || r.type,
+      amount: Number(r.amount),
+      currency: r.currency,
+      status: r.status,
+      created_at: r.created_at,
+      type: r.type,
+    })),
+  });
 });
 
 const deletePaymentMethod = asyncHandler(async (req, res) => {
@@ -156,12 +253,14 @@ const withdraw = asyncHandler(async (req, res) => {
 
 module.exports = {
   paymentMethodSchema,
+  paymentMethodUpdateSchema,
   getWallet,
   feeTerms,
   transactions,
   overview,
   listPaymentMethods,
   addPaymentMethod,
+  updatePaymentMethod,
   deletePaymentMethod,
   billingHistory,
   withdraw,
