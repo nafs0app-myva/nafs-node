@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Nafs API — All Endpoints",
-    "description": "Complete Nafs therapist + client API collection (NAFS-backup Figma). Base: {{baseUrl}}. After Login, token is saved to the environment automatically.\n\n2.2.0: register/forgot-password send OTP emails (SMTP_*). Shared PUT/GET /onboarding. Role-aware GET/PATCH /profile and GET /home/dashboard. GET /auth/me returns client profile.",
+    "description": "Complete Nafs therapist + client API collection (NAFS-backup Figma). Base: {{baseUrl}}. After Login, token is saved to the environment automatically.\n\n2.2.0: register/forgot-password send OTP emails (SMTP_*). Shared PUT/GET /onboarding. Role-aware GET/PATCH /profile and GET /home/dashboard. GET /auth/me returns client profile.\n\nIncludes Figma Checkout payment APIs: checkout-summary, Confirm & Pay, payment options/status/webhook, and payment-method edit.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -83,6 +83,11 @@
     {
       "key": "setupKey",
       "value": "nafs_setup_myva_7kR9pL2mX4qW8nV1"
+    },
+    {
+      "key": "moyasarWebhookSecret",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -1568,6 +1573,25 @@
           "response": []
         },
         {
+          "name": "Fee terms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fees/terms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fees",
+                "terms"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
           "name": "Withdraw",
           "request": {
             "method": "POST",
@@ -1670,7 +1694,50 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"brand\": \"visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2028,\n  \"is_default\": true\n}",
+              "raw": "{\n  \"brand\": \"Visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2028,\n  \"is_default\": true,\n  \"method_type\": \"card\",\n  \"provider_token\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update payment method",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{paymentMethodId}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"Visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2029,\n  \"is_default\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1686,19 +1753,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/payment-methods/{{id}}",
+              "raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "payment-methods",
-                "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
+                "{{paymentMethodId}}"
               ]
             },
             "description": "",
@@ -1739,6 +1800,127 @@
                   "type": "string"
                 }
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment options (Checkout rails)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/options",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "options"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{bookingId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{bookingId}}",
+                "status"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment return page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/return?booking={{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "return"
+              ],
+              "query": [
+                {
+                  "key": "booking",
+                  "value": "{{bookingId}}"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Moyasar webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Moyasar-Token",
+                "value": "{{moyasarWebhookSecret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payments/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "webhook"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"payment_paid\",\n  \"data\": {\n    \"id\": \"pay_xxx\",\n    \"status\": \"paid\",\n    \"metadata\": {\n      \"booking_id\": \"{{bookingId}}\"\n    },\n    \"payments\": [\n      {\n        \"id\": \"pay_xxx\",\n        \"status\": \"paid\"\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
@@ -3025,11 +3207,41 @@
               "path": [
                 "specialists",
                 "{{id}}"
-              ],
-              "variable": [
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "id",
-                  "value": "1"
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Specialist availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/specialists/{{id}}/availability?days=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "specialists",
+                "{{id}}",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "5"
                 }
               ]
             },
@@ -3079,12 +3291,116 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"therapist_id\": 1,\n  \"booking_date\": \"2026-10-25\",\n  \"booking_time\": \"14:00:00\",\n  \"session_type\": \"video\",\n  \"beneficiary\": \"Myself\",\n  \"note\": \"First session\",\n  \"amount\": 350,\n  \"currency\": \"SAR\"\n}",
+              "raw": "{\n  \"therapist_id\": 1,\n  \"booking_date\": \"2026-11-10\",\n  \"booking_time\": \"14:00:00\",\n  \"session_type\": \"video\",\n  \"beneficiary\": \"Myself\",\n  \"note\": \"First session\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout summary (Figma Checkout)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}/checkout-summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}",
+                "checkout-summary"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm & Pay",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}",
+                "pay"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"card\",\n  \"payment_method_id\": null,\n  \"confirm_if_unpaid\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{bookingId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{bookingId}}",
+                "status"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
@@ -3100,20 +3416,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/bookings/{{id}}/checkout",
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}/checkout",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "bookings",
-                "{{id}}",
+                "{{bookingId}}",
                 "checkout"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
             "description": "",
@@ -3135,6 +3445,66 @@
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel preview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}/cancel-preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}",
+                "cancel-preview"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel booking",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}",
+                "cancel"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
