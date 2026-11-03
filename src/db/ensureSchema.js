@@ -6,6 +6,20 @@ const { pool } = require('../config/db');
 async function ensureSchema() {
   const conn = await pool.getConnection();
   try {
+    await conn.query(`SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci`);
+
+    // Hostinger DBs often default to utf8mb4_general_ci while schema.sql uses
+    // utf8mb4_unicode_ci. Align live tables so ENUM/string compares succeed.
+    for (const table of ['faqs', 'policies', 'sessions', 'vacation_blocks']) {
+      try {
+        await conn.query(
+          `ALTER TABLE \`${table}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+        );
+      } catch (err) {
+        if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
+      }
+    }
+
     await conn.query(`
       CREATE TABLE IF NOT EXISTS client_profiles (
         user_id BIGINT UNSIGNED PRIMARY KEY,

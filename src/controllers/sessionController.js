@@ -438,13 +438,16 @@ const calendar = asyncHandler(async (req, res) => {
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     return fail(res, 'Query month required as YYYY-MM', 422);
   }
+  // Cast ENUM status / DATE_FORMAT strings to a single collation so Hostinger
+  // (utf8mb4_general_ci connections vs utf8mb4_unicode_ci tables) does not error.
   const rows = await query(
     `SELECT DATE_FORMAT(DATE_ADD(starts_at, INTERVAL :off MINUTE), '%Y-%m-%d') AS day,
             COUNT(*) AS sessions_count,
-            SUM(status = 'scheduled') AS scheduled_count
+            SUM(CAST(status AS CHAR) COLLATE utf8mb4_unicode_ci = 'scheduled') AS scheduled_count
      FROM sessions
-     WHERE therapist_id = :uid AND status <> 'cancelled'
-       AND DATE_FORMAT(DATE_ADD(starts_at, INTERVAL :off MINUTE), '%Y-%m') = :month
+     WHERE therapist_id = :uid
+       AND CAST(status AS CHAR) COLLATE utf8mb4_unicode_ci <> 'cancelled'
+       AND DATE_FORMAT(DATE_ADD(starts_at, INTERVAL :off MINUTE), '%Y-%m') COLLATE utf8mb4_unicode_ci = :month
      GROUP BY day
      ORDER BY day ASC`,
     { uid: req.user.id, month, off: tzOffset(req) }

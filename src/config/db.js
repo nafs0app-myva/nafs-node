@@ -1,6 +1,9 @@
 const mysql = require('mysql2/promise');
 const env = require('./env');
 
+// Hostinger MySQL often defaults connections to utf8mb4_general_ci while our
+ // schema uses utf8mb4_unicode_ci. Mixing them breaks ENUM/string compares
+ // ("Illegal mix of collations"). Force unicode on every connection.
 const pool = mysql.createPool({
   host: env.db.host,
   port: env.db.port,
@@ -11,6 +14,11 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   namedPlaceholders: true,
   timezone: 'Z',
+  charset: 'utf8mb4_unicode_ci',
+});
+
+pool.pool.on('connection', (connection) => {
+  connection.query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
 });
 
 async function query(sql, params) {

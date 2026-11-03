@@ -43,13 +43,23 @@ const faqs = asyncHandler(async (req, res) => {
   const locale = req.query.locale === 'ar' ? 'ar' : 'en';
   // `audience` = therapist | client; rows marked `all` are shown to both.
   const audience = req.query.audience === 'therapist' ? 'therapist' : 'client';
+  // Pick locale columns in JS so SQL never compares string literals/params with
+  // mismatched connection vs table collations (Hostinger utf8mb4_general_ci).
+  const questionExpr =
+    locale === 'ar'
+      ? `IF(question_ar IS NOT NULL AND question_ar <> '', question_ar, question_en)`
+      : `question_en`;
+  const answerExpr =
+    locale === 'ar'
+      ? `IF(answer_ar IS NOT NULL AND answer_ar <> '', answer_ar, answer_en)`
+      : `answer_en`;
   const rows = await query(
-    `SELECT id,
-            IF(:locale = 'ar' AND question_ar IS NOT NULL, question_ar, question_en) AS question,
-            IF(:locale = 'ar' AND answer_ar IS NOT NULL, answer_ar, answer_en) AS answer,
-            category, sort_order
-     FROM faqs WHERE is_active = 1 AND audience IN ('all', :audience) ORDER BY sort_order ASC`,
-    { locale, audience }
+    `SELECT id, ${questionExpr} AS question, ${answerExpr} AS answer, category, sort_order
+     FROM faqs
+     WHERE is_active = 1
+       AND CAST(audience AS CHAR) COLLATE utf8mb4_unicode_ci IN ('all', :audience)
+     ORDER BY sort_order ASC`,
+    { audience }
   );
   return ok(res, { faqs: rows });
 });
@@ -60,11 +70,14 @@ const listPolicies = asyncHandler(async (req, res) => {
   const audience = req.query.audience === 'therapist' ? 'therapist' : 'client';
   // Optional `q` matches the title or the full text in either language.
   const q = String(req.query.q || '').trim();
-  let sql = `SELECT slug,
-            IF(:locale = 'ar' AND title_ar IS NOT NULL, title_ar, title_en) AS title,
-            updated_at
-     FROM policies WHERE audience IN ('all', :audience)`;
-  const params = { locale, audience };
+  const titleExpr =
+    locale === 'ar'
+      ? `IF(title_ar IS NOT NULL AND title_ar <> '', title_ar, title_en)`
+      : `title_en`;
+  let sql = `SELECT slug, ${titleExpr} AS title, updated_at
+     FROM policies
+     WHERE CAST(audience AS CHAR) COLLATE utf8mb4_unicode_ci IN ('all', :audience)`;
+  const params = { audience };
   if (q) {
     sql += ` AND (title_en LIKE :q OR title_ar LIKE :q OR body_en LIKE :q OR body_ar LIKE :q)`;
     params.q = `%${q}%`;
