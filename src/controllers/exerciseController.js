@@ -241,6 +241,17 @@ function isCompletedToday(completedAt) {
   );
 }
 
+function toDateOnly(value) {
+  if (value == null || value === '') return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  const s = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? s.slice(0, 10) : d.toISOString().slice(0, 10);
+}
+
 function planItemFromRow(row) {
   const catalog = findExercise(row.exercise_id);
   if (!catalog) return null;
@@ -250,9 +261,7 @@ function planItemFromRow(row) {
     plan_id: row.id,
     exercise_id: row.exercise_id,
     added_at: row.added_at,
-    scheduled_for: row.scheduled_for
-      ? String(row.scheduled_for).slice(0, 10)
-      : null,
+    scheduled_for: toDateOnly(row.scheduled_for),
     completed_at: row.completed_at || null,
     done,
   };
