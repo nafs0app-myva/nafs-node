@@ -84,6 +84,9 @@ Address / video fields on admin-tech are optional extras (settings / other scree
 | Mood check-in | `POST/GET /mood/checkins` |
 | Mood detector (camera + consent) | `POST /mood/detector` |
 | Journal list / entry | `GET/POST /journals`, `GET/PUT/DELETE /journals/:id` |
+| Exercise Library | `GET /exercises`, `GET /exercises/:id` (includes `audio_url` / `video_url` / `media_url`) |
+| My Plan (today's exercises) | `GET /plan/exercises` |
+| Guided Audio / Video player | `GET /exercises/:id` → play `media_url` |
 | Find specialists | `GET /specialists`, `GET /specialists/:id` |
 | Book session + checkout | `POST /bookings`, `GET /bookings/:id/checkout-summary`, `POST /bookings/:id/pay`, `POST /bookings/:id/checkout`, `GET /bookings` |
 

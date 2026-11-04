@@ -290,9 +290,10 @@ router.get('/assessments', authenticate, assessment.list);
 router.get('/goals', authenticate, assessment.getGoals);
 router.put('/goals', authenticate, validate(assessment.goalsSchema), assessment.saveGoals);
 
-// Client: exercise library (static catalogue)
+// Client: exercise library + My Plan (static catalogue with audio/video media URLs)
 router.get('/exercises', authenticate, exercises.list);
 router.get('/exercises/:id', authenticate, exercises.getOne);
+router.get('/plan/exercises', authenticate, exercises.planExercises);
 
 // Client: specialists & booking
 router.get('/specialists', authenticate, booking.listSpecialists);

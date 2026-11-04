@@ -104,6 +104,21 @@ module.exports = {
       get: { summary: 'Get user goals', responses: { 200: { description: 'OK' } } },
       put: { summary: 'Save user goals', responses: { 200: { description: 'OK' } } },
     },
+    '/exercises': {
+      get: {
+        summary: 'Exercise library (includes audio_url / video_url / media_url)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/exercises/{id}': {
+      get: {
+        summary: 'Exercise detail with playable media_url',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/plan/exercises': {
+      get: { summary: 'My Plan today exercises', responses: { 200: { description: 'OK' } } },
+    },
     '/specialists': { get: { summary: 'Browse specialists', responses: { 200: { description: 'OK' } } } },
     '/bookings': {
       get: { summary: 'My bookings', responses: { 200: { description: 'OK' } } },

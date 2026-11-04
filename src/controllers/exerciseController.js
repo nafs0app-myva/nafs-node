@@ -1,14 +1,52 @@
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
+const env = require('../config/env');
 
 /**
  * Static exercise catalogue (same for every user). Kept in code rather than a
  * table — it is small, read-only and has no per-user state. Colours are hex
  * strings and icons are short keys the app maps to its own icon set.
  *
- *  GET /exercises       → { exercises: [summary...] }  (no instructions/sequence)
- *  GET /exercises/:id   → { exercise: full }           (instructions + sequence)
+ * Media: every audio exercise exposes `audio_url` + `media_url`; every video
+ * exercise exposes `video_url` + `media_url`. Override the CDN base with
+ * MEDIA_BASE_URL (defaults to public sample hosts so players work out of the box).
+ *
+ *  GET /exercises         → { exercises: [summary...] }
+ *  GET /exercises/:id     → { exercise: full }
+ *  GET /plan/exercises    → { date, exercises, progress }  (Figma My Plan)
  */
+
+const AUDIO_BASE =
+  process.env.MEDIA_AUDIO_BASE_URL ||
+  'https://www.soundhelix.com/examples/mp3';
+const VIDEO_BASE =
+  process.env.MEDIA_VIDEO_BASE_URL ||
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample';
+const THUMB_BASE =
+  process.env.MEDIA_THUMB_BASE_URL || `${env.app.url.replace(/\/$/, '')}/media/exercises`;
+
+function audioMedia(file, thumb) {
+  const audio_url = `${AUDIO_BASE}/${file}`;
+  return {
+    audio_url,
+    video_url: null,
+    media_url: audio_url,
+    media_mime: 'audio/mpeg',
+    thumbnail_url: `${THUMB_BASE}/${thumb}`,
+  };
+}
+
+function videoMedia(file, thumb) {
+  const video_url = `${VIDEO_BASE}/${file}`;
+  return {
+    audio_url: null,
+    video_url,
+    media_url: video_url,
+    media_mime: 'video/mp4',
+    thumbnail_url: `${THUMB_BASE}/${thumb}`,
+  };
+}
+
 const EXERCISES = [
   {
     id: 'understand_yourself',
@@ -26,6 +64,7 @@ const EXERCISES = [
     description:
       'A short guided reflection that helps you check in with your own thoughts and feelings, ' +
       'building the self-awareness that underlies most other mental wellness practices.',
+    ...audioMedia('SoundHelix-Song-1.mp3', 'understand_yourself.jpg'),
     instructions: [
       { title: 'Pause', body: 'Find a quiet moment and sit comfortably.' },
       { title: 'Reflect', body: 'Ask yourself how you are really feeling right now, without judgment.' },
@@ -48,6 +87,7 @@ const EXERCISES = [
     description:
       'A powerful, yet simple, relaxation technique that aims to return breathing to its normal ' +
       'rhythm. It helps clear the mind, relax the body, and improve focus.',
+    ...audioMedia('SoundHelix-Song-2.mp3', 'box_breathing.jpg'),
     instructions: [
       {
         title: 'Breathe In',
@@ -76,20 +116,21 @@ const EXERCISES = [
       'your thoughts are racing or you feel disconnected from your surroundings.',
     action_label: 'Watch Now',
     action_icon: 'play',
+    ...videoMedia('ForBiggerBlazes.mp4', 'mindful_reset_video.jpg'),
     instructions: [
       { title: 'Settle In', body: 'Find a comfortable spot and press play.' },
       { title: 'Follow Along', body: 'Let the video guide your attention through sight, sound and touch.' },
       { title: 'Notice', body: 'Notice how your body feels once the video ends.' },
     ],
     sequence: [
-      { title: 'Mountain Pose Grounding', tag: 'Centering', duration_label: '0:15', icon: 'self_improvement', accent: '#5D4FD6' },
-      { title: 'Gentle Side Reach', tag: 'Lateral Release', duration_label: '0:20', icon: 'accessibility_new', accent: '#5B9BE8' },
-      { title: 'Standing Rotations (Left)', tag: 'Spine Release', duration_label: '0:20', icon: 'person', accent: '#5D4FD6' },
-      { title: 'Standing Rotations (Right)', tag: 'Bilateral Alignment', duration_label: '0:20', icon: 'compare_arrows', accent: '#5B9BE8' },
-      { title: 'Ribcage Lateral Expansion', tag: 'Intercostal Breath', duration_label: '0:30', icon: 'height', accent: '#5D4FD6' },
-      { title: 'Gentle Torso Unwinding', tag: 'Somatic Reset', duration_label: '0:25', icon: 'accessibility_new', accent: '#1E9D5C' },
-      { title: 'Grounded Stillness & Integration', tag: 'Vagal Recovery', duration_label: '0:30', icon: 'spa', accent: '#2F63E0' },
-      { title: 'Closing Breath & Release', tag: 'Integration', duration_label: '0:20', icon: 'air', accent: '#1E9D5C' },
+      { title: 'Mountain Pose Grounding', tag: 'Centering', duration_label: '0:15', start_seconds: 0, icon: 'self_improvement', accent: '#5D4FD6' },
+      { title: 'Gentle Side Reach', tag: 'Lateral Release', duration_label: '0:20', start_seconds: 15, icon: 'accessibility_new', accent: '#5B9BE8' },
+      { title: 'Standing Rotations (Left)', tag: 'Spine Release', duration_label: '0:20', start_seconds: 35, icon: 'person', accent: '#5D4FD6' },
+      { title: 'Standing Rotations (Right)', tag: 'Bilateral Alignment', duration_label: '0:20', start_seconds: 55, icon: 'compare_arrows', accent: '#5B9BE8' },
+      { title: 'Ribcage Lateral Expansion', tag: 'Intercostal Breath', duration_label: '0:30', start_seconds: 75, icon: 'height', accent: '#5D4FD6' },
+      { title: 'Gentle Torso Unwinding', tag: 'Somatic Reset', duration_label: '0:25', start_seconds: 105, icon: 'accessibility_new', accent: '#1E9D5C' },
+      { title: 'Grounded Stillness & Integration', tag: 'Vagal Recovery', duration_label: '0:30', start_seconds: 130, icon: 'spa', accent: '#2F63E0' },
+      { title: 'Closing Breath & Release', tag: 'Integration', duration_label: '0:20', start_seconds: 160, icon: 'air', accent: '#1E9D5C' },
     ],
   },
   {
@@ -110,16 +151,17 @@ const EXERCISES = [
       'during long stretches at a desk.',
     action_label: 'Watch Now',
     action_icon: 'play',
+    ...videoMedia('ForBiggerEscapes.mp4', 'midday_desk_mobility.jpg'),
     instructions: [
       { title: 'Roll', body: 'Slowly roll your shoulders back five times.' },
       { title: 'Tilt', body: 'Gently tilt your head toward each shoulder, holding for a few seconds.' },
       { title: 'Reach', body: 'Reach both arms overhead and stretch upward.' },
     ],
     sequence: [
-      { title: 'Shoulder Rolls', tag: 'Warm-Up', duration_label: '0:20', icon: 'autorenew', accent: '#E2932A' },
-      { title: 'Neck Tilts (Left)', tag: 'Lateral Release', duration_label: '0:20', icon: 'accessibility_new', accent: '#E2932A' },
-      { title: 'Neck Tilts (Right)', tag: 'Lateral Release', duration_label: '0:20', icon: 'accessibility_new', accent: '#E2932A' },
-      { title: 'Overhead Reach', tag: 'Upper-Body Stretch', duration_label: '0:25', icon: 'height', accent: '#E2932A' },
+      { title: 'Shoulder Rolls', tag: 'Warm-Up', duration_label: '0:20', start_seconds: 0, icon: 'autorenew', accent: '#E2932A' },
+      { title: 'Neck Tilts (Left)', tag: 'Lateral Release', duration_label: '0:20', start_seconds: 20, icon: 'accessibility_new', accent: '#E2932A' },
+      { title: 'Neck Tilts (Right)', tag: 'Lateral Release', duration_label: '0:20', start_seconds: 40, icon: 'accessibility_new', accent: '#E2932A' },
+      { title: 'Overhead Reach', tag: 'Upper-Body Stretch', duration_label: '0:25', start_seconds: 60, icon: 'height', accent: '#E2932A' },
     ],
   },
   {
@@ -138,6 +180,7 @@ const EXERCISES = [
     description:
       'A calming wind-down routine that eases your mind and body out of the day and toward deep, ' +
       'restful sleep.',
+    ...audioMedia('SoundHelix-Song-3.mp3', 'evening_wind_down.jpg'),
     instructions: [
       { title: 'Dim the Lights', body: 'Lower the lights and put screens away.' },
       { title: 'Breathe Slowly', body: 'Take slow, deep breaths, letting each exhale last longer than the inhale.' },
@@ -147,11 +190,28 @@ const EXERCISES = [
 ];
 
 function withDefaults(e) {
+  const media =
+    e.type === 'video'
+      ? {
+          audio_url: e.audio_url || null,
+          video_url: e.video_url || null,
+          media_url: e.media_url || e.video_url || null,
+          media_mime: e.media_mime || 'video/mp4',
+          thumbnail_url: e.thumbnail_url || null,
+        }
+      : {
+          audio_url: e.audio_url || null,
+          video_url: e.video_url || null,
+          media_url: e.media_url || e.audio_url || null,
+          media_mime: e.media_mime || 'audio/mpeg',
+          thumbnail_url: e.thumbnail_url || null,
+        };
   return {
     action_label: 'Start Now',
     action_icon: 'arrow_forward',
     sequence: [],
     ...e,
+    ...media,
   };
 }
 
@@ -172,4 +232,27 @@ const getOne = asyncHandler(async (req, res) => {
   return ok(res, { exercise: withDefaults(found) });
 });
 
-module.exports = { list, getOne };
+/**
+ * GET /plan/exercises — Figma "My Plan" today's schedule.
+ * Returns the same catalogue (summaries) plus a simple progress shell the app can fill.
+ */
+const planExercises = asyncHandler(async (req, res) => {
+  const tag = (req.query.tag || '').trim().toLowerCase();
+  const rows = EXERCISES.filter((e) => !tag || e.tags.some((t) => t.toLowerCase() === tag)).map(summary);
+  const today = new Date().toISOString().slice(0, 10);
+  return ok(res, {
+    date: today,
+    headline: 'Daily Rhythm',
+    subheadline: 'Take care of yourself today',
+    focus_goal_minutes: 30,
+    exercises: rows,
+    progress: {
+      done: 0,
+      total: rows.length,
+      label: `0/${rows.length}`,
+      tasks_done_label: 'Tasks Done',
+    },
+  });
+});
+
+module.exports = { list, getOne, planExercises };
