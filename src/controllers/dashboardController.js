@@ -1,6 +1,7 @@
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
+const { buildTodayExercises, planProgress } = require('./exerciseController');
 
 function parseJsonField(value) {
   if (value == null) return value;
@@ -277,6 +278,11 @@ async function clientDashboard(uid, user) {
   );
   const journalDone = Number(journalToday[0]?.count || 0) > 0;
 
+  // Real wellness-exercise plan (same catalogue + done flags as GET /plan/exercises).
+  // Kept separate from today_tasks, which tracks mood / journal / session synthetics.
+  const todayExercises = await buildTodayExercises(uid);
+  const exerciseProgress = planProgress(todayExercises);
+
   return {
     role: 'client',
     greeting_name: user.full_name || 'there',
@@ -305,12 +311,20 @@ async function clientDashboard(uid, user) {
         meta: upcoming[0] || null,
       },
     ],
+    today_exercises: todayExercises,
+    my_plan: {
+      date: new Date().toISOString().slice(0, 10),
+      exercises: todayExercises,
+      progress: exerciseProgress,
+    },
     stats: {
       mood_streak: streak,
       journal_entries_7d: Number(journalWeek[0]?.count || 0),
       open_assessments: Number(openAssessments[0]?.count || 0),
       unread_notifications: Number(unread[0]?.count || 0),
       upcoming_sessions: upcoming.length,
+      exercises_done_today: exerciseProgress.done,
+      exercises_total_today: exerciseProgress.total,
     },
   };
 }

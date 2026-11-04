@@ -80,14 +80,14 @@ Address / video fields on admin-tech are optional extras (settings / other scree
 
 | Figma page / screen | API(s) |
 | --- | --- |
-| Client home | `GET /home/dashboard` (role=`client`: streak, today_tasks, goals, upcoming) |
+| Client home | `GET /home/dashboard` (role=`client`: streak, today_tasks, today_exercises / my_plan, goals, upcoming) |
 | Mood check-in | `POST/GET /mood/checkins` |
 | Mood detector (camera + consent) | `POST /mood/detector` |
 | Journal list / entry | `GET/POST /journals`, `GET/PUT/DELETE /journals/:id` |
 | Journal rotating prompt | `GET /journals/prompt` → answer via `POST /journals` with `prompt_id` |
 | Manage journal prompts (admin) | `GET/POST /journal-prompts`, `PATCH /journal-prompts/:id` |
 | Exercise Library | `GET /exercises`, `GET /exercises/:id` (includes `audio_url` / `video_url` / `media_url`) |
-| My Plan (today's exercises) | `GET /plan/exercises` |
+| My Plan (today's exercises) | `GET /plan/exercises`, `POST /plan/exercises/:id/complete` (also on dashboard as `today_exercises` / `my_plan`) |
 | Guided Audio / Video player | `GET /exercises/:id` → play `media_url` |
 | Find specialists | `GET /specialists`, `GET /specialists/:id` |
 | Book session + checkout | `POST /bookings`, `GET /bookings/:id/checkout-summary`, `POST /bookings/:id/pay`, `POST /bookings/:id/checkout`, `GET /bookings` |

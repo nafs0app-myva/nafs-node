@@ -656,6 +656,18 @@ CREATE TABLE notification_preferences (
   CONSTRAINT fk_np_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Per-user / per-day wellness exercise completions (My Plan + home dashboard)
+CREATE TABLE exercise_completions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  exercise_id VARCHAR(64) NOT NULL,
+  completed_on DATE NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_exercise_completion_day (user_id, exercise_id, completed_on),
+  INDEX idx_exercise_completions_user_day (user_id, completed_on),
+  CONSTRAINT fk_exercise_completion_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Live call signalling (ring / accept / decline) for video and audio sessions

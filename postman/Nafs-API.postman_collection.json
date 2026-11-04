@@ -894,7 +894,7 @@
                 "dashboard"
               ]
             },
-            "description": "",
+            "description": "Client response includes today_tasks (mood/journal/session) plus today_exercises[] and my_plan (real exercise ids, category, accent, card_background, duration_minutes, done).",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -3237,7 +3237,38 @@
                 }
               ]
             },
-            "description": ""
+            "description": "Same catalogue as dashboard today_exercises; each item includes done for today."
+          },
+          "response": []
+        },
+        {
+          "name": "Complete My Plan exercise",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plan/exercises/box_breathing/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "exercises",
+                "box_breathing",
+                "complete"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Marks the exercise done for today; dashboard today_exercises.done flips to true."
           },
           "response": []
         },

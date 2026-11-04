@@ -53,7 +53,8 @@ module.exports = {
     '/application/submit': { post: { summary: 'Submit therapist application', responses: { 200: { description: 'OK' } } } },
     '/home/dashboard': {
       get: {
-        summary: 'Role-aware home dashboard (client or therapist summary)',
+        summary:
+          'Role-aware home dashboard. Client includes today_tasks (mood/journal/session) plus today_exercises / my_plan (real exercise ids).',
         responses: { 200: { description: 'OK' } },
       },
     },
@@ -130,7 +131,16 @@ module.exports = {
       },
     },
     '/plan/exercises': {
-      get: { summary: 'My Plan today exercises', responses: { 200: { description: 'OK' } } },
+      get: {
+        summary: 'My Plan today exercises (summary shape + done)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/plan/exercises/{id}/complete': {
+      post: {
+        summary: 'Mark a My Plan exercise complete for today',
+        responses: { 200: { description: 'OK' } },
+      },
     },
     '/specialists': { get: { summary: 'Browse specialists', responses: { 200: { description: 'OK' } } } },
     '/bookings': {

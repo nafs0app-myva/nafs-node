@@ -312,6 +312,7 @@ router.put('/goals', authenticate, validate(assessment.goalsSchema), assessment.
 router.get('/exercises', authenticate, exercises.list);
 router.get('/exercises/:id', authenticate, exercises.getOne);
 router.get('/plan/exercises', authenticate, exercises.planExercises);
+router.post('/plan/exercises/:id/complete', authenticate, exercises.completeExercise);
 
 // Client: specialists & booking
 router.get('/specialists', authenticate, booking.listSpecialists);

@@ -359,6 +359,20 @@ async function ensureSchema() {
       }
     }
 
+    // My Plan: per-user daily exercise completions (string exercise ids from catalogue)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS exercise_completions (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        exercise_id VARCHAR(64) NOT NULL,
+        completed_on DATE NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_exercise_completion_day (user_id, exercise_id, completed_on),
+        INDEX idx_exercise_completions_user_day (user_id, completed_on),
+        CONSTRAINT fk_exercise_completion_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     // Journal prompts (rotate-once-answered pool managed from backend)
     await conn.query(`
       CREATE TABLE IF NOT EXISTS journal_prompts (

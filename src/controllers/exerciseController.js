@@ -1,3 +1,4 @@
+const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
 const env = require('../config/env');
@@ -11,9 +12,13 @@ const env = require('../config/env');
  * exercise exposes `video_url` + `media_url`. Override the CDN base with
  * MEDIA_BASE_URL (defaults to public sample hosts so players work out of the box).
  *
- *  GET /exercises         → { exercises: [summary...] }
- *  GET /exercises/:id     → { exercise: full }
- *  GET /plan/exercises    → { date, exercises, progress }  (Figma My Plan)
+ * Completion is per-user / per-day in `exercise_completions` so My Plan and
+ * GET /home/dashboard → today_exercises can share real `done` flags.
+ *
+ *  GET /exercises                      → { exercises: [summary...] }
+ *  GET /exercises/:id                  → { exercise: full }
+ *  GET /plan/exercises                 → { date, exercises[+done], progress }
+ *  POST /plan/exercises/:id/complete   → mark done for today
  */
 
 const AUDIO_BASE =
@@ -220,6 +225,46 @@ function summary(e) {
   return rest;
 }
 
+async function completedExerciseIdsToday(userId) {
+  try {
+    const rows = await query(
+      `SELECT exercise_id
+       FROM exercise_completions
+       WHERE user_id = :uid AND completed_on = CURDATE()`,
+      { uid: userId }
+    );
+    return new Set(rows.map((r) => String(r.exercise_id)));
+  } catch (err) {
+    // Table may not exist yet on a host that has not run ensureSchema.
+    if (err.code === 'ER_NO_SUCH_TABLE') return new Set();
+    throw err;
+  }
+}
+
+/**
+ * Today's My Plan exercises — same summary shape as GET /exercises, plus `done`.
+ * Used by GET /plan/exercises and GET /home/dashboard → today_exercises.
+ */
+async function buildTodayExercises(userId, { tag } = {}) {
+  const filter = (tag || '').trim().toLowerCase();
+  const rows = EXERCISES.filter((e) => !filter || e.tags.some((t) => t.toLowerCase() === filter)).map(
+    summary
+  );
+  const doneIds = await completedExerciseIdsToday(userId);
+  return rows.map((e) => ({ ...e, done: doneIds.has(String(e.id)) }));
+}
+
+function planProgress(exercises) {
+  const total = exercises.length;
+  const done = exercises.filter((e) => e.done).length;
+  return {
+    done,
+    total,
+    label: `${done}/${total}`,
+    tasks_done_label: 'Tasks Done',
+  };
+}
+
 const list = asyncHandler(async (req, res) => {
   const tag = (req.query.tag || '').trim().toLowerCase();
   const rows = EXERCISES.filter((e) => !tag || e.tags.some((t) => t.toLowerCase() === tag));
@@ -229,30 +274,61 @@ const list = asyncHandler(async (req, res) => {
 const getOne = asyncHandler(async (req, res) => {
   const found = EXERCISES.find((e) => e.id === req.params.id);
   if (!found) return fail(res, 'Exercise not found', 404);
-  return ok(res, { exercise: withDefaults(found) });
+  const doneIds = await completedExerciseIdsToday(req.user.id);
+  return ok(res, {
+    exercise: { ...withDefaults(found), done: doneIds.has(String(found.id)) },
+  });
 });
 
 /**
  * GET /plan/exercises — Figma "My Plan" today's schedule.
- * Returns the same catalogue (summaries) plus a simple progress shell the app can fill.
  */
 const planExercises = asyncHandler(async (req, res) => {
-  const tag = (req.query.tag || '').trim().toLowerCase();
-  const rows = EXERCISES.filter((e) => !tag || e.tags.some((t) => t.toLowerCase() === tag)).map(summary);
+  const exercises = await buildTodayExercises(req.user.id, { tag: req.query.tag });
   const today = new Date().toISOString().slice(0, 10);
+  const progress = planProgress(exercises);
   return ok(res, {
     date: today,
     headline: 'Daily Rhythm',
     subheadline: 'Take care of yourself today',
     focus_goal_minutes: 30,
-    exercises: rows,
-    progress: {
-      done: 0,
-      total: rows.length,
-      label: `0/${rows.length}`,
-      tasks_done_label: 'Tasks Done',
-    },
+    exercises,
+    progress,
   });
 });
 
-module.exports = { list, getOne, planExercises };
+/**
+ * POST /plan/exercises/:id/complete — mark an exercise done for today.
+ */
+const completeExercise = asyncHandler(async (req, res) => {
+  const found = EXERCISES.find((e) => e.id === req.params.id);
+  if (!found) return fail(res, 'Exercise not found', 404);
+
+  await query(
+    `INSERT INTO exercise_completions (user_id, exercise_id, completed_on)
+     VALUES (:uid, :exercise_id, CURDATE())
+     ON DUPLICATE KEY UPDATE completed_on = VALUES(completed_on)`,
+    { uid: req.user.id, exercise_id: found.id }
+  );
+
+  const exercises = await buildTodayExercises(req.user.id);
+  return ok(
+    res,
+    {
+      exercise_id: found.id,
+      done: true,
+      today_exercises: exercises,
+      progress: planProgress(exercises),
+    },
+    'Exercise marked complete for today'
+  );
+});
+
+module.exports = {
+  list,
+  getOne,
+  planExercises,
+  completeExercise,
+  buildTodayExercises,
+  planProgress,
+};
