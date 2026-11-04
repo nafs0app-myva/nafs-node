@@ -308,11 +308,22 @@ router.get('/assessments', authenticate, assessment.list);
 router.get('/goals', authenticate, assessment.getGoals);
 router.put('/goals', authenticate, validate(assessment.goalsSchema), assessment.saveGoals);
 
-// Client: exercise library + My Plan (static catalogue with audio/video media URLs)
+// Client: exercise library (read-only catalogue) + per-user My Plan
 router.get('/exercises', authenticate, exercises.list);
 router.get('/exercises/:id', authenticate, exercises.getOne);
-router.get('/plan/exercises', authenticate, exercises.planExercises);
-router.post('/plan/exercises/:id/complete', authenticate, exercises.completeExercise);
+router.get('/plan/exercises', authenticate, exercises.listPlan);
+router.post(
+  '/plan/exercises',
+  authenticate,
+  validate(exercises.addToPlanSchema),
+  exercises.addToPlan
+);
+router.delete('/plan/exercises/:exercise_id', authenticate, exercises.removeFromPlan);
+router.post(
+  '/plan/exercises/:exercise_id/complete',
+  authenticate,
+  exercises.completePlanExercise
+);
 
 // Client: specialists & booking
 router.get('/specialists', authenticate, booking.listSpecialists);

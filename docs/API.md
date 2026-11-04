@@ -76,7 +76,7 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 ## Home / Calendar / Sessions
 | Method | Path |
 | --- | --- |
-| GET | `/home/dashboard` | **Role-aware** (client + therapist). Client also returns `today_exercises[]` / `my_plan` (real exercise ids + `done`) alongside `today_tasks` |
+| GET | `/home/dashboard` | **Role-aware**. Client: `today_tasks` + `today_exercises` / `my_plan` from `user_exercise_plan` |
 | GET | `/calendar?month=YYYY-MM` |
 | GET/POST | `/sessions` |
 | GET/PATCH | `/sessions/:id` |
@@ -135,10 +135,12 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | POST | `/assessments/:id/answers` | |
 | GET | `/assessments` | |
 | GET/PUT | `/goals` | Goals list (also settable via `PUT /onboarding`) |
-| GET | `/exercises` | Exercise library summaries |
-| GET | `/exercises/:id` | Exercise detail + media |
-| GET | `/plan/exercises` | My Plan today (`exercises[].done`) |
-| POST | `/plan/exercises/:id/complete` | Mark exercise done for today |
+| GET | `/exercises` | Read-only catalogue |
+| GET | `/exercises/:id` | Detail + `on_plan` / `done` |
+| GET | `/plan/exercises` | This user's My Plan (empty until adds) |
+| POST | `/plan/exercises` | Add `{ exercise_id }` (idempotent; rejects unknown ids) |
+| DELETE | `/plan/exercises/:exercise_id` | Remove from plan |
+| POST | `/plan/exercises/:exercise_id/complete` | Set `completed_at` (today `done`) |
 
 ## Client specialists / booking
 | Method | Path |

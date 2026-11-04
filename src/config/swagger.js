@@ -132,13 +132,23 @@ module.exports = {
     },
     '/plan/exercises': {
       get: {
-        summary: 'My Plan today exercises (summary shape + done)',
+        summary: "List this user's My Plan items (not the full catalogue)",
+        responses: { 200: { description: 'OK' } },
+      },
+      post: {
+        summary: 'Add exercise to My Plan ({ exercise_id }, idempotent)',
+        responses: { 201: { description: 'Created' }, 200: { description: 'Already on plan' } },
+      },
+    },
+    '/plan/exercises/{exercise_id}': {
+      delete: {
+        summary: 'Remove exercise from My Plan',
         responses: { 200: { description: 'OK' } },
       },
     },
-    '/plan/exercises/{id}/complete': {
+    '/plan/exercises/{exercise_id}/complete': {
       post: {
-        summary: 'Mark a My Plan exercise complete for today',
+        summary: 'Mark a plan exercise complete for today',
         responses: { 200: { description: 'OK' } },
       },
     },

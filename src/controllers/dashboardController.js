@@ -1,7 +1,7 @@
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
-const { buildTodayExercises, planProgress } = require('./exerciseController');
+const { buildUserPlanExercises, planProgress } = require('./exerciseController');
 
 function parseJsonField(value) {
   if (value == null) return value;
@@ -278,9 +278,9 @@ async function clientDashboard(uid, user) {
   );
   const journalDone = Number(journalToday[0]?.count || 0) > 0;
 
-  // Real wellness-exercise plan (same catalogue + done flags as GET /plan/exercises).
-  // Kept separate from today_tasks, which tracks mood / journal / session synthetics.
-  const todayExercises = await buildTodayExercises(uid);
+  // User's My Plan items (from user_exercise_plan), not the full catalogue.
+  // Kept separate from today_tasks (mood / journal / session synthetics).
+  const todayExercises = await buildUserPlanExercises(uid, { todayOnly: true });
   const exerciseProgress = planProgress(todayExercises);
 
   return {

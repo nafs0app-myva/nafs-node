@@ -894,7 +894,7 @@
                 "dashboard"
               ]
             },
-            "description": "Client response includes today_tasks (mood/journal/session) plus today_exercises[] and my_plan (real exercise ids, category, accent, card_background, duration_minutes, done).",
+            "description": "Client: today_tasks (mood/journal/session) plus today_exercises[] / my_plan from user_exercise_plan (empty until POST /plan/exercises).",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -3213,7 +3213,7 @@
           "response": []
         },
         {
-          "name": "My Plan exercises",
+          "name": "My Plan — list",
           "request": {
             "method": "GET",
             "header": [],
@@ -3237,12 +3237,85 @@
                 }
               ]
             },
-            "description": "Same catalogue as dashboard today_exercises; each item includes done for today."
+            "description": "This user's saved plan only (not the full catalogue). Empty until Add."
           },
           "response": []
         },
         {
-          "name": "Complete My Plan exercise",
+          "name": "My Plan — add exercise",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exercise_id\": \"box_breathing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plan/exercises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "exercises"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Idempotent. Rejects ids not in the EXERCISES catalogue."
+          },
+          "response": []
+        },
+        {
+          "name": "My Plan — remove exercise",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plan/exercises/box_breathing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "exercises",
+                "box_breathing"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "My Plan — complete exercise",
           "request": {
             "method": "POST",
             "header": [],
@@ -3268,7 +3341,7 @@
                 }
               ]
             },
-            "description": "Marks the exercise done for today; dashboard today_exercises.done flips to true."
+            "description": "Must already be on the plan. Sets completed_at; done=true for today."
           },
           "response": []
         },

@@ -87,7 +87,8 @@ Address / video fields on admin-tech are optional extras (settings / other scree
 | Journal rotating prompt | `GET /journals/prompt` → answer via `POST /journals` with `prompt_id` |
 | Manage journal prompts (admin) | `GET/POST /journal-prompts`, `PATCH /journal-prompts/:id` |
 | Exercise Library | `GET /exercises`, `GET /exercises/:id` (includes `audio_url` / `video_url` / `media_url`) |
-| My Plan (today's exercises) | `GET /plan/exercises`, `POST /plan/exercises/:id/complete` (also on dashboard as `today_exercises` / `my_plan`) |
+| My Plan | `GET/POST /plan/exercises`, `DELETE /plan/exercises/:exercise_id`, `POST …/complete` (dashboard: `today_exercises` / `my_plan`) |
+| Add Exercise to My Plan | `POST /plan/exercises` body `{ "exercise_id": "box_breathing" }` |
 | Guided Audio / Video player | `GET /exercises/:id` → play `media_url` |
 | Find specialists | `GET /specialists`, `GET /specialists/:id` |
 | Book session + checkout | `POST /bookings`, `GET /bookings/:id/checkout-summary`, `POST /bookings/:id/pay`, `POST /bookings/:id/checkout`, `GET /bookings` |
