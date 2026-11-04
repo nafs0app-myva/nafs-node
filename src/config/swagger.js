@@ -94,7 +94,20 @@ module.exports = {
     '/mood/detector': { post: { summary: 'Save mood detector result', responses: { 201: { description: 'Created' } } } },
     '/journals': {
       get: { summary: 'List journal entries', responses: { 200: { description: 'OK' } } },
-      post: { summary: 'Create journal entry', responses: { 201: { description: 'Created' } } },
+      post: {
+        summary: 'Create journal entry (optional prompt_id marks prompt answered)',
+        responses: { 201: { description: 'Created' } },
+      },
+    },
+    '/journals/prompt': {
+      get: {
+        summary: 'Next unanswered rotating journal prompt for this user',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/journal-prompts': {
+      get: { summary: 'Admin: list journal prompts', responses: { 200: { description: 'OK' } } },
+      post: { summary: 'Admin: create journal prompt', responses: { 201: { description: 'Created' } } },
     },
     '/assessments': {
       get: { summary: 'List assessments', responses: { 200: { description: 'OK' } } },

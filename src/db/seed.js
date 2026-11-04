@@ -297,6 +297,25 @@ async function runSeed() {
     );
   }
 
+  // Rotating journal prompts (idempotent seed for the backend-managed pool)
+  const promptSeed = [
+    [1, 'What are you grateful for today?', 'ما الذي تشعر بالامتنان له اليوم؟'],
+    [2, 'What emotion showed up most strongly for you today?', 'ما هو الشعور الذي ظهر بقوة أكبر اليوم؟'],
+    [3, 'Describe one moment you want to remember.', 'صف لحظة واحدة تريد أن تتذكرها.'],
+    [4, 'What is one thing you can let go of right now?', 'ما الشيء الذي يمكنك التخلي عنه الآن؟'],
+    [5, 'How did you take care of yourself today?', 'كيف اعتنيت بنفسك اليوم؟'],
+  ];
+  for (const [sort, en, ar] of promptSeed) {
+    const existing = await query(`SELECT id FROM journal_prompts WHERE text_en = :en LIMIT 1`, { en });
+    if (!existing.length) {
+      await query(
+        `INSERT INTO journal_prompts (text_en, text_ar, sort_order, is_active)
+         VALUES (:en, :ar, :sort, 1)`,
+        { en, ar, sort }
+      );
+    }
+  }
+
   await query(
     `INSERT INTO user_goals (user_id, goals)
      VALUES (:uid, :goals)

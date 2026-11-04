@@ -276,9 +276,27 @@ router.get('/mood/checkins', authenticate, mood.listCheckins);
 router.post('/mood/detector', authenticate, validate(mood.detectorSchema), mood.saveDetector);
 router.post('/journals', authenticate, validate(journal.entrySchema), journal.create);
 router.get('/journals', authenticate, journal.list);
+// Must be registered before /journals/:id so "prompt" is not treated as an id.
+router.get('/journals/prompt', authenticate, journal.getPrompt);
 router.get('/journals/:id', authenticate, journal.getOne);
 router.put('/journals/:id', authenticate, validate(journal.entrySchema), journal.update);
 router.delete('/journals/:id', authenticate, journal.remove);
+// Admin: manage rotating journal prompt pool
+router.get('/journal-prompts', authenticate, requireRole('admin'), journal.listPromptsAdmin);
+router.post(
+  '/journal-prompts',
+  authenticate,
+  requireRole('admin'),
+  validate(journal.promptAdminSchema),
+  journal.createPromptAdmin
+);
+router.patch(
+  '/journal-prompts/:id',
+  authenticate,
+  requireRole('admin'),
+  validate(journal.promptAdminUpdateSchema),
+  journal.updatePromptAdmin
+);
 router.post('/assessments', authenticate, validate(assessment.startSchema), assessment.start);
 router.post(
   '/assessments/:id/answers',

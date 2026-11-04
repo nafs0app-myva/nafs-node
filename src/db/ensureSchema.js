@@ -359,6 +359,52 @@ async function ensureSchema() {
       }
     }
 
+    // Journal prompts (rotate-once-answered pool managed from backend)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS journal_prompts (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        text_en VARCHAR(500) NOT NULL,
+        text_ar VARCHAR(500) NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_journal_prompts_active_sort (is_active, sort_order, id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    try {
+      await conn.query(
+        `ALTER TABLE journal_entries ADD COLUMN prompt_id BIGINT UNSIGNED NULL AFTER user_id`
+      );
+    } catch (err) {
+      if (err.code !== 'ER_DUP_FIELDNAME' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+    try {
+      await conn.query(
+        `ALTER TABLE journal_entries ADD INDEX idx_journal_user_prompt (user_id, prompt_id)`
+      );
+    } catch (err) {
+      if (err.code !== 'ER_DUP_KEYNAME' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+    try {
+      await conn.query(
+        `ALTER TABLE journal_entries
+         ADD CONSTRAINT fk_journal_prompt FOREIGN KEY (prompt_id) REFERENCES journal_prompts(id) ON DELETE SET NULL`
+      );
+    } catch (err) {
+      // Already exists / table missing / engine quirks on shared hosts
+      if (
+        err.code !== 'ER_DUP_KEYNAME' &&
+        err.code !== 'ER_FK_DUP_NAME' &&
+        err.code !== 'ER_CANNOT_ADD_FOREIGN' &&
+        err.code !== 'ER_NO_REFERENCED_ROW_2' &&
+        err.code !== 'ER_NO_SUCH_TABLE' &&
+        err.errno !== 1826
+      ) {
+        // MySQL 1050/1005 variants — ignore if constraint already present
+        if (!String(err.message || '').match(/Duplicate|already exists|errno: 121/i)) throw err;
+      }
+    }
+
     // Backfill client profiles / onboarding rows for existing users
     await conn.query(`
       INSERT IGNORE INTO client_profiles (user_id, preferred_language)

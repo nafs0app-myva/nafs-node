@@ -3240,6 +3240,153 @@
             "description": ""
           },
           "response": []
+        },
+        {
+          "name": "Next journal prompt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/prompt?locale=en",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals",
+                "prompt"
+              ],
+              "query": [
+                {
+                  "key": "locale",
+                  "value": "en"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create journal with prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/journals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Prompt answer\",\n  \"body\": \"Today I felt grateful for a quiet morning.\",\n  \"mood_tag\": \"grateful\",\n  \"entry_date\": \"2026-11-04\",\n  \"prompt_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List journal prompts (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journal-prompts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journal-prompts"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create journal prompt (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/journal-prompts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journal-prompts"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text_en\": \"What made you smile today?\",\n  \"text_ar\": null,\n  \"sort_order\": 10,\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
         }
       ]
     },
