@@ -126,8 +126,11 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | --- | --- | --- |
 | POST/GET | `/mood/checkins` | Ongoing mood |
 | POST | `/mood/detector` | |
-| GET/POST | `/journals` | |
+| GET/POST | `/journals` | optional `prompt_id` on create |
+| GET | `/journals/prompt` | next unanswered rotating prompt |
 | GET/PUT/DELETE | `/journals/:id` | |
+| GET/POST | `/journal-prompts` | admin prompt pool |
+| PATCH | `/journal-prompts/:id` | admin |
 | POST | `/assessments` | Optional quizzes (not the primary onboarding gate) |
 | POST | `/assessments/:id/answers` | |
 | GET | `/assessments` | |
