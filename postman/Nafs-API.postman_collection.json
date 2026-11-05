@@ -1,101 +1,33 @@
 {
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "name": "Nafs API — All Endpoints",
-    "description": "Complete Nafs therapist + client API collection (NAFS-backup Figma). Base: {{baseUrl}}. After Login, token is saved to the environment automatically.\n\n2.2.0: register/forgot-password send OTP emails (SMTP_*). Shared PUT/GET /onboarding. Role-aware GET/PATCH /profile and GET /home/dashboard. GET /auth/me returns client profile.\n\nIncludes Figma Checkout payment APIs: checkout-summary, Confirm & Pay, payment options/status/webhook, and payment-method edit.",
+    "name": "Nafs API \u2014 All Endpoints",
+    "description": "Complete Nafs therapist + client API collection.\nBase: {{baseUrl}} (Hostinger: https://myva.ae/api/v1).\nLogin saves {{token}} automatically.\n\nSynced from src/routes/index.js \u2014 150 unique routes.\nIncludes My Plan CRUD, FCM test-push, admin push-config/status, journal prompts, payments.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{token}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "https://myva.ae/api/v1"
-    },
-    {
-      "key": "token",
-      "value": ""
-    },
-    {
-      "key": "clientToken",
-      "value": ""
-    },
-    {
-      "key": "id",
-      "value": "1"
-    },
-    {
-      "key": "sessionId",
-      "value": "1"
-    },
-    {
-      "key": "clientId",
-      "value": "1"
-    },
-    {
-      "key": "bookingId",
-      "value": "1"
-    },
-    {
-      "key": "journalId",
-      "value": "1"
-    },
-    {
-      "key": "assessmentId",
-      "value": "1"
-    },
-    {
-      "key": "vacationId",
-      "value": "1"
-    },
-    {
-      "key": "deviceId",
-      "value": "1"
-    },
-    {
-      "key": "mediaId",
-      "value": "1"
-    },
-    {
-      "key": "chatId",
-      "value": "1"
-    },
-    {
-      "key": "notificationId",
-      "value": "1"
-    },
-    {
-      "key": "paymentMethodId",
-      "value": "1"
-    },
-    {
-      "key": "therapistId",
-      "value": "1"
-    },
-    {
-      "key": "setupKey",
-      "value": "nafs_setup_myva_7kR9pL2mX4qW8nV1"
-    },
-    {
-      "key": "moyasarWebhookSecret",
-      "value": "",
-      "type": "string"
-    }
-  ],
   "item": [
     {
-      "name": "Admin",
+      "name": "00 Health & Admin",
       "item": [
         {
-          "name": "DB Setup (migrate + seed)",
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /admin/db-setup",
           "request": {
             "method": "POST",
             "header": [
@@ -108,6 +40,16 @@
                 "value": "{{setupKey}}"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/db-setup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "db-setup"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"migrate_only\": false\n}",
@@ -116,39 +58,135 @@
                   "language": "json"
                 }
               }
-            },
-            "url": "{{baseUrl}}/admin/db-setup",
-            "description": "Remote migrate + seed. Requires SETUP_KEY env on server and X-Setup-Key header."
-          }
-        }
-      ]
-    },
-    {
-      "name": "00 App",
-      "item": [
-        {
-          "name": "Health",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "noauth"
             }
           },
           "response": []
         },
         {
-          "name": "Bootstrap",
+          "name": "GET /admin/email-status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Setup-Key",
+                "value": "{{setupKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/email-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "email-status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /admin/email-test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Setup-Key",
+                "value": "{{setupKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/email-test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "email-test"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"nafs0app@gmail.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /admin/push-status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Setup-Key",
+                "value": "{{setupKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/push-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "push-status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /admin/push-config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Setup-Key",
+                "value": "{{setupKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/push-config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "push-config"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service_account\": \"<paste JSON or base64 service account>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 App & Settings",
+      "item": [
+        {
+          "name": "GET /app/bootstrap",
           "request": {
             "method": "GET",
             "header": [],
@@ -161,16 +199,12 @@
                 "app",
                 "bootstrap"
               ]
-            },
-            "description": "",
-            "auth": {
-              "type": "noauth"
             }
           },
           "response": []
         },
         {
-          "name": "Get settings",
+          "name": "GET /settings",
           "request": {
             "method": "GET",
             "header": [],
@@ -183,7 +217,6 @@
                 "settings"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -198,7 +231,7 @@
           "response": []
         },
         {
-          "name": "Update settings",
+          "name": "PATCH /settings",
           "request": {
             "method": "PATCH",
             "header": [
@@ -216,7 +249,15 @@
                 "settings"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locale\": \"en\",\n  \"theme\": \"system\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -226,15 +267,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"locale\": \"en\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
@@ -242,10 +274,10 @@
       ]
     },
     {
-      "name": "01 Auth",
+      "name": "02 Auth",
       "item": [
         {
-          "name": "Register therapist",
+          "name": "POST /auth/register",
           "request": {
             "method": "POST",
             "header": [
@@ -264,13 +296,9 @@
                 "register"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"new.therapist@nafs.app\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"New Therapist\",\n  \"phone\": \"+966500000001\",\n  \"role\": \"therapist\",\n  \"locale\": \"en\"\n}",
+              "raw": "{\n  \"email\": \"client@example.com\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"Demo Client\",\n  \"role\": \"client\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -281,43 +309,7 @@
           "response": []
         },
         {
-          "name": "Register client",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"new.client@nafs.app\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"New Client\",\n  \"phone\": \"+966500000002\",\n  \"role\": \"client\",\n  \"locale\": \"en\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Login therapist",
+          "name": "POST /auth/login",
           "request": {
             "method": "POST",
             "header": [
@@ -336,13 +328,9 @@
                 "login"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "raw": "{\n  \"email\": \"demo@nafs.app\",\n  \"password\": \"Password123!\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -357,67 +345,18 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 200) {",
+                  "try {",
                   "  const j = pm.response.json();",
-                  "  if (j.data && j.data.token) pm.environment.set('token', j.data.token);",
-                  "}"
+                  "  const t = j?.data?.token || j?.data?.access_token;",
+                  "  if (t) { pm.environment.set('token', t); pm.collectionVariables.set('token', t); }",
+                  "} catch (e) {}"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Login client",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{clientEmail}}\",\n  \"password\": \"{{clientPassword}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  const j = pm.response.json();",
-                  "  if (j.data && j.data.token) pm.environment.set('clientToken', j.data.token);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Verify email",
+          "name": "POST /auth/verify-email",
           "request": {
             "method": "POST",
             "header": [
@@ -436,13 +375,9 @@
                 "verify-email"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"new.client@nafs.app\",\n  \"code\": \"123456\"\n}",
+              "raw": "{\n  \"email\": \"client@example.com\",\n  \"code\": \"123456\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -453,7 +388,7 @@
           "response": []
         },
         {
-          "name": "Forgot password",
+          "name": "POST /auth/forgot-password",
           "request": {
             "method": "POST",
             "header": [
@@ -472,13 +407,9 @@
                 "forgot-password"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "raw": "{\n  \"email\": \"demo@nafs.app\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -489,7 +420,39 @@
           "response": []
         },
         {
-          "name": "Reset password",
+          "name": "POST /auth/resend-verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "resend-verification"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/reset-password",
           "request": {
             "method": "POST",
             "header": [
@@ -508,13 +471,9 @@
                 "reset-password"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"123456\",\n  \"password\": \"Password123!\"\n}",
+              "raw": "{\n  \"email\": \"demo@nafs.app\",\n  \"code\": \"123456\",\n  \"password\": \"Password123!\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -525,7 +484,7 @@
           "response": []
         },
         {
-          "name": "Change password",
+          "name": "POST /auth/change-password",
           "request": {
             "method": "POST",
             "header": [
@@ -544,7 +503,15 @@
                 "change-password"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"Password1234!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -554,21 +521,96 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"Password123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Me",
+          "name": "POST /auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/logout-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout-all"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /auth/me",
           "request": {
             "method": "GET",
             "header": [],
@@ -582,7 +624,38 @@
                 "me"
               ]
             },
-            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Onboarding",
+      "item": [
+        {
+          "name": "GET /onboarding",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboarding"
+              ]
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -597,35 +670,53 @@
           "response": []
         },
         {
-          "name": "Resend verification",
+          "name": "PUT /onboarding",
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboarding"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{clientEmail}}\"\n}",
+              "raw": "{\n  \"step\": \"goals\",\n  \"goals\": [\"Sleep better\", \"Reduce anxiety\"],\n  \"completed\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/resend-verification",
-            "description": "Resend email verification OTP"
-          }
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "02 Application Onboarding",
+      "name": "04 Application",
       "item": [
         {
-          "name": "List specializations",
+          "name": "GET /specializations",
           "request": {
             "method": "GET",
             "header": [],
@@ -637,16 +728,47 @@
               "path": [
                 "specializations"
               ]
-            },
-            "description": "",
-            "auth": {
-              "type": "noauth"
             }
           },
           "response": []
         },
         {
-          "name": "Get application",
+          "name": "GET /modalities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modalities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modalities"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /practice-scope/options",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/practice-scope/options",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-scope",
+                "options"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /application",
           "request": {
             "method": "GET",
             "header": [],
@@ -659,7 +781,6 @@
                 "application"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -674,7 +795,7 @@
           "response": []
         },
         {
-          "name": "Application status",
+          "name": "GET /application/status",
           "request": {
             "method": "GET",
             "header": [],
@@ -688,7 +809,6 @@
                 "status"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -703,7 +823,7 @@
           "response": []
         },
         {
-          "name": "Save identity",
+          "name": "PUT /application/identity",
           "request": {
             "method": "PUT",
             "header": [
@@ -722,7 +842,15 @@
                 "identity"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Dr Demo\",\n  \"gender\": \"female\",\n  \"date_of_birth\": \"1990-01-01\",\n  \"identity_number\": \"1234567890\",\n  \"city\": \"Dubai\",\n  \"country\": \"AE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -732,21 +860,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Dr. Sara Alami\",\n  \"identity_number\": \"ID-998877\",\n  \"gender\": \"female\",\n  \"date_of_birth\": \"1988-04-12\",\n  \"bio\": \"Clinical psychologist\",\n  \"working_capacity\": \"individual\",\n  \"years_experience\": 12\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Save experience",
+          "name": "PUT /application/experience",
           "request": {
             "method": "PUT",
             "header": [
@@ -765,7 +884,15 @@
                 "experience"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"years_experience\": 5,\n  \"bio\": \"Licensed therapist\",\n  \"specialization_ids\": [1],\n  \"modality_ids\": [1]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -775,21 +902,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"years_experience\": 12,\n  \"specialization_ids\": [\n    1,\n    2,\n    3\n  ],\n  \"licenses\": [\n    {\n      \"license_number\": \"SCFHS-445566\",\n      \"expiry_date\": \"2028-12-31\",\n      \"issuer\": \"SCFHS\"\n    }\n  ],\n  \"degrees\": [\n    {\n      \"degree_title\": \"PhD Clinical Psychology\",\n      \"institution\": \"KSU\",\n      \"year_awarded\": 2016\n    }\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Save admin tech",
+          "name": "PUT /application/admin-tech",
           "request": {
             "method": "PUT",
             "header": [
@@ -808,7 +926,15 @@
                 "admin-tech"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_fee_default\": 250,\n  \"session_duration_minutes\": 50,\n  \"timezone\": \"Asia/Dubai\",\n  \"address_line\": \"Clinic\",\n  \"video_enabled\": true,\n  \"slots\": [{\"weekday\": 0, \"start_time\": \"09:00\", \"end_time\": \"17:00\", \"is_active\": true}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -818,21 +944,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"city\": \"Riyadh\",\n  \"country\": \"Saudi Arabia\",\n  \"address\": \"Olaya\",\n  \"timezone\": \"Asia/Riyadh\",\n  \"video_provider\": \"custom\",\n  \"video_meeting_url\": \"https://meet.nafs.app/demo\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Submit application",
+          "name": "POST /application/submit",
           "request": {
             "method": "POST",
             "header": [
@@ -851,7 +968,15 @@
                 "submit"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -861,15 +986,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
@@ -877,10 +993,10 @@
       ]
     },
     {
-      "name": "03 Home Calendar Sessions",
+      "name": "05 Home Calendar Sessions",
       "item": [
         {
-          "name": "Dashboard",
+          "name": "GET /home/dashboard",
           "request": {
             "method": "GET",
             "header": [],
@@ -894,7 +1010,6 @@
                 "dashboard"
               ]
             },
-            "description": "Client: today_tasks (mood/journal/session) plus today_exercises[] / my_plan from user_exercise_plan (empty until POST /plan/exercises).",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -909,12 +1024,12 @@
           "response": []
         },
         {
-          "name": "Calendar",
+          "name": "GET /calendar",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/calendar?month=2026-10",
+              "raw": "{{baseUrl}}/calendar?month=2026-11",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -924,11 +1039,10 @@
               "query": [
                 {
                   "key": "month",
-                  "value": "2026-10"
+                  "value": "2026-11"
                 }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -943,7 +1057,7 @@
           "response": []
         },
         {
-          "name": "List sessions",
+          "name": "GET /sessions",
           "request": {
             "method": "GET",
             "header": [],
@@ -956,7 +1070,6 @@
                 "sessions"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -971,7 +1084,7 @@
           "response": []
         },
         {
-          "name": "Create session",
+          "name": "POST /sessions",
           "request": {
             "method": "POST",
             "header": [
@@ -989,7 +1102,15 @@
                 "sessions"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": 1,\n  \"title\": \"Intake\",\n  \"session_type\": \"video\",\n  \"starts_at\": \"2026-11-10T10:00:00.000Z\",\n  \"duration_minutes\": 50,\n  \"fee_amount\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -999,21 +1120,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"client_id\": 1,\n  \"title\": \"Follow-up\",\n  \"session_type\": \"video\",\n  \"starts_at\": \"2026-10-25T10:00:00\",\n  \"duration_minutes\": 50,\n  \"fee_amount\": 350,\n  \"currency\": \"SAR\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Get session",
+          "name": "GET /sessions/{{id}}",
           "request": {
             "method": "GET",
             "header": [],
@@ -1025,15 +1137,8 @@
               "path": [
                 "sessions",
                 "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1048,7 +1153,7 @@
           "response": []
         },
         {
-          "name": "Update session",
+          "name": "PATCH /sessions/{{id}}",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1065,15 +1170,17 @@
               "path": [
                 "sessions",
                 "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1083,21 +1190,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated session\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Join session",
+          "name": "POST /sessions/{{id}}/join",
           "request": {
             "method": "POST",
             "header": [
@@ -1115,23 +1213,6 @@
                 "sessions",
                 "{{id}}",
                 "join"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
               ]
             },
             "body": {
@@ -1142,12 +1223,266 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Cancel session",
+          "name": "POST /sessions/{{id}}/call/ring",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{id}}/call/ring",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{id}}",
+                "call",
+                "ring"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /calls/{{id}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/calls/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calls",
+                "{{id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /calls/{{id}}/accept",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/calls/{{id}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calls",
+                "{{id}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /calls/{{id}}/decline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/calls/{{id}}/decline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calls",
+                "{{id}}",
+                "decline"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /calls/{{id}}/cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/calls/{{id}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calls",
+                "{{id}}",
+                "cancel"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /sessions/{{id}}/review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{id}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{id}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great session\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /sessions/{{id}}/cancel",
           "request": {
             "method": "POST",
             "header": [
@@ -1165,23 +1500,6 @@
                 "sessions",
                 "{{id}}",
                 "cancel"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
               ]
             },
             "body": {
@@ -1192,12 +1510,22 @@
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Add session note",
+          "name": "POST /sessions/{{id}}/notes",
           "request": {
             "method": "POST",
             "header": [
@@ -1215,15 +1543,17 @@
                 "sessions",
                 "{{id}}",
                 "notes"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Session notes\",\n  \"is_private\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1233,21 +1563,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"body\": \"Client making progress\",\n  \"is_private\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Get availability",
+          "name": "GET /availability",
           "request": {
             "method": "GET",
             "header": [],
@@ -1260,7 +1581,6 @@
                 "availability"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1275,7 +1595,7 @@
           "response": []
         },
         {
-          "name": "Set availability",
+          "name": "PUT /availability",
           "request": {
             "method": "PUT",
             "header": [
@@ -1293,7 +1613,15 @@
                 "availability"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slots\": [{\"weekday\": 1, \"start_time\": \"09:00\", \"end_time\": \"17:00\", \"is_active\": true}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1303,15 +1631,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"slots\": [\n    {\n      \"weekday\": 0,\n      \"start_time\": \"09:00\",\n      \"end_time\": \"17:00\"\n    },\n    {\n      \"weekday\": 1,\n      \"start_time\": \"09:00\",\n      \"end_time\": \"17:00\"\n    }\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
@@ -1319,10 +1638,10 @@
       ]
     },
     {
-      "name": "04 Clients",
+      "name": "06 Clients",
       "item": [
         {
-          "name": "List clients",
+          "name": "GET /clients",
           "request": {
             "method": "GET",
             "header": [],
@@ -1341,7 +1660,6 @@
                 }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1356,7 +1674,7 @@
           "response": []
         },
         {
-          "name": "Create client",
+          "name": "POST /clients",
           "request": {
             "method": "POST",
             "header": [
@@ -1374,7 +1692,15 @@
                 "clients"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"New Client\",\n  \"email\": \"newclient@example.com\",\n  \"phone\": \"+971500000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1384,21 +1710,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"full_name\": \"New Client\",\n  \"email\": \"patient@example.com\",\n  \"phone\": \"+966505555555\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Get client",
+          "name": "GET /clients/{{id}}",
           "request": {
             "method": "GET",
             "header": [],
@@ -1410,15 +1727,8 @@
               "path": [
                 "clients",
                 "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1433,7 +1743,7 @@
           "response": []
         },
         {
-          "name": "Update client",
+          "name": "PATCH /clients/{{id}}",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1450,15 +1760,17 @@
               "path": [
                 "clients",
                 "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1468,15 +1780,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Updated Client\",\n  \"status\": \"active\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
@@ -1484,10 +1787,10 @@
       ]
     },
     {
-      "name": "05 Wallet Billing Payouts",
+      "name": "07 Wallet Billing Payments",
       "item": [
         {
-          "name": "Wallet",
+          "name": "GET /wallet",
           "request": {
             "method": "GET",
             "header": [],
@@ -1500,7 +1803,6 @@
                 "wallet"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1515,7 +1817,7 @@
           "response": []
         },
         {
-          "name": "Wallet transactions",
+          "name": "GET /wallet/transactions",
           "request": {
             "method": "GET",
             "header": [],
@@ -1529,7 +1831,6 @@
                 "transactions"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1544,7 +1845,7 @@
           "response": []
         },
         {
-          "name": "Wallet overview",
+          "name": "GET /wallet/overview",
           "request": {
             "method": "GET",
             "header": [],
@@ -1558,7 +1859,6 @@
                 "overview"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1573,7 +1873,7 @@
           "response": []
         },
         {
-          "name": "Fee terms",
+          "name": "GET /fees/terms",
           "request": {
             "method": "GET",
             "header": [],
@@ -1586,13 +1886,12 @@
                 "fees",
                 "terms"
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
         {
-          "name": "Withdraw",
+          "name": "POST /wallet/withdraw",
           "request": {
             "method": "POST",
             "header": [
@@ -1611,7 +1910,15 @@
                 "withdraw"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1621,21 +1928,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"amount\": 100\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "List payment methods",
+          "name": "GET /payment-methods",
           "request": {
             "method": "GET",
             "header": [],
@@ -1648,7 +1946,6 @@
                 "payment-methods"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1663,7 +1960,7 @@
           "response": []
         },
         {
-          "name": "Add payment method",
+          "name": "POST /payment-methods",
           "request": {
             "method": "POST",
             "header": [
@@ -1681,7 +1978,15 @@
                 "payment-methods"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2030,\n  \"is_default\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1691,21 +1996,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"brand\": \"Visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2028,\n  \"is_default\": true,\n  \"method_type\": \"card\",\n  \"provider_token\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Update payment method",
+          "name": "PATCH /payment-methods/{{id}}",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1715,54 +2011,24 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}",
+              "raw": "{{baseUrl}}/payment-methods/{{id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "payment-methods",
-                "{{paymentMethodId}}"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
+                "{{id}}"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"brand\": \"Visa\",\n  \"last4\": \"4242\",\n  \"exp_month\": 12,\n  \"exp_year\": 2029,\n  \"is_default\": true\n}",
+              "raw": "{\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete payment method",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payment-methods",
-                "{{paymentMethodId}}"
-              ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1777,7 +2043,35 @@
           "response": []
         },
         {
-          "name": "Billing history",
+          "name": "DELETE /payment-methods/{{id}}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payment-methods/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /billing-history",
           "request": {
             "method": "GET",
             "header": [],
@@ -1790,7 +2084,6 @@
                 "billing-history"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1805,7 +2098,7 @@
           "response": []
         },
         {
-          "name": "Payment options (Checkout rails)",
+          "name": "GET /payments/options",
           "request": {
             "method": "GET",
             "header": [],
@@ -1819,13 +2112,12 @@
                 "options"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -1834,37 +2126,7 @@
           "response": []
         },
         {
-          "name": "Payment status",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/payments/{{bookingId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payments",
-                "{{bookingId}}",
-                "status"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Payment return page",
+          "name": "GET /payments/return",
           "request": {
             "method": "GET",
             "header": [],
@@ -1883,23 +2145,18 @@
                   "value": "{{bookingId}}"
                 }
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
         {
-          "name": "Moyasar webhook",
+          "name": "POST /payments/webhook",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "X-Moyasar-Token",
-                "value": "{{moyasarWebhookSecret}}"
               }
             ],
             "url": {
@@ -1912,10 +2169,9 @@
                 "webhook"
               ]
             },
-            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"payment_paid\",\n  \"data\": {\n    \"id\": \"pay_xxx\",\n    \"status\": \"paid\",\n    \"metadata\": {\n      \"booking_id\": \"{{bookingId}}\"\n    },\n    \"payments\": [\n      {\n        \"id\": \"pay_xxx\",\n        \"status\": \"paid\"\n      }\n    ]\n  }\n}",
+              "raw": "{\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1926,7 +2182,36 @@
           "response": []
         },
         {
-          "name": "List payouts",
+          "name": "GET /payments/{{bookingId}}/status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{bookingId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{bookingId}}",
+                "status"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /payouts",
           "request": {
             "method": "GET",
             "header": [],
@@ -1939,7 +2224,6 @@
                 "payouts"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1954,7 +2238,7 @@
           "response": []
         },
         {
-          "name": "Request payout",
+          "name": "POST /payouts",
           "request": {
             "method": "POST",
             "header": [
@@ -1972,49 +2256,15 @@
                 "payouts"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 200,\n  \"bank_name\": \"Al Rajhi\",\n  \"iban\": \"SA0380000000608010167519\",\n  \"currency\": \"SAR\"\n}",
+              "raw": "{\n  \"amount\": 100,\n  \"method\": \"bank\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "06 Chat",
-      "item": [
-        {
-          "name": "List chat threads",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/chats",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "chats"
-              ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2029,149 +2279,7 @@
           "response": []
         },
         {
-          "name": "Start chat",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/chats",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "chats"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"client_id\": 1\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get messages",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/chats/{{id}}/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "chats",
-                "{{id}}",
-                "messages"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Send message",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/chats/{{id}}/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "chats",
-                "{{id}}",
-                "messages"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"body\": \"Hello, how are you?\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "07 Profile Support Notifications Devices",
-      "item": [
-        {
-          "name": "Get profile",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/profile",
-            "description": "Role-aware profile (client_profiles or therapist_profiles)"
-          }
-        },
-        {
-          "name": "Update profile",
+          "name": "PATCH /payouts/{{id}}/status",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2180,20 +2288,458 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/payouts/{{id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payouts",
+                "{{id}}",
+                "status"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"city\": \"Jeddah\",\n  \"about\": \"Updated client about\"\n}",
+              "raw": "{\n  \"status\": \"paid\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/profile"
-          }
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 Chats",
+      "item": [
+        {
+          "name": "GET /chats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
         },
         {
-          "name": "FAQs",
+          "name": "POST /chats",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"participant_id\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /chats/{{id}}/messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats/{{id}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats",
+                "{{id}}",
+                "messages"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /chats/{{id}}/messages",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chats/{{id}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats",
+                "{{id}}",
+                "messages"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Hello\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 Profile Credentials",
+      "item": [
+        {
+          "name": "GET /profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Demo Client\",\n  \"phone\": \"+971500000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /profile/avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profile/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "avatar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /profile/avatar/{{userId}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/profile/avatar/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "avatar",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /credentials/license/{{id}}/document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/license/{{id}}/document",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "license",
+                "{{id}}",
+                "document"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /credentials/license/{{id}}/document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/license/{{id}}/document",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "license",
+                "{{id}}",
+                "document"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /credentials/license/{{id}}/document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/license/{{id}}/document",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "license",
+                "{{id}}",
+                "document"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /credentials/documents/{{docId}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/documents/{{docId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "documents",
+                "{{docId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10 Support FAQs Policies",
+      "item": [
+        {
+          "name": "GET /faqs",
           "request": {
             "method": "GET",
             "header": [],
@@ -2211,16 +2757,12 @@
                   "value": "en"
                 }
               ]
-            },
-            "description": "",
-            "auth": {
-              "type": "noauth"
             }
           },
           "response": []
         },
         {
-          "name": "List policies",
+          "name": "GET /policies",
           "request": {
             "method": "GET",
             "header": [],
@@ -2232,51 +2774,30 @@
               "path": [
                 "policies"
               ]
-            },
-            "description": "",
-            "auth": {
-              "type": "noauth"
             }
           },
           "response": []
         },
         {
-          "name": "Get policy",
+          "name": "GET /policies/privacy",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/policies/{{slug}}",
+              "raw": "{{baseUrl}}/policies/privacy",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "policies",
-                "{{slug}}"
-              ],
-              "variable": [
-                {
-                  "key": "slug",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
+                "privacy"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Contact Us",
+          "name": "POST /contact",
           "request": {
             "method": "POST",
             "header": [
@@ -2294,13 +2815,9 @@
                 "contact"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "noauth"
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Sara\",\n  \"email\": \"demo@nafs.app\",\n  \"message\": \"Need help with payouts\"\n}",
+              "raw": "{\n  \"name\": \"User\",\n  \"email\": \"user@example.com\",\n  \"message\": \"Hello support\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2311,7 +2828,122 @@
           "response": []
         },
         {
-          "name": "Report a Problem",
+          "name": "GET /contact/messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/contact/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contact",
+                "messages"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /contact/{{id}}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contact/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contact",
+                "{{id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /report-problem/categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report-problem/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-problem",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /report-problem",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report-problem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-problem"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /report-problem",
           "request": {
             "method": "POST",
             "header": [
@@ -2329,7 +2961,15 @@
                 "report-problem"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"bug\",\n  \"description\": \"Something went wrong\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2339,21 +2979,131 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"subject\": \"Bug\",\n  \"description\": \"Something is not working\",\n  \"category\": \"technical\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "List notifications",
+          "name": "POST /report-problem/{{id}}/screenshot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/report-problem/{{id}}/screenshot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-problem",
+                "{{id}}",
+                "screenshot"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /report-problem/{{id}}/screenshot",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report-problem/{{id}}/screenshot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-problem",
+                "{{id}}",
+                "screenshot"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /report-problem/{{id}}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/report-problem/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-problem",
+                "{{id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11 Notifications Devices",
+      "item": [
+        {
+          "name": "GET /notifications",
           "request": {
             "method": "GET",
             "header": [],
@@ -2366,7 +3116,6 @@
                 "notifications"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2381,100 +3130,7 @@
           "response": []
         },
         {
-          "name": "Mark notification read",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/notifications/{{id}}/read",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications",
-                "{{id}}",
-                "read"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Mark all notifications read",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/notifications/read-all",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications",
-                "read-all"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Test FCM push",
+          "name": "POST /notifications/test-push",
           "request": {
             "method": "POST",
             "header": [
@@ -2493,7 +3149,15 @@
                 "test-push"
               ]
             },
-            "description": "Requires POST /devices first. Returns delivered count / FCM errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Nafs test\",\n  \"body\": \"Push delivery check\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2503,21 +3167,97 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Nafs test\",\n  \"body\": \"Push delivery check\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Get notification preferences",
+          "name": "POST /notifications/{{id}}/read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{id}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{id}}",
+                "read"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /notifications/read-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /notifications/preferences",
           "request": {
             "method": "GET",
             "header": [],
@@ -2531,7 +3271,6 @@
                 "preferences"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2546,7 +3285,7 @@
           "response": []
         },
         {
-          "name": "Update notification preferences",
+          "name": "PATCH /notifications/preferences",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2565,7 +3304,15 @@
                 "preferences"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_bookings\": true,\n  \"clinical_alerts\": true,\n  \"financial\": true,\n  \"push_channel\": true,\n  \"email_channel\": true,\n  \"sms_channel\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2575,21 +3322,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"client_bookings\": true,\n  \"clinical_alerts\": true,\n  \"financial\": true,\n  \"push_channel\": true,\n  \"email_channel\": true,\n  \"sms_channel\": false\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Register device",
+          "name": "POST /devices",
           "request": {
             "method": "POST",
             "header": [
@@ -2607,7 +3345,15 @@
                 "devices"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"REPLACE_WITH_REAL_FCM_TOKEN\",\n  \"platform\": \"android\",\n  \"device_name\": \"Pixel\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2617,21 +3363,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"postman-device-token\",\n  \"platform\": \"ios\",\n  \"device_name\": \"iPhone 15\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "List devices",
+          "name": "GET /devices",
           "request": {
             "method": "GET",
             "header": [],
@@ -2644,7 +3381,6 @@
                 "devices"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2659,7 +3395,34 @@
           "response": []
         },
         {
-          "name": "Revoke device",
+          "name": "DELETE /devices",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /devices/{{id}}",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -2671,15 +3434,8 @@
               "path": [
                 "devices",
                 "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2696,10 +3452,10 @@
       ]
     },
     {
-      "name": "08 Client Mood Journal Assessments",
+      "name": "12 Mood Journal Goals",
       "item": [
         {
-          "name": "Create mood check-in",
+          "name": "POST /mood/checkins",
           "request": {
             "method": "POST",
             "header": [
@@ -2718,31 +3474,30 @@
                 "checkins"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"mood\": \"calm\",\n  \"intensity\": 7,\n  \"note\": \"Feeling okay\",\n  \"tags\": [\n    \"morning\"\n  ]\n}",
+              "raw": "{\n  \"mood\": \"calm\",\n  \"intensity\": 3,\n  \"note\": \"Feeling okay\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "List mood check-ins",
+          "name": "GET /mood/checkins",
           "request": {
             "method": "GET",
             "header": [],
@@ -2756,13 +3511,12 @@
                 "checkins"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -2771,7 +3525,7 @@
           "response": []
         },
         {
-          "name": "Mood detector",
+          "name": "POST /mood/detector",
           "request": {
             "method": "POST",
             "header": [
@@ -2790,31 +3544,30 @@
                 "detector"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"detected_mood\": \"happy\",\n  \"confidence\": 85.5,\n  \"consent_accepted\": true\n}",
+              "raw": "{\n  \"consent\": true,\n  \"mood\": \"anxious\",\n  \"confidence\": 0.8\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Create journal entry",
+          "name": "POST /journals",
           "request": {
             "method": "POST",
             "header": [
@@ -2832,31 +3585,30 @@
                 "journals"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Today\",\n  \"body\": \"Reflecting on progress\",\n  \"mood_tag\": \"hopeful\",\n  \"entry_date\": \"2026-10-19\",\n  \"is_pinned\": false\n}",
+              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Prompt answer\",\n  \"body\": \"Today I felt grateful.\",\n  \"mood_tag\": \"grateful\",\n  \"entry_date\": \"2026-11-05\",\n  \"prompt_id\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "List journals",
+          "name": "GET /journals",
           "request": {
             "method": "GET",
             "header": [],
@@ -2875,13 +3627,12 @@
                 }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -2890,506 +3641,7 @@
           "response": []
         },
         {
-          "name": "Get journal",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/journals/{{id}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "journals",
-                "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update journal",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/journals/{{id}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "journals",
-                "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Today updated\",\n  \"body\": \"Updated reflection\",\n  \"mood_tag\": \"calm\",\n  \"entry_date\": \"2026-10-19\",\n  \"is_pinned\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete journal",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/journals/{{id}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "journals",
-                "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Start assessment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/assessments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "assessments"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"assessment_type\": \"anxiety_stress\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Save assessment answers",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/assessments/{{id}}/answers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "assessments",
-                "{{id}}",
-                "answers"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"answers\": [\n    {\n      \"question_key\": \"q1\",\n      \"answer_value\": \"sometimes\"\n    },\n    {\n      \"question_key\": \"q2\",\n      \"answer_value\": 3\n    }\n  ],\n  \"complete\": true,\n  \"score\": 12,\n  \"summary\": {\n    \"level\": \"mild\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List assessments",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/assessments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "assessments"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get goals",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/goals",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "goals"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Save goals",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/goals",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "goals"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goals\": [\n    \"Sleep better\",\n    \"Reduce anxiety\",\n    \"Weekly check-in\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List exercises",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/exercises",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "exercises"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": ""
-          },
-          "response": []
-        },
-        {
-          "name": "Get exercise (audio/video media)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/exercises/box_breathing",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "exercises",
-                "box_breathing"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": ""
-          },
-          "response": []
-        },
-        {
-          "name": "My Plan — list",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/plan/exercises",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "plan",
-                "exercises"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "This user's saved plan only (not the full catalogue). Empty until Add."
-          },
-          "response": []
-        },
-        {
-          "name": "My Plan — add exercise",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"exercise_id\": \"box_breathing\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/plan/exercises",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "plan",
-                "exercises"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Idempotent. Rejects ids not in the EXERCISES catalogue."
-          },
-          "response": []
-        },
-        {
-          "name": "My Plan — remove exercise",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/plan/exercises/box_breathing",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "plan",
-                "exercises",
-                "box_breathing"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": ""
-          },
-          "response": []
-        },
-        {
-          "name": "My Plan — complete exercise",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/plan/exercises/box_breathing/complete",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "plan",
-                "exercises",
-                "box_breathing",
-                "complete"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Must already be on the plan. Sets completed_at; done=true for today."
-          },
-          "response": []
-        },
-        {
-          "name": "Next journal prompt",
+          "name": "GET /journals/prompt",
           "request": {
             "method": "GET",
             "header": [],
@@ -3414,32 +3666,27 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
         {
-          "name": "Create journal with prompt",
+          "name": "GET /journals/{{id}}",
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/journals",
+              "raw": "{{baseUrl}}/journals/{{id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "journals"
+                "journals",
+                "{{id}}"
               ]
             },
             "auth": {
@@ -3447,26 +3694,86 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Prompt answer\",\n  \"body\": \"Today I felt grateful for a quiet morning.\",\n  \"mood_tag\": \"grateful\",\n  \"entry_date\": \"2026-11-04\",\n  \"prompt_id\": 1\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "List journal prompts (admin)",
+          "name": "PUT /journals/{{id}}",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/journals/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals",
+                "{{id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /journals/{{id}}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals",
+                "{{id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /journal-prompts",
           "request": {
             "method": "GET",
             "header": [],
@@ -3488,13 +3795,12 @@
                   "type": "string"
                 }
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
         {
-          "name": "Create journal prompt (admin)",
+          "name": "POST /journal-prompts",
           "request": {
             "method": "POST",
             "header": [
@@ -3512,6 +3818,15 @@
                 "journal-prompts"
               ]
             },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text_en\": \"What are you grateful for today?\",\n  \"text_ar\": \"\u0645\u0627 \u0627\u0644\u0630\u064a \u062a\u0634\u0639\u0631 \u0628\u0627\u0644\u0627\u0645\u062a\u0646\u0627\u0646 \u0644\u0647 \u0627\u0644\u064a\u0648\u0645\u061f\",\n  \"sort_order\": 1,\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -3521,16 +3836,227 @@
                   "type": "string"
                 }
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /journal-prompts/{{id}}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/journal-prompts/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journal-prompts",
+                "{{id}}"
+              ]
             },
-            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"text_en\": \"What made you smile today?\",\n  \"text_ar\": null,\n  \"sort_order\": 10,\n  \"is_active\": true\n}",
+              "raw": "{\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /assessments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assessments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assessments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assessment_type\": \"phq9\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /assessments/{{id}}/answers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assessments/{{id}}/answers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assessments",
+                "{{id}}",
+                "answers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [{\"question_id\": 1, \"value\": 2}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /assessments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assessments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assessments"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /goals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/goals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "goals"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /goals",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/goals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "goals"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goals\": [\"Sleep better\", \"Reduce anxiety\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
@@ -3538,10 +4064,213 @@
       ]
     },
     {
-      "name": "09 Client Specialists Booking",
+      "name": "13 Exercises My Plan",
       "item": [
         {
-          "name": "List specialists",
+          "name": "GET /exercises",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/exercises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercises"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /exercises/{{id}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/exercises/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercises",
+                "{{id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /plan/exercises",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plan/exercises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "exercises"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /plan/exercises",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plan/exercises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "exercises"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exercise_id\": \"box_breathing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /plan/exercises/box_breathing",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plan/exercises/box_breathing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "exercises",
+                "box_breathing"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /plan/exercises/box_breathing/complete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plan/exercises/box_breathing/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "exercises",
+                "box_breathing",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "14 Specialists Bookings",
+      "item": [
+        {
+          "name": "GET /specialists",
           "request": {
             "method": "GET",
             "header": [],
@@ -3560,13 +4289,12 @@
                 }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -3575,36 +4303,7 @@
           "response": []
         },
         {
-          "name": "Get specialist",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/specialists/{{id}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "specialists",
-                "{{id}}"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Specialist availability",
+          "name": "GET /specialists/{{id}}/availability",
           "request": {
             "method": "GET",
             "header": [],
@@ -3625,13 +4324,12 @@
                 }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -3640,7 +4338,35 @@
           "response": []
         },
         {
-          "name": "Create booking",
+          "name": "GET /specialists/{{id}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/specialists/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "specialists",
+                "{{id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /bookings",
           "request": {
             "method": "POST",
             "header": [
@@ -3658,52 +4384,50 @@
                 "bookings"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"therapist_id\": 1,\n  \"booking_date\": \"2026-11-10\",\n  \"booking_time\": \"14:00:00\",\n  \"session_type\": \"video\",\n  \"beneficiary\": \"Myself\",\n  \"note\": \"First session\"\n}",
+              "raw": "{\n  \"therapist_id\": 2,\n  \"booking_date\": \"2026-11-12\",\n  \"booking_time\": \"10:00:00\",\n  \"session_type\": \"video\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Checkout summary (Figma Checkout)",
+          "name": "GET /bookings/{{id}}/checkout-summary",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bookings/{{bookingId}}/checkout-summary",
+              "raw": "{{baseUrl}}/bookings/{{id}}/checkout-summary",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "bookings",
-                "{{bookingId}}",
+                "{{id}}",
                 "checkout-summary"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -3712,7 +4436,7 @@
           "response": []
         },
         {
-          "name": "Confirm & Pay",
+          "name": "POST /bookings/{{id}}/checkout",
           "request": {
             "method": "POST",
             "header": [
@@ -3722,99 +4446,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/bookings/{{bookingId}}/pay",
+              "raw": "{{baseUrl}}/bookings/{{id}}/checkout",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "bookings",
-                "{{bookingId}}",
-                "pay"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"method\": \"card\",\n  \"payment_method_id\": null,\n  \"confirm_if_unpaid\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Payment status",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/payments/{{bookingId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payments",
-                "{{bookingId}}",
-                "status"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Checkout booking",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/bookings/{{bookingId}}/checkout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings",
-                "{{bookingId}}",
+                "{{id}}",
                 "checkout"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
               ]
             },
             "body": {
@@ -3825,118 +4464,7 @@
                   "language": "json"
                 }
               }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cancel preview",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/bookings/{{bookingId}}/cancel-preview",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings",
-                "{{bookingId}}",
-                "cancel-preview"
-              ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cancel booking",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/bookings/{{bookingId}}/cancel",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings",
-                "{{bookingId}}",
-                "cancel"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "My bookings",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/bookings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings"
-              ]
-            },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "10 Consultant Vacation",
-      "item": [
-        {
-          "name": "List vacations",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/vacations",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "vacations"
-              ]
-            },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -3951,7 +4479,181 @@
           "response": []
         },
         {
-          "name": "Create vacation",
+          "name": "GET /bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /bookings/{{id}}/cancel-preview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{id}}/cancel-preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{id}}",
+                "cancel-preview"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /bookings/{{id}}/pay",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{id}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{id}}",
+                "pay"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": \"card\",\n  \"save_card\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /bookings/{{id}}/cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{id}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{id}}",
+                "cancel"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "15 Vacations",
+      "item": [
+        {
+          "name": "GET /vacations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vacations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacations"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /vacations",
           "request": {
             "method": "POST",
             "header": [
@@ -3969,7 +4671,15 @@
                 "vacations"
               ]
             },
-            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"starts_on\": \"2026-12-01\",\n  \"ends_on\": \"2026-12-07\",\n  \"reason\": \"Holiday\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -3979,21 +4689,54 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"start_date\": \"2026-11-01\",\n  \"end_date\": \"2026-11-05\",\n  \"reason\": \"Family travel\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         },
         {
-          "name": "Delete vacation",
+          "name": "PATCH /vacations/{{id}}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vacations/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vacations",
+                "{{id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /vacations/{{id}}",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -4005,15 +4748,8 @@
               "path": [
                 "vacations",
                 "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -4030,10 +4766,10 @@
       ]
     },
     {
-      "name": "11 Privacy Data",
+      "name": "16 Privacy",
       "item": [
         {
-          "name": "List consents",
+          "name": "GET /privacy/consents",
           "request": {
             "method": "GET",
             "header": [],
@@ -4047,13 +4783,12 @@
                 "consents"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -4062,7 +4797,7 @@
           "response": []
         },
         {
-          "name": "Update consents",
+          "name": "PUT /privacy/consents",
           "request": {
             "method": "PUT",
             "header": [
@@ -4081,31 +4816,30 @@
                 "consents"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"consents\": [\n    {\n      \"consent_key\": \"mood_detector\",\n      \"enabled\": true\n    },\n    {\n      \"consent_key\": \"session_recording\",\n      \"enabled\": false\n    },\n    {\n      \"consent_key\": \"research\",\n      \"enabled\": false\n    }\n  ]\n}",
+              "raw": "{\n  \"marketing\": false,\n  \"analytics\": true,\n  \"camera_mood\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "List media recordings",
+          "name": "GET /privacy/media",
           "request": {
             "method": "GET",
             "header": [],
@@ -4119,13 +4853,12 @@
                 "media"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -4134,7 +4867,7 @@
           "response": []
         },
         {
-          "name": "Add media recording",
+          "name": "POST /privacy/media",
           "request": {
             "method": "POST",
             "header": [
@@ -4153,31 +4886,103 @@
                 "media"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"media_type\": \"audio\",\n  \"title\": \"Morning reflection\",\n  \"url\": \"https://cdn.nafs.app/demo/audio1.mp3\",\n  \"duration_seconds\": 42\n}",
+              "raw": "{\n  \"kind\": \"audio\",\n  \"file_name\": \"note.m4a\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Delete media recording",
+          "name": "POST /privacy/media/upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/privacy/media/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "media",
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /privacy/media/{{id}}/file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/privacy/media/{{id}}/file",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "media",
+                "{{id}}",
+                "file"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /privacy/media/{{id}}",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -4190,21 +4995,14 @@
                 "privacy",
                 "media",
                 "{{id}}"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -4213,7 +5011,7 @@
           "response": []
         },
         {
-          "name": "Request data export",
+          "name": "POST /privacy/export",
           "request": {
             "method": "POST",
             "header": [
@@ -4232,31 +5030,30 @@
                 "export"
               ]
             },
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{clientToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"format\": \"pdf\",\n  \"include_flags\": {\n    \"journals\": true,\n    \"mood\": true,\n    \"assessments\": true\n  }\n}",
+              "raw": "{\n  \"format\": \"json\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "List exports",
+          "name": "GET /privacy/exports",
           "request": {
             "method": "GET",
             "header": [],
@@ -4270,13 +5067,12 @@
                 "exports"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -4285,7 +5081,37 @@
           "response": []
         },
         {
-          "name": "Retention policy",
+          "name": "GET /privacy/exports/{{id}}/download",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/privacy/exports/{{id}}/download",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "exports",
+                "{{id}}",
+                "download"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /privacy/retention",
           "request": {
             "method": "GET",
             "header": [],
@@ -4299,13 +5125,12 @@
                 "retention"
               ]
             },
-            "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{clientToken}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -4314,64 +5139,54 @@
           "response": []
         }
       ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://myva.ae/api/v1"
     },
     {
-      "name": "02b Onboarding Shared",
-      "item": [
-        {
-          "name": "Get onboarding",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/onboarding",
-            "description": "Returns role-aware onboarding state. Auth required."
-          }
-        },
-        {
-          "name": "Save client onboarding",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"step\": \"goals\",\n  \"full_name\": \"Noura Client\",\n  \"gender\": \"female\",\n  \"city\": \"Riyadh\",\n  \"goals\": [\n    \"Sleep better\",\n    \"Reduce anxiety\"\n  ],\n  \"concerns\": [\n    \"anxiety\",\n    \"sleep\"\n  ],\n  \"preferred_therapist_gender\": \"any\",\n  \"completed\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/onboarding"
-          }
-        },
-        {
-          "name": "Save therapist onboarding",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"step\": \"basics\",\n  \"bio\": \"Clinical psychologist\",\n  \"years_experience\": 8,\n  \"city\": \"Riyadh\",\n  \"specialization_ids\": [\n    1,\n    2\n  ],\n  \"completed\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/onboarding"
-          }
-        }
-      ]
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "setupKey",
+      "value": ""
+    },
+    {
+      "key": "id",
+      "value": "1"
+    },
+    {
+      "key": "bookingId",
+      "value": "1"
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "docId",
+      "value": "1"
+    },
+    {
+      "key": "paymentMethodId",
+      "value": "1"
+    },
+    {
+      "key": "clientToken",
+      "value": ""
     }
   ]
 }

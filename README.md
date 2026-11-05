@@ -74,8 +74,8 @@ Set `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` for real email. Without SMTP, OTPs a
 
 Synced to **My Workspace** (cloud):
 
-- Collection **nafse-api** — all 94 endpoints
-- Collection **Nafs API** — same full set
+- Collection **nafse-api** — all 150 endpoints
+- Collection **Nafs API** — same full 150-route set
 - Environments **Nafs Hostinger** (`https://myva.ae/api/v1`) and **Nafs Local**
 
 Repo copies under `postman/` if you prefer file import.
