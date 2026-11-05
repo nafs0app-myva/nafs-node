@@ -49,6 +49,7 @@ node scripts/test-all-apis.js http://127.0.0.1:43125/api/v1
 ```
 
 - Explorer: http://127.0.0.1:43125/
+- Admin panel: http://127.0.0.1:43125/admin/ (live: https://myva.ae/admin/)
 - Swagger: http://127.0.0.1:43125/api/docs
 - API base: http://127.0.0.1:43125/api/v1
 
@@ -56,8 +57,21 @@ node scripts/test-all-apis.js http://127.0.0.1:43125/api/v1
 
 | Role | Email | Password |
 | --- | --- | --- |
+| Admin | `admin@myva.ae` | `Password123!` |
 | Therapist | `demo@nafs.app` | `Password123!` |
 | Client | `client@nafs.app` | `Password123!` |
+
+### Admin panel
+
+Web UI at `/admin/` for platform admins (`role=admin`):
+
+- Overview + today’s joins / sessions / bookings
+- Daily activity (users & consultants added)
+- List / deactivate / permanently delete users
+- Add consultants
+- Approve / reject consultant applications
+
+Admin JWT APIs live under `/api/v1/admin/panel/*`.
 
 ### Mobile app contract (v2.2)
 

@@ -24,6 +24,7 @@ const payout = require('../controllers/payoutController');
 const credentials = require('../controllers/credentialController');
 const privacy = require('../controllers/privacyController');
 const admin = require('../controllers/adminController');
+const adminPanel = require('../controllers/adminPanelController');
 const onboarding = require('../controllers/onboardingController');
 const exercises = require('../controllers/exerciseController');
 const payments = require('../controllers/paymentController');
@@ -58,6 +59,48 @@ router.get('/admin/email-status', admin.emailStatus);
 router.post('/admin/email-test', admin.emailTest);
 router.get('/admin/push-status', admin.pushStatusAdmin);
 router.post('/admin/push-config', admin.pushConfigAdmin);
+
+// JWT admin panel (role=admin) — used by https://myva.ae/admin/
+router.get('/admin/panel/overview', authenticate, requireRole('admin'), adminPanel.overview);
+router.get('/admin/panel/activity', authenticate, requireRole('admin'), adminPanel.activity);
+router.get('/admin/panel/users', authenticate, requireRole('admin'), adminPanel.listUsers);
+router.post(
+  '/admin/panel/users',
+  authenticate,
+  requireRole('admin'),
+  validate(adminPanel.createUserSchema),
+  adminPanel.createUser
+);
+router.patch(
+  '/admin/panel/users/:id',
+  authenticate,
+  requireRole('admin'),
+  validate(adminPanel.updateUserSchema),
+  adminPanel.updateUser
+);
+router.delete('/admin/panel/users/:id', authenticate, requireRole('admin'), adminPanel.removeUser);
+router.post(
+  '/admin/panel/consultants',
+  authenticate,
+  requireRole('admin'),
+  validate(adminPanel.createConsultantSchema),
+  adminPanel.createConsultant
+);
+router.get('/admin/panel/applications', authenticate, requireRole('admin'), adminPanel.listApplications);
+router.post(
+  '/admin/panel/applications/:id/approve',
+  authenticate,
+  requireRole('admin'),
+  validate(adminPanel.reviewSchema),
+  adminPanel.approveApplication
+);
+router.post(
+  '/admin/panel/applications/:id/reject',
+  authenticate,
+  requireRole('admin'),
+  validate(adminPanel.reviewSchema),
+  adminPanel.rejectApplication
+);
 
 // Splash / language / app config (Figma first pages)
 router.get('/app/bootstrap', appCtrl.bootstrap);

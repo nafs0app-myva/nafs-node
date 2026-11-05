@@ -440,6 +440,30 @@ async function ensureSchema() {
       INSERT IGNORE INTO user_onboarding (user_id, role)
       SELECT id, role FROM users WHERE role IN ('client','therapist')
     `);
+
+    // Ensure at least one platform admin exists for /admin on myva.ae
+    try {
+      const [admins] = await conn.query(
+        `SELECT id FROM users WHERE role = 'admin' AND is_active = 1 LIMIT 1`
+      );
+      if (!admins.length) {
+        const bcrypt = require('bcryptjs');
+        const hash = await bcrypt.hash('Password123!', 10);
+        await conn.query(
+          `INSERT INTO users (email, phone, password_hash, full_name, role, locale, is_verified, is_active)
+           VALUES (?, ?, ?, ?, 'admin', 'en', 1, 1)
+           ON DUPLICATE KEY UPDATE
+             role = 'admin',
+             is_verified = 1,
+             is_active = 1,
+             password_hash = VALUES(password_hash),
+             full_name = VALUES(full_name)`,
+          ['admin@myva.ae', '+971500000001', hash, 'Nafs Admin']
+        );
+      }
+    } catch (err) {
+      if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
   } finally {
     conn.release();
   }

@@ -343,9 +343,28 @@ async function runSeed() {
     { uid: clientUserId }
   );
 
+  // Platform admin for https://myva.ae/admin/
+  await query(
+    `INSERT INTO users (email, phone, password_hash, full_name, role, locale, is_verified, is_active)
+     VALUES (:email, :phone, :password_hash, :full_name, 'admin', 'en', 1, 1)
+     ON DUPLICATE KEY UPDATE
+       role = 'admin',
+       is_verified = 1,
+       is_active = 1,
+       password_hash = VALUES(password_hash),
+       full_name = VALUES(full_name)`,
+    {
+      email: 'admin@myva.ae',
+      phone: '+971500000001',
+      password_hash: passwordHash,
+      full_name: 'Nafs Admin',
+    }
+  );
+
   return {
     therapist: { email: 'demo@nafs.app', password: 'Password123!' },
     client: { email: 'client@nafs.app', password: 'Password123!' },
+    admin: { email: 'admin@myva.ae', password: 'Password123!' },
   };
 }
 
@@ -355,6 +374,7 @@ if (require.main === module) {
       console.log('Seed complete.');
       console.log(`  Therapist: ${accounts.therapist.email} / ${accounts.therapist.password}`);
       console.log(`  Client:    ${accounts.client.email} / ${accounts.client.password}`);
+      console.log(`  Admin:     ${accounts.admin.email} / ${accounts.admin.password}`);
     })
     .catch((err) => {
       console.error(err);

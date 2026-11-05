@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nafs Admin · myva.ae</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg0: #071512;
+        --bg1: #0f2e28;
+        --panel: rgba(232, 245, 240, 0.07);
+        --panel-strong: rgba(232, 245, 240, 0.12);
+        --ink: #eef7f3;
+        --muted: #a7c4bb;
+        --accent: #f0c27a;
+        --accent-ink: #13201c;
+        --line: rgba(238, 247, 243, 0.14);
+        --good: #86efac;
+        --bad: #fca5a5;
+        --warn: #fcd34d;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: "Source Sans 3", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 12% 18%, rgba(240, 194, 122, 0.16), transparent 42%),
+          radial-gradient(circle at 88% 0%, rgba(56, 148, 122, 0.32), transparent 46%),
+          linear-gradient(160deg, var(--bg0) 0%, var(--bg1) 55%, #163f36 100%);
+      }
+      button, input, select, textarea {
+        font: inherit;
+        color: inherit;
+      }
+      button { cursor: pointer; }
+      a { color: var(--accent); }
+      .hidden { display: none !important; }
+
+      /* —— Login —— */
+      #login-view {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+      }
+      .login-card {
+        width: min(420px, 100%);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 1.25rem;
+        padding: 2rem 1.6rem;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+        animation: rise 0.55s ease both;
+      }
+      .login-card .brand {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 2.4rem;
+        margin: 0 0 0.25rem;
+        letter-spacing: -0.03em;
+      }
+      .login-card .sub {
+        color: var(--muted);
+        margin: 0 0 1.5rem;
+      }
+      label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin: 0 0 0.35rem;
+      }
+      .field { margin-bottom: 0.95rem; }
+      input, select, textarea {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid var(--line);
+        border-radius: 0.75rem;
+        padding: 0.75rem 0.9rem;
+        outline: none;
+      }
+      input:focus, select:focus, textarea:focus {
+        border-color: rgba(240, 194, 122, 0.55);
+        box-shadow: 0 0 0 3px rgba(240, 194, 122, 0.12);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        border: none;
+        border-radius: 999px;
+        padding: 0.75rem 1.15rem;
+        font-weight: 600;
+        background: var(--accent);
+        color: var(--accent-ink);
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+      .btn:hover { transform: translateY(-1px); }
+      .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+      .btn.block { width: 100%; }
+      .btn.ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      .btn.danger {
+        background: rgba(252, 165, 165, 0.18);
+        color: var(--bad);
+        border: 1px solid rgba(252, 165, 165, 0.35);
+      }
+      .btn.sm { padding: 0.45rem 0.8rem; font-size: 0.88rem; }
+      .error {
+        color: var(--bad);
+        background: rgba(252, 165, 165, 0.1);
+        border: 1px solid rgba(252, 165, 165, 0.25);
+        border-radius: 0.75rem;
+        padding: 0.65rem 0.8rem;
+        margin: 0 0 0.9rem;
+        font-size: 0.92rem;
+      }
+      .hint { color: var(--muted); font-size: 0.85rem; margin-top: 1rem; }
+
+      /* —— Shell —— */
+      #app-view { min-height: 100vh; display: grid; grid-template-columns: 240px 1fr; }
+      @media (max-width: 860px) {
+        #app-view { grid-template-columns: 1fr; }
+        .sidebar { position: sticky; top: 0; z-index: 5; }
+        .nav { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .nav button { flex: 1 1 auto; }
+      }
+      .sidebar {
+        border-right: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.22);
+        padding: 1.4rem 1rem;
+      }
+      .sidebar .brand {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.7rem;
+        margin: 0 0 0.15rem;
+      }
+      .sidebar .tag {
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin: 0 0 1.4rem;
+      }
+      .nav { display: grid; gap: 0.35rem; }
+      .nav button {
+        text-align: left;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 0.75rem;
+        padding: 0.7rem 0.85rem;
+        color: var(--muted);
+      }
+      .nav button.active, .nav button:hover {
+        background: var(--panel-strong);
+        border-color: var(--line);
+        color: var(--ink);
+      }
+      .sidebar .footer {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 0.55rem;
+      }
+      .who { font-size: 0.88rem; color: var(--muted); word-break: break-all; }
+
+      .main { padding: 1.4rem 1.35rem 2.5rem; }
+      .page-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 0.85rem;
+        margin-bottom: 1.25rem;
+      }
+      .page-head h1 {
+        font-family: Fraunces, Georgia, serif;
+        font-size: clamp(1.6rem, 3vw, 2.1rem);
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+      .page-head p { margin: 0.25rem 0 0; color: var(--muted); }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+      }
+      .stat {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        padding: 0.95rem 1rem;
+        animation: rise 0.45s ease both;
+      }
+      .stat .label { color: var(--muted); font-size: 0.82rem; margin-bottom: 0.35rem; }
+      .stat .value {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.85rem;
+        line-height: 1;
+      }
+      .stat .delta { margin-top: 0.4rem; font-size: 0.8rem; color: var(--accent); }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 1.1rem;
+        padding: 1rem 1.05rem;
+        margin-bottom: 1rem;
+      }
+      .panel h2 {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.2rem;
+        margin: 0 0 0.85rem;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-bottom: 0.85rem;
+        align-items: center;
+      }
+      .toolbar input, .toolbar select { width: auto; min-width: 0; flex: 1 1 140px; }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+      }
+      th, td {
+        text-align: left;
+        padding: 0.65rem 0.45rem;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+      }
+      th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+      tr:hover td { background: rgba(255, 255, 255, 0.02); }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        text-transform: capitalize;
+      }
+      .badge.ok { color: var(--good); border-color: rgba(134, 239, 172, 0.35); }
+      .badge.off { color: var(--bad); border-color: rgba(252, 165, 165, 0.35); }
+      .badge.warn { color: var(--warn); border-color: rgba(252, 211, 77, 0.35); }
+      .row-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+      .chart {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(28px, 1fr));
+        gap: 0.35rem;
+        align-items: end;
+        height: 180px;
+        margin-top: 0.5rem;
+      }
+      .bar-wrap {
+        display: grid;
+        grid-template-rows: 1fr auto;
+        height: 100%;
+        gap: 0.35rem;
+        text-align: center;
+      }
+      .bar {
+        align-self: end;
+        width: 100%;
+        min-height: 2px;
+        border-radius: 0.4rem 0.4rem 0.15rem 0.15rem;
+        background: linear-gradient(180deg, var(--accent), rgba(56, 148, 122, 0.85));
+        transition: height 0.4s ease;
+      }
+      .bar-label { font-size: 0.65rem; color: var(--muted); writing-mode: horizontal-tb; }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+      }
+      .form-grid .full { grid-column: 1 / -1; }
+      .muted { color: var(--muted); }
+      .empty {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--muted);
+      }
+      .toast {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        background: #12332c;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        padding: 0.8rem 1rem;
+        border-radius: 0.85rem;
+        box-shadow: var(--shadow);
+        z-index: 50;
+        animation: rise 0.3s ease both;
+        max-width: min(360px, calc(100% - 2rem));
+      }
+      .toast.bad { border-color: rgba(252, 165, 165, 0.4); color: var(--bad); }
+
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: none; }
+      }
+
+      .table-wrap { overflow-x: auto; }
+    </style>
+  </head>
+  <body>
+    <div id="login-view">
+      <form class="login-card" id="login-form">
+        <h1 class="brand">Nafs</h1>
+        <p class="sub">Admin panel for myva.ae — manage consultants, users, and daily activity.</p>
+        <div id="login-error" class="error hidden"></div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="username" required placeholder="admin@myva.ae" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+        </div>
+        <button class="btn block" type="submit" id="login-btn">Sign in</button>
+        <p class="hint">Use an account with role <code>admin</code>. Default seed: admin@myva.ae</p>
+      </form>
+    </div>
+
+    <div id="app-view" class="hidden">
+      <aside class="sidebar">
+        <div class="brand">Nafs</div>
+        <p class="tag">Admin · myva.ae</p>
+        <nav class="nav" id="nav">
+          <button type="button" data-page="overview" class="active">Overview</button>
+          <button type="button" data-page="activity">Daily activity</button>
+          <button type="button" data-page="users">Users</button>
+          <button type="button" data-page="consultants">Add consultant</button>
+          <button type="button" data-page="applications">Applications</button>
+        </nav>
+        <div class="footer">
+          <div class="who" id="who"></div>
+          <button type="button" class="btn ghost sm" id="logout-btn">Sign out</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section id="page-overview" class="page"></section>
+        <section id="page-activity" class="page hidden"></section>
+        <section id="page-users" class="page hidden"></section>
+        <section id="page-consultants" class="page hidden"></section>
+        <section id="page-applications" class="page hidden"></section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script>
+      const API = '/api/v1';
+      const state = {
+        token: localStorage.getItem('nafs_admin_token') || '',
+        user: JSON.parse(localStorage.getItem('nafs_admin_user') || 'null'),
+        page: 'overview',
+        users: { q: '', role: '', active: '', page: 1 },
+      };
+
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => [...document.querySelectorAll(sel)];
+
+      function toast(msg, bad = false) {
+        const el = $('#toast');
+        el.textContent = msg;
+        el.classList.toggle('bad', !!bad);
+        el.classList.remove('hidden');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => el.classList.add('hidden'), 3200);
+      }
+
+      async function api(path, opts = {}) {
+        const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+        if (state.token) headers.Authorization = `Bearer ${state.token}`;
+        const res = await fetch(`${API}${path}`, { ...opts, headers });
+        const json = await res.json().catch(() => ({}));
+        if (res.status === 401 || res.status === 403) {
+          if (state.token && path !== '/auth/login') {
+            logout(false);
+            throw new Error(json.message || 'Session expired — sign in again');
+          }
+        }
+        if (!res.ok || json.success === false) {
+          throw new Error(json.message || `Request failed (${res.status})`);
+        }
+        return json;
+      }
+
+      function showLogin() {
+        $('#login-view').classList.remove('hidden');
+        $('#app-view').classList.add('hidden');
+      }
+
+      function showApp() {
+        $('#login-view').classList.add('hidden');
+        $('#app-view').classList.remove('hidden');
+        $('#who').textContent = state.user?.email || '';
+        setPage(state.page);
+      }
+
+      function logout(clearMsg = true) {
+        state.token = '';
+        state.user = null;
+        localStorage.removeItem('nafs_admin_token');
+        localStorage.removeItem('nafs_admin_user');
+        showLogin();
+        if (clearMsg) toast('Signed out');
+      }
+
+      function setPage(page) {
+        state.page = page;
+        $$('.nav button').forEach((b) => b.classList.toggle('active', b.dataset.page === page));
+        $$('.page').forEach((p) => p.classList.add('hidden'));
+        const el = $(`#page-${page}`);
+        if (el) el.classList.remove('hidden');
+        if (page === 'overview') loadOverview();
+        if (page === 'activity') loadActivity();
+        if (page === 'users') loadUsers();
+        if (page === 'consultants') renderConsultantForm();
+        if (page === 'applications') loadApplications();
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function roleLabel(role) {
+        if (role === 'therapist') return 'consultant';
+        return role || '—';
+      }
+
+      async function loadOverview() {
+        const root = $('#page-overview');
+        root.innerHTML = `<div class="empty">Loading overview…</div>`;
+        try {
+          const { data } = await api('/admin/panel/overview');
+          const t = data.totals;
+          const d = data.today;
+          root.innerHTML = `
+            <div class="page-head">
+              <div>
+                <h1>Overview</h1>
+                <p>Live counts across Nafs on myva.ae</p>
+              </div>
+              <button type="button" class="btn ghost sm" id="refresh-overview">Refresh</button>
+            </div>
+            <div class="stats">
+              <div class="stat"><div class="label">Total users</div><div class="value">${t.users_total}</div></div>
+              <div class="stat"><div class="label">Clients</div><div class="value">${t.clients}</div></div>
+              <div class="stat"><div class="label">Consultants</div><div class="value">${t.consultants}</div></div>
+              <div class="stat"><div class="label">Admins</div><div class="value">${t.admins}</div></div>
+              <div class="stat"><div class="label">Active</div><div class="value">${t.active_users}</div></div>
+              <div class="stat"><div class="label">Inactive</div><div class="value">${t.inactive_users}</div></div>
+            </div>
+            <div class="panel">
+              <h2>Today</h2>
+              <div class="stats">
+                <div class="stat"><div class="label">Users joined</div><div class="value">${d.users_joined}</div></div>
+                <div class="stat"><div class="label">Consultants added</div><div class="value">${d.consultants_joined}</div></div>
+                <div class="stat"><div class="label">Clients joined</div><div class="value">${d.clients_joined}</div></div>
+                <div class="stat"><div class="label">Sessions</div><div class="value">${d.sessions_today}</div></div>
+                <div class="stat"><div class="label">Bookings</div><div class="value">${d.bookings_today}</div></div>
+                <div class="stat"><div class="label">Mood check-ins</div><div class="value">${d.mood_checkins_today}</div></div>
+                <div class="stat"><div class="label">Journal entries</div><div class="value">${d.journal_entries_today}</div></div>
+                <div class="stat"><div class="label">Pending apps</div><div class="value">${d.applications_pending}</div></div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Recent users</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th></tr></thead>
+                  <tbody>
+                    ${(data.recent_users || []).map((u) => `
+                      <tr>
+                        <td>${escapeHtml(u.full_name)}</td>
+                        <td>${escapeHtml(u.email)}</td>
+                        <td><span class="badge">${escapeHtml(roleLabel(u.role))}</span></td>
+                        <td><span class="badge ${u.is_active ? 'ok' : 'off'}">${u.is_active ? 'active' : 'inactive'}</span></td>
+                        <td>${escapeHtml(String(u.created_at || '').slice(0, 10))}</td>
+                      </tr>`).join('') || `<tr><td colspan="5" class="empty">No users yet</td></tr>`}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Pending consultant applications</h2>
+              ${(data.pending_applications || []).length
+                ? `<div class="table-wrap"><table>
+                    <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Submitted</th></tr></thead>
+                    <tbody>
+                      ${data.pending_applications.map((a) => `
+                        <tr>
+                          <td>${escapeHtml(a.full_name)}</td>
+                          <td>${escapeHtml(a.email)}</td>
+                          <td><span class="badge warn">${escapeHtml(a.status)}</span></td>
+                          <td>${escapeHtml(String(a.submitted_at || '').slice(0, 16).replace('T', ' '))}</td>
+                        </tr>`).join('')}
+                    </tbody></table></div>`
+                : `<p class="muted">No pending applications.</p>`}
+            </div>`;
+          $('#refresh-overview')?.addEventListener('click', loadOverview);
+        } catch (err) {
+          root.innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      async function loadActivity() {
+        const root = $('#page-activity');
+        root.innerHTML = `<div class="empty">Loading activity…</div>`;
+        try {
+          const { data } = await api('/admin/panel/activity?days=14');
+          const series = data.series || [];
+          const maxUsers = Math.max(1, ...series.map((s) => s.users));
+          const sum = (key) => series.reduce((a, s) => a + (s[key] || 0), 0);
+          root.innerHTML = `
+            <div class="page-head">
+              <div>
+                <h1>Daily activity</h1>
+                <p>Last ${data.days} days — users &amp; consultants added each day</p>
+              </div>
+              <button type="button" class="btn ghost sm" id="refresh-activity">Refresh</button>
+            </div>
+            <div class="stats">
+              <div class="stat"><div class="label">Users (${data.days}d)</div><div class="value">${sum('users')}</div></div>
+              <div class="stat"><div class="label">Consultants</div><div class="value">${sum('consultants')}</div></div>
+              <div class="stat"><div class="label">Clients</div><div class="value">${sum('clients')}</div></div>
+              <div class="stat"><div class="label">Sessions</div><div class="value">${sum('sessions')}</div></div>
+              <div class="stat"><div class="label">Bookings</div><div class="value">${sum('bookings')}</div></div>
+              <div class="stat"><div class="label">Mood check-ins</div><div class="value">${sum('mood_checkins')}</div></div>
+            </div>
+            <div class="panel">
+              <h2>Users joined per day</h2>
+              <div class="chart">
+                ${series.map((s) => {
+                  const h = Math.round((s.users / maxUsers) * 100);
+                  return `<div class="bar-wrap" title="${s.day}: ${s.users} users, ${s.consultants} consultants">
+                    <div class="bar" style="height:${Math.max(h, s.users ? 8 : 2)}%"></div>
+                    <div class="bar-label">${s.day.slice(5)}</div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Day-by-day</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Day</th><th>Users</th><th>Consultants</th><th>Clients</th>
+                      <th>Sessions</th><th>Bookings</th><th>Mood</th><th>Journal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${[...series].reverse().map((s) => `
+                      <tr>
+                        <td>${escapeHtml(s.day)}</td>
+                        <td>${s.users}</td>
+                        <td>${s.consultants}</td>
+                        <td>${s.clients}</td>
+                        <td>${s.sessions}</td>
+                        <td>${s.bookings}</td>
+                        <td>${s.mood_checkins}</td>
+                        <td>${s.journal_entries}</td>
+                      </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>`;
+          $('#refresh-activity')?.addEventListener('click', loadActivity);
+        } catch (err) {
+          root.innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      async function loadUsers() {
+        const root = $('#page-users');
+        const { q, role, active, page } = state.users;
+        root.innerHTML = `
+          <div class="page-head">
+            <div>
+              <h1>Users</h1>
+              <p>Search, deactivate, or permanently remove accounts</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="toolbar">
+              <input id="user-q" placeholder="Search name, email, phone" value="${escapeHtml(q)}" />
+              <select id="user-role">
+                <option value="">All roles</option>
+                <option value="client" ${role === 'client' ? 'selected' : ''}>Clients</option>
+                <option value="therapist" ${role === 'therapist' ? 'selected' : ''}>Consultants</option>
+                <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admins</option>
+              </select>
+              <select id="user-active">
+                <option value="">Any status</option>
+                <option value="1" ${active === '1' ? 'selected' : ''}>Active</option>
+                <option value="0" ${active === '0' ? 'selected' : ''}>Inactive</option>
+              </select>
+              <button type="button" class="btn sm" id="user-search">Search</button>
+            </div>
+            <div id="users-table"><div class="empty">Loading…</div></div>
+          </div>`;
+
+        $('#user-search').onclick = () => {
+          state.users.q = $('#user-q').value.trim();
+          state.users.role = $('#user-role').value;
+          state.users.active = $('#user-active').value;
+          state.users.page = 1;
+          loadUsers();
+        };
+
+        try {
+          const params = new URLSearchParams({ page: String(page), limit: '25' });
+          if (q) params.set('q', q);
+          if (role) params.set('role', role);
+          if (active !== '') params.set('active', active);
+          const { data } = await api(`/admin/panel/users?${params}`);
+          const totalPages = Math.max(1, Math.ceil((data.total || 0) / (data.limit || 25)));
+          $('#users-table').innerHTML = `
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${(data.users || []).map((u) => `
+                    <tr>
+                      <td>${u.id}</td>
+                      <td>${escapeHtml(u.full_name)}</td>
+                      <td>${escapeHtml(u.email)}</td>
+                      <td><span class="badge">${escapeHtml(roleLabel(u.role))}</span></td>
+                      <td><span class="badge ${u.is_active ? 'ok' : 'off'}">${u.is_active ? 'active' : 'inactive'}</span></td>
+                      <td>${escapeHtml(String(u.created_at || '').slice(0, 10))}</td>
+                      <td>
+                        <div class="row-actions">
+                          ${u.is_active
+                            ? `<button type="button" class="btn ghost sm" data-act="deactivate" data-id="${u.id}">Deactivate</button>`
+                            : `<button type="button" class="btn ghost sm" data-act="activate" data-id="${u.id}">Activate</button>`}
+                          <button type="button" class="btn danger sm" data-act="delete" data-id="${u.id}" data-name="${escapeHtml(u.full_name)}">Delete</button>
+                        </div>
+                      </td>
+                    </tr>`).join('') || `<tr><td colspan="7" class="empty">No users found</td></tr>`}
+                </tbody>
+              </table>
+            </div>
+            <div class="toolbar" style="margin-top:0.85rem;justify-content:space-between">
+              <span class="muted">${data.total || 0} total · page ${page} / ${totalPages}</span>
+              <div class="row-actions">
+                <button type="button" class="btn ghost sm" id="prev-page" ${page <= 1 ? 'disabled' : ''}>Previous</button>
+                <button type="button" class="btn ghost sm" id="next-page" ${page >= totalPages ? 'disabled' : ''}>Next</button>
+              </div>
+            </div>`;
+
+          $('#prev-page')?.addEventListener('click', () => {
+            state.users.page = Math.max(1, page - 1);
+            loadUsers();
+          });
+          $('#next-page')?.addEventListener('click', () => {
+            state.users.page = page + 1;
+            loadUsers();
+          });
+
+          $$('#users-table [data-act]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              const id = btn.dataset.id;
+              const act = btn.dataset.act;
+              try {
+                if (act === 'deactivate') {
+                  await api(`/admin/panel/users/${id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ is_active: false }),
+                  });
+                  toast('User deactivated');
+                } else if (act === 'activate') {
+                  await api(`/admin/panel/users/${id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ is_active: true }),
+                  });
+                  toast('User activated');
+                } else if (act === 'delete') {
+                  const hard = confirm(
+                    `Permanently delete ${btn.dataset.name || 'this user'}?\n\nOK = permanent delete\nCancel = abort`
+                  );
+                  if (!hard) return;
+                  await api(`/admin/panel/users/${id}?hard=1`, { method: 'DELETE' });
+                  toast('User deleted');
+                }
+                loadUsers();
+              } catch (err) {
+                toast(err.message, true);
+              }
+            });
+          });
+        } catch (err) {
+          $('#users-table').innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      function renderConsultantForm() {
+        const root = $('#page-consultants');
+        root.innerHTML = `
+          <div class="page-head">
+            <div>
+              <h1>Add consultant</h1>
+              <p>Create a verified consultant account ready to log in</p>
+            </div>
+          </div>
+          <div class="panel">
+            <form id="consultant-form" class="form-grid">
+              <div>
+                <label for="c-name">Full name</label>
+                <input id="c-name" name="full_name" required />
+              </div>
+              <div>
+                <label for="c-email">Email</label>
+                <input id="c-email" name="email" type="email" required />
+              </div>
+              <div>
+                <label for="c-phone">Phone</label>
+                <input id="c-phone" name="phone" placeholder="+9715…" />
+              </div>
+              <div>
+                <label for="c-pass">Password</label>
+                <input id="c-pass" name="password" type="password" minlength="8" required />
+              </div>
+              <div>
+                <label for="c-city">City</label>
+                <input id="c-city" name="city" />
+              </div>
+              <div>
+                <label for="c-country">Country</label>
+                <input id="c-country" name="country" value="UAE" />
+              </div>
+              <div>
+                <label for="c-years">Years experience</label>
+                <input id="c-years" name="years_experience" type="number" min="0" max="60" value="0" />
+              </div>
+              <div>
+                <label for="c-fee">Default session fee</label>
+                <input id="c-fee" name="session_fee_default" type="number" min="0" step="0.01" />
+              </div>
+              <div>
+                <label for="c-gender">Gender</label>
+                <select id="c-gender" name="gender">
+                  <option value="unspecified">Unspecified</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+              </div>
+              <div>
+                <label for="c-locale">Locale</label>
+                <select id="c-locale" name="locale">
+                  <option value="en">English</option>
+                  <option value="ar">Arabic</option>
+                </select>
+              </div>
+              <div class="full">
+                <label for="c-bio">Bio</label>
+                <textarea id="c-bio" name="bio" rows="3"></textarea>
+              </div>
+              <div class="full">
+                <button class="btn" type="submit" id="c-submit">Create consultant</button>
+              </div>
+            </form>
+          </div>`;
+
+        $('#consultant-form').onsubmit = async (e) => {
+          e.preventDefault();
+          const btn = $('#c-submit');
+          btn.disabled = true;
+          const body = {
+            full_name: $('#c-name').value.trim(),
+            email: $('#c-email').value.trim(),
+            phone: $('#c-phone').value.trim() || null,
+            password: $('#c-pass').value,
+            city: $('#c-city').value.trim() || null,
+            country: $('#c-country').value.trim() || null,
+            years_experience: Number($('#c-years').value) || 0,
+            session_fee_default: $('#c-fee').value === '' ? null : Number($('#c-fee').value),
+            gender: $('#c-gender').value,
+            locale: $('#c-locale').value,
+            bio: $('#c-bio').value.trim() || null,
+          };
+          try {
+            await api('/admin/panel/consultants', { method: 'POST', body: JSON.stringify(body) });
+            toast('Consultant created');
+            e.target.reset();
+            $('#c-country').value = 'UAE';
+          } catch (err) {
+            toast(err.message, true);
+          } finally {
+            btn.disabled = false;
+          }
+        };
+      }
+
+      async function loadApplications() {
+        const root = $('#page-applications');
+        root.innerHTML = `
+          <div class="page-head">
+            <div>
+              <h1>Applications</h1>
+              <p>Approve or reject consultant applications</p>
+            </div>
+            <button type="button" class="btn ghost sm" id="refresh-apps">Refresh</button>
+          </div>
+          <div class="panel"><div id="apps-table"><div class="empty">Loading…</div></div></div>`;
+        $('#refresh-apps').onclick = loadApplications;
+        try {
+          const { data } = await api('/admin/panel/applications');
+          const apps = data.applications || [];
+          $('#apps-table').innerHTML = apps.length
+            ? `<div class="table-wrap"><table>
+                <thead>
+                  <tr><th>Name</th><th>Email</th><th>City</th><th>Status</th><th>Submitted</th><th></th></tr>
+                </thead>
+                <tbody>
+                  ${apps.map((a) => `
+                    <tr>
+                      <td>${escapeHtml(a.full_name)}</td>
+                      <td>${escapeHtml(a.email)}</td>
+                      <td>${escapeHtml(a.city || '—')}</td>
+                      <td><span class="badge ${a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'off' : 'warn'}">${escapeHtml(a.status)}</span></td>
+                      <td>${escapeHtml(String(a.submitted_at || a.created_at || '').slice(0, 16).replace('T', ' '))}</td>
+                      <td>
+                        ${['submitted', 'under_review', 'draft'].includes(a.status)
+                          ? `<div class="row-actions">
+                              <button type="button" class="btn sm" data-app="approve" data-id="${a.id}">Approve</button>
+                              <button type="button" class="btn danger sm" data-app="reject" data-id="${a.id}">Reject</button>
+                            </div>`
+                          : '—'}
+                      </td>
+                    </tr>`).join('')}
+                </tbody></table></div>`
+            : `<p class="muted">No applications yet.</p>`;
+
+          $$('#apps-table [data-app]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              const id = btn.dataset.id;
+              const action = btn.dataset.app;
+              const notes = prompt(action === 'approve' ? 'Approval notes (optional)' : 'Rejection notes (optional)', '') || '';
+              try {
+                await api(`/admin/panel/applications/${id}/${action}`, {
+                  method: 'POST',
+                  body: JSON.stringify({ notes }),
+                });
+                toast(action === 'approve' ? 'Application approved' : 'Application rejected');
+                loadApplications();
+              } catch (err) {
+                toast(err.message, true);
+              }
+            });
+          });
+        } catch (err) {
+          $('#apps-table').innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      $('#login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errEl = $('#login-error');
+        errEl.classList.add('hidden');
+        const btn = $('#login-btn');
+        btn.disabled = true;
+        try {
+          const json = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: $('#email').value.trim(),
+              password: $('#password').value,
+            }),
+          });
+          const user = json.data?.user;
+          const token = json.data?.token;
+          if (!user || user.role !== 'admin') {
+            throw new Error('This account is not an admin. Use an admin@… account.');
+          }
+          state.user = user;
+          state.token = token;
+          localStorage.setItem('nafs_admin_token', token);
+          localStorage.setItem('nafs_admin_user', JSON.stringify(user));
+          showApp();
+        } catch (err) {
+          errEl.textContent = err.message;
+          errEl.classList.remove('hidden');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('#logout-btn').addEventListener('click', () => logout());
+      $$('#nav button').forEach((b) => b.addEventListener('click', () => setPage(b.dataset.page)));
+
+      if (state.token && state.user?.role === 'admin') {
+        showApp();
+      } else {
+        showLogin();
+      }
+    </script>
+  </body>
+</html>
