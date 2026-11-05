@@ -44,13 +44,20 @@ const changePasswordLimiter = rateLimit({
 const router = express.Router();
 
 router.get('/health', (_req, res) => {
-  res.json({ success: true, message: 'Nafs API healthy', data: { time: new Date().toISOString() } });
+  const { pushConfigured } = require('../services/pushService');
+  res.json({
+    success: true,
+    message: 'Nafs API healthy',
+    data: { time: new Date().toISOString(), push_configured: pushConfigured() },
+  });
 });
 
 // One-time / secured remote migrate+seed (Hostinger). Requires X-Setup-Key header.
 router.post('/admin/db-setup', admin.dbSetup);
 router.get('/admin/email-status', admin.emailStatus);
 router.post('/admin/email-test', admin.emailTest);
+router.get('/admin/push-status', admin.pushStatusAdmin);
+router.post('/admin/push-config', admin.pushConfigAdmin);
 
 // Splash / language / app config (Figma first pages)
 router.get('/app/bootstrap', appCtrl.bootstrap);
@@ -256,6 +263,12 @@ router.patch('/report-problem/:id', authenticate, requireRole('admin'), validate
 
 // Notifications & devices
 router.get('/notifications', authenticate, notification.list);
+router.post(
+  '/notifications/test-push',
+  authenticate,
+  validate(notification.testPushSchema),
+  notification.testPush
+);
 router.post('/notifications/:id/read', authenticate, notification.markRead);
 router.post('/notifications/read-all', authenticate, notification.markAllRead);
 router.get('/notifications/preferences', authenticate, notification.getPrefs);

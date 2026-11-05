@@ -349,6 +349,8 @@ async function ensureSchema() {
       `ALTER TABLE data_export_requests ADD COLUMN file_data LONGBLOB NULL`,
       `ALTER TABLE device_tokens ADD COLUMN session_hash CHAR(64) NULL`,
       `ALTER TABLE device_tokens ADD COLUMN session_expires_at DATETIME NULL`,
+      // FCM tokens can exceed 255 on some platforms / web push
+      `ALTER TABLE device_tokens MODIFY COLUMN token VARCHAR(512) NOT NULL`,
       `ALTER TABLE media_recordings ADD COLUMN file_mime VARCHAR(80) NULL`,
       `ALTER TABLE media_recordings ADD COLUMN file_data LONGBLOB NULL`,
     ]) {
@@ -358,6 +360,15 @@ async function ensureSchema() {
         if (err.code !== 'ER_DUP_FIELDNAME' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
       }
     }
+
+    // Opaque app secrets (e.g. FCM service account) — survives redeploys without panel env
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS app_secrets (
+        secret_key VARCHAR(64) NOT NULL PRIMARY KEY,
+        value_text MEDIUMTEXT NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
     // My Plan: per-user saved exercises (catalogue string ids) + schedule/completion
     await conn.query(`

@@ -84,6 +84,19 @@ Repo copies under `postman/` if you prefer file import.
 
 Live API: https://myva.ae/api/v1  
 
+**Push (FCM):** Firebase HTTP v1. Set credentials with either Hostinger env
+`FCM_SERVICE_ACCOUNT` (JSON/base64) or once via:
+
+```bash
+curl -X POST https://myva.ae/api/v1/admin/push-config \
+  -H 'Content-Type: application/json' \
+  -H 'X-Setup-Key: YOUR_SETUP_KEY' \
+  -d '{"service_account":"<json or base64>"}'
+```
+
+Clients must `POST /devices` with the FCM token. Verify with
+`POST /notifications/test-push` and `GET /admin/push-status`.
+
 Use `hostinger.env` with **Import .env** (includes `DB_NAME=u809513268_nafs` and `SETUP_KEY`). After deploy, migrate + seed remotely:
 
 ```bash

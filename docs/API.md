@@ -159,9 +159,12 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | POST | `/contact` |
 | POST | `/report-problem` |
 | GET | `/notifications` |
+| POST | `/notifications/test-push` | Send a real FCM test to this user's devices |
 | GET/PATCH | `/notifications/preferences` |
-| POST/GET | `/devices` |
+| POST/GET | `/devices` | Register FCM token (`token`, `platform`) |
 | DELETE | `/devices/:id` |
+| GET | `/admin/push-status` | Setup-key: FCM configured? OAuth OK? device count |
+| POST | `/admin/push-config` | Setup-key: save FCM service account into `app_secrets` |
 | GET/PUT | `/privacy/consents` |
 | GET/POST | `/privacy/media` |
 | DELETE | `/privacy/media/:id` |

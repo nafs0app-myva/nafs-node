@@ -340,7 +340,7 @@ const changePassword = asyncHandler(async (req, res) => {
 
 const logoutSchema = Joi.object({
   // This device's push token; it is unregistered so a signed-out account stops getting pushes here.
-  fcm_token: Joi.string().max(255).allow('', null),
+  fcm_token: Joi.string().max(512).allow('', null),
 });
 
 // POST /auth/logout - ends this session on the server: the token is revoked and

@@ -4,6 +4,7 @@ const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
 const jwt = require('jsonwebtoken');
 const { hashToken, invalidateUser } = require('../middleware/auth');
+const { sendPush, pushConfigured, pushStatus } = require('../services/pushService');
 
 /** The signed-in request's own login token, as `{hash, expires}`. */
 function currentSession(req) {
@@ -27,9 +28,16 @@ async function endDeviceSessions(userId, devices) {
 }
 
 const deviceSchema = Joi.object({
-  token: Joi.string().required(),
+  // FCM registration tokens are usually ~150–200 chars; allow headroom for web.
+  token: Joi.string().trim().min(20).max(512).required(),
   platform: Joi.string().valid('ios', 'android', 'web').required(),
   device_name: Joi.string().allow('', null),
+});
+
+const testPushSchema = Joi.object({
+  title: Joi.string().max(120).default('Nafs test'),
+  body: Joi.string().max(500).default('Push delivery check from the Nafs API'),
+  data_only: Joi.boolean().default(false),
 });
 
 const prefsSchema = Joi.object({
@@ -82,7 +90,78 @@ const registerDevice = asyncHandler(async (req, res) => {
       device_name: req.body.device_name || null,
     }
   );
-  return ok(res, null, 'Device registered', 201);
+  return ok(
+    res,
+    {
+      push_configured: pushConfigured(),
+      ...pushStatus(),
+    },
+    'Device registered',
+    201
+  );
+});
+
+/**
+ * POST /notifications/test-push
+ * Sends a real FCM message to this user's registered devices and returns delivery stats.
+ */
+const testPush = asyncHandler(async (req, res) => {
+  const title = req.body.title || 'Nafs test';
+  const body = req.body.body || 'Push delivery check from the Nafs API';
+  const dataOnly = !!req.body.data_only;
+
+  const devices = await query(
+    `SELECT id, platform, LEFT(token, 12) AS token_prefix, created_at, last_active_at
+     FROM device_tokens WHERE user_id = :uid`,
+    { uid: req.user.id }
+  );
+
+  if (!pushConfigured()) {
+    return fail(
+      res,
+      'FCM is not configured on this server. Set FCM_SERVICE_ACCOUNT (base64 service-account JSON) and redeploy.',
+      503,
+      { push: pushStatus(), devices }
+    );
+  }
+  if (!devices.length) {
+    return fail(
+      res,
+      'No device tokens registered. Call POST /devices with the FCM token from the app first.',
+      400,
+      { push: pushStatus(), devices: [] }
+    );
+  }
+
+  const result = await sendPush(req.user.id, {
+    title,
+    body,
+    dataOnly,
+    data: { type: 'test_push', source: 'api' },
+  });
+
+  // In-app inbox row (without a second push — sendPush already ran above).
+  if (!dataOnly) {
+    await query(
+      `INSERT INTO notifications (user_id, title, body, type, data)
+       VALUES (:uid, :title, :body, 'test_push', :data)`,
+      {
+        uid: req.user.id,
+        title,
+        body,
+        data: JSON.stringify({ source: 'api' }),
+      }
+    );
+  }
+
+  if (!result.delivered) {
+    return fail(res, 'Push was not delivered to any device', 502, {
+      push: pushStatus(),
+      devices,
+      result,
+    });
+  }
+  return ok(res, { push: pushStatus(), devices, result }, 'Test push sent');
 });
 
 const listDevices = asyncHandler(async (req, res) => {
@@ -168,6 +247,7 @@ const updatePrefs = asyncHandler(async (req, res) => {
 module.exports = {
   deviceSchema,
   prefsSchema,
+  testPushSchema,
   list,
   markRead,
   markAllRead,
@@ -177,4 +257,5 @@ module.exports = {
   revokeOtherDevices,
   getPrefs,
   updatePrefs,
+  testPush,
 };

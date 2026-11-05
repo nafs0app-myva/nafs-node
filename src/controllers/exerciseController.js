@@ -343,7 +343,7 @@ const getOne = asyncHandler(async (req, res) => {
       planMeta = {
         plan_id: row.id,
         added_at: row.added_at,
-        scheduled_for: row.scheduled_for ? String(row.scheduled_for).slice(0, 10) : null,
+        scheduled_for: toDateOnly(row.scheduled_for),
         completed_at: row.completed_at || null,
       };
     }

@@ -5,6 +5,14 @@ const env = require('../config/env');
 const { ok, fail } = require('../utils/response');
 const { getEmailStatus, recentOutbox, sendMail, smtpConfigured } = require('../services/emailService');
 const { ensureSchema } = require('../db/ensureSchema');
+const {
+  pushConfigured,
+  pushStatus,
+  accessToken,
+  resetPushAccount,
+  warmPushFromDb,
+  savePushAccount,
+} = require('../services/pushService');
 
 const EMPTY_DB_BOOTSTRAP_KEY = 'nafs_setup_myva_7kR9pL2mX4qW8nV1';
 
@@ -101,4 +109,55 @@ async function emailTest(req, res) {
   return ok(res, result, 'Test email sent');
 }
 
-module.exports = { dbSetup, emailStatus, emailTest };
+async function pushStatusAdmin(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  await warmPushFromDb();
+  const status = pushStatus();
+  let oauth = null;
+  if (status.configured) {
+    try {
+      const token = await accessToken();
+      oauth = { ok: true, token_len: token.length };
+    } catch (err) {
+      oauth = { ok: false, error: err.message };
+    }
+  }
+  let device_count = 0;
+  try {
+    const [{ c }] = await query(`SELECT COUNT(*) AS c FROM device_tokens`);
+    device_count = Number(c || 0);
+  } catch (_) {
+    /* table may be missing before migrate */
+  }
+  return ok(res, { push: status, oauth, device_count });
+}
+
+/**
+ * POST /admin/push-config
+ * Body: { service_account: "<json or base64 json>" }
+ * Stores FCM credentials in app_secrets so production push works without panel env.
+ */
+async function pushConfigAdmin(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  const raw = req.body?.service_account || req.body?.FCM_SERVICE_ACCOUNT || '';
+  if (!raw || String(raw).trim().length < 20) {
+    return fail(res, 'Provide body.service_account (JSON or base64 service-account JSON)', 400);
+  }
+  try {
+    const status = await savePushAccount(raw);
+    let oauth = null;
+    try {
+      const token = await accessToken();
+      oauth = { ok: true, token_len: token.length };
+    } catch (err) {
+      oauth = { ok: false, error: err.message };
+    }
+    return ok(res, { push: status, oauth }, 'FCM service account saved');
+  } catch (err) {
+    return fail(res, err.message || 'Invalid service account', 400);
+  }
+}
+
+module.exports = { dbSetup, emailStatus, emailTest, pushStatusAdmin, pushConfigAdmin };

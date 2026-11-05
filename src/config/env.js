@@ -19,8 +19,9 @@ const env = {
     url: process.env.APP_URL || 'http://127.0.0.1:43125',
   },
   setupKey: process.env.SETUP_KEY || '',
-  // Push via Firebase Cloud Messaging (HTTP v1). Provide the service-account
-  // JSON inline, base64-encoded, or as a file path.
+  // Push via Firebase Cloud Messaging (HTTP v1).
+  // Sources (first match): FCM_SERVICE_ACCOUNT env, FCM_SERVICE_ACCOUNT_FILE,
+  // then app_secrets.fcm_service_account in MySQL (set via POST /admin/push-config).
   fcm: {
     serviceAccount: process.env.FCM_SERVICE_ACCOUNT || '',
     serviceAccountFile: process.env.FCM_SERVICE_ACCOUNT_FILE || '',

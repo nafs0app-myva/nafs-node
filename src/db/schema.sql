@@ -424,7 +424,7 @@ CREATE TABLE notifications (
 CREATE TABLE device_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
-  token VARCHAR(255) NOT NULL,
+  token VARCHAR(512) NOT NULL,
   platform ENUM('ios','android','web') NOT NULL,
   device_name VARCHAR(120) NULL,
   session_hash CHAR(64) NULL,
@@ -654,6 +654,13 @@ CREATE TABLE notification_preferences (
   email_channel TINYINT(1) NOT NULL DEFAULT 1,
   sms_channel TINYINT(1) NOT NULL DEFAULT 0,
   CONSTRAINT fk_np_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Opaque secrets (FCM service account JSON, etc.) — set via admin APIs
+CREATE TABLE app_secrets (
+  secret_key VARCHAR(64) NOT NULL PRIMARY KEY,
+  value_text MEDIUMTEXT NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Per-user My Plan (exercise_id is a catalogue string id, not a DB FK)

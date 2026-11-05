@@ -2,6 +2,7 @@ const app = require('./app');
 const env = require('./config/env');
 const { pool } = require('./config/db');
 const { ensureSchema } = require('./db/ensureSchema');
+const { warmPushFromDb } = require('./services/pushService');
 const { scheduleLicenseExpiryReminders } = require('./jobs/licenseExpiry');
 
 async function start() {
@@ -11,6 +12,8 @@ async function start() {
   conn.release();
 
   await ensureSchema();
+  const pushReady = await warmPushFromDb().catch(() => false);
+  console.log(`[push] FCM configured: ${pushReady ? 'yes' : 'no'}`);
 
   scheduleLicenseExpiryReminders();
 
