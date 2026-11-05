@@ -3,6 +3,7 @@ const env = require('./config/env');
 const { pool } = require('./config/db');
 const { ensureSchema } = require('./db/ensureSchema');
 const { warmPushFromDb } = require('./services/pushService');
+const { warmAgoraFromDb } = require('./services/agoraService');
 const { scheduleLicenseExpiryReminders } = require('./jobs/licenseExpiry');
 
 async function start() {
@@ -14,6 +15,8 @@ async function start() {
   await ensureSchema();
   const pushReady = await warmPushFromDb().catch(() => false);
   console.log(`[push] FCM configured: ${pushReady ? 'yes' : 'no'}`);
+  const agoraReady = await warmAgoraFromDb().catch(() => false);
+  console.log(`[agora] RTC tokens configured: ${agoraReady ? 'yes' : 'no'}`);
 
   scheduleLicenseExpiryReminders();
 

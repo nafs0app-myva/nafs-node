@@ -4,6 +4,7 @@ const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
 const { notify } = require('../utils/notify');
 const { sendPush } = require('../services/pushService');
+const { rtcJoinPayload } = require('../services/agoraService');
 
 // How long a call rings before it counts as missed.
 const RING_SECONDS = 45;
@@ -18,13 +19,18 @@ const signal = (userId, type, call, extra = {}) =>
     data: { type, call_id: call.id, session_id: call.session_id, ...extra },
   }).catch((e) => console.error('[call] push failed:', e.message));
 
-const view = (c) => ({
-  id: c.id,
-  session_id: c.session_id,
-  status: c.status,
-  ring_seconds: RING_SECONDS,
-  channel: `nafs-session-${c.session_id}`,
-});
+const view = (c, uid = null) => {
+  const channel = `nafs-session-${c.session_id}`;
+  const base = {
+    id: c.id,
+    session_id: c.session_id,
+    status: c.status,
+    ring_seconds: RING_SECONDS,
+    channel,
+  };
+  if (uid == null) return base;
+  return { ...base, ...rtcJoinPayload(channel, uid) };
+};
 
 /** Marks a ring that ran out as missed (once) and tells the callee. */
 async function expireIfStale(call) {
@@ -121,7 +127,7 @@ const respond = (to) =>
       id: call.id,
     });
     signal(call.caller_id, to === 'accepted' ? 'call_accepted' : 'call_declined', call);
-    return ok(res, { call: view({ ...call, status: to }) });
+    return ok(res, { call: view({ ...call, status: to }, Number(req.user.id)) });
   });
 
 // POST /calls/:id/cancel - the caller hangs up before an answer (or the ring timed out).

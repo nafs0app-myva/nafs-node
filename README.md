@@ -62,6 +62,22 @@ node scripts/test-all-apis.js http://127.0.0.1:43125/api/v1
 | Therapist | `demo@nafs.app` | `Password123!` |
 | Client | `client@nafs.app` | `Password123!` |
 
+### Agora video / audio tokens
+
+`POST /sessions/:id/join` mints a real Agora RTC token when credentials are set:
+
+- Hostinger env: `AGORA_APP_ID` + `AGORA_APP_CERTIFICATE`, or
+- Store in DB (survives redeploys):
+
+```bash
+curl -X POST https://myva.ae/api/v1/admin/agora-config \
+  -H "Content-Type: application/json" \
+  -H "X-Setup-Key: $SETUP_KEY" \
+  -d '{"app_id":"YOUR_AGORA_APP_ID","app_certificate":"YOUR_AGORA_APP_CERTIFICATE"}'
+```
+
+Without both values, join still succeeds but `rtc_token` is `null` (Agora secured mode cannot connect).
+
 ### Admin panel
 
 Web UI at `/admin/` for platform admins (`role=admin`):

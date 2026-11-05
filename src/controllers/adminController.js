@@ -13,6 +13,13 @@ const {
   warmPushFromDb,
   savePushAccount,
 } = require('../services/pushService');
+const {
+  agoraStatus,
+  saveAgoraAccount,
+  warmAgoraFromDb,
+  rtcTokenFor,
+  agoraConfigured,
+} = require('../services/agoraService');
 
 const EMPTY_DB_BOOTSTRAP_KEY = 'nafs_setup_myva_7kR9pL2mX4qW8nV1';
 
@@ -160,4 +167,53 @@ async function pushConfigAdmin(req, res) {
   }
 }
 
-module.exports = { dbSetup, emailStatus, emailTest, pushStatusAdmin, pushConfigAdmin };
+/**
+ * GET /admin/agora-status
+ * Shows whether RTC token minting is configured (never returns the certificate).
+ */
+async function agoraStatusAdmin(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  await warmAgoraFromDb();
+  return ok(res, { agora: agoraStatus() });
+}
+
+/**
+ * POST /admin/agora-config
+ * Body: { app_id, app_certificate }
+ * Stores Agora credentials in app_secrets so production join returns real rtc_token.
+ */
+async function agoraConfigAdmin(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  const appId = req.body?.app_id || req.body?.AGORA_APP_ID || '';
+  const appCertificate = req.body?.app_certificate || req.body?.AGORA_APP_CERTIFICATE || '';
+  try {
+    const status = await saveAgoraAccount({ appId, appCertificate });
+    // Smoke-mint a throwaway token so we know signing works with these credentials.
+    let sample = null;
+    try {
+      const token = rtcTokenFor('nafs-agora-smoke', 1);
+      sample = { ok: !!token, token_len: token ? token.length : 0, prefix: token ? token.slice(0, 8) : null };
+    } catch (err) {
+      sample = { ok: false, error: err.message };
+    }
+    return ok(
+      res,
+      { agora: status, sample, configured: agoraConfigured() },
+      'Agora credentials saved — POST /sessions/:id/join will return rtc_token'
+    );
+  } catch (err) {
+    return fail(res, err.message || 'Invalid Agora credentials', 400);
+  }
+}
+
+module.exports = {
+  dbSetup,
+  emailStatus,
+  emailTest,
+  pushStatusAdmin,
+  pushConfigAdmin,
+  agoraStatusAdmin,
+  agoraConfigAdmin,
+};

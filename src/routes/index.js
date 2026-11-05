@@ -59,6 +59,8 @@ router.get('/admin/email-status', admin.emailStatus);
 router.post('/admin/email-test', admin.emailTest);
 router.get('/admin/push-status', admin.pushStatusAdmin);
 router.post('/admin/push-config', admin.pushConfigAdmin);
+router.get('/admin/agora-status', admin.agoraStatusAdmin);
+router.post('/admin/agora-config', admin.agoraConfigAdmin);
 
 // JWT admin panel (role=admin) — used by https://myva.ae/admin/
 router.get('/admin/panel/overview', authenticate, requireRole('admin'), adminPanel.overview);

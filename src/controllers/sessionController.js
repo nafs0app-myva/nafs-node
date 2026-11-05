@@ -6,7 +6,7 @@ const { notify, formatForUser } = require('../utils/notify');
 const { netAmount, PLATFORM_FEE_PERCENT } = require('../config/fees');
 const { cancelBooking: settleCancellation } = require('../services/cancellationService');
 const { wallClock } = require('../utils/time');
-const { rtcTokenFor } = require('../services/agoraService');
+const { rtcJoinPayload, agoraConfigured } = require('../services/agoraService');
 
 const createSchema = Joi.object({
   client_id: Joi.number().integer().required(),
@@ -347,11 +347,16 @@ const join = asyncHandler(async (req, res) => {
   // is bound to this channel and to the caller's user id (the Agora uid).
   const channel = `nafs-session-${session.id}`;
   const uid = Number(req.user.id);
+  const rtc = rtcJoinPayload(channel, uid);
+  if (!rtc.rtc_token) {
+    console.warn(
+      `[agora] join session ${session.id} uid ${uid}: rtc_token is null — set AGORA_APP_ID + AGORA_APP_CERTIFICATE (env or POST /admin/agora-config)`
+    );
+  }
   return ok(res, {
     join_url: session.join_url,
-    channel,
-    rtc_token: rtcTokenFor(channel, uid),
-    uid,
+    ...rtc,
+    agora_configured: agoraConfigured(),
     session,
   });
 });
