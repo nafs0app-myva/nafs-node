@@ -48,8 +48,9 @@ node scripts/test-all-apis.js
 node scripts/test-all-apis.js http://127.0.0.1:43125/api/v1
 ```
 
-- Explorer: http://127.0.0.1:43125/
+- Website: http://127.0.0.1:43125/ (live: https://myva.ae/)
 - Admin panel: http://127.0.0.1:43125/admin/ (live: https://myva.ae/admin/)
+- Developers / API explorer: http://127.0.0.1:43125/developers/
 - Swagger: http://127.0.0.1:43125/api/docs
 - API base: http://127.0.0.1:43125/api/v1
 
