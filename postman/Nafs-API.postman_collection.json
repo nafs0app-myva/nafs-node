@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Nafs API \u2014 All Endpoints",
-    "description": "Complete Nafs therapist + client API collection.\nBase: {{baseUrl}} (Hostinger: https://myva.ae/api/v1).\nLogin saves {{token}} automatically.\n\nSynced from src/routes/index.js \u2014 150 unique routes.\nIncludes My Plan CRUD, FCM test-push, admin push-config/status, journal prompts, payments.",
+    "description": "Complete Nafs therapist + client API collection.\nBase: {{baseUrl}} (Hostinger: https://myva.ae/api/v1).\nLogin saves {{token}} automatically.\n\nSynced from src/routes/index.js.\nIncludes Stripe Checkout payments, My Plan CRUD, FCM test-push, admin push/agora/stripe-config, journal prompts.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -177,6 +177,67 @@
                 }
               }
             }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /admin/stripe-status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Setup-Key",
+                "value": "{{setupKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stripe-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "stripe-status"
+              ]
+            },
+            "description": "Shows whether Stripe live/test keys are configured (never returns the secret key)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /admin/stripe-config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Setup-Key",
+                "value": "{{setupKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stripe-config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "stripe-config"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publishable_key\": \"pk_live_…\",\n  \"secret_key\": \"sk_live_…\",\n  \"webhook_secret\": \"whsec_…\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Stores Stripe keys in app_secrets so Hostinger checkout can charge cards."
           },
           "response": []
         }
@@ -2177,7 +2238,42 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Legacy Moyasar webhook (fallback when Stripe is not configured)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /payments/stripe/webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payments/stripe/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "stripe",
+                "webhook"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"checkout.session.completed\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"cs_live_…\",\n      \"object\": \"checkout.session\",\n      \"metadata\": {\n        \"booking_id\": \"{{bookingId}}\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Stripe webhook. Point Stripe Dashboard to this URL for checkout.session.completed. Server re-fetches the session before confirming."
           },
           "response": []
         },
@@ -4557,13 +4653,14 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"payment_method\": \"card\",\n  \"save_card\": false\n}",
+              "raw": "{\n  \"method\": \"card\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
+            "description": "Starts Stripe Checkout (live). Response includes pay_url (checkout.stripe.com) and provider: stripe. Open pay_url in a webview, then poll GET /payments/{{bookingId}}/status.",
             "auth": {
               "type": "bearer",
               "bearer": [
