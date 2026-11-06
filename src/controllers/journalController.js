@@ -10,7 +10,7 @@ const entrySchema = Joi.object({
   mood_tag: Joi.string().allow('', null),
   media_url: Joi.string().uri().allow('', null),
   is_pinned: Joi.boolean().default(false),
-  entry_date: Joi.date().iso().required(),
+  entry_date: Joi.date().iso().default(() => new Date().toISOString().slice(0, 10)),
   // Optional: answering a rotating journal prompt marks it done for this user.
   prompt_id: Joi.number().integer().positive().allow(null),
 });
@@ -81,7 +81,7 @@ const getPrompt = asyncHandler(async (req, res) => {
 });
 
 const create = asyncHandler(async (req, res) => {
-  const p = req.body;
+  const p = req.body || {};
   let promptId = p.prompt_id || null;
   if (promptId) {
     const [prompt] = await query(
