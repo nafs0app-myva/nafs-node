@@ -51,6 +51,7 @@ DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS device_tokens;
 DROP TABLE IF EXISTS mood_checkins;
 DROP TABLE IF EXISTS mood_detector_results;
+DROP TABLE IF EXISTS journal_blocks;
 DROP TABLE IF EXISTS journal_media;
 DROP TABLE IF EXISTS journal_entries;
 DROP TABLE IF EXISTS journal_prompts;
@@ -478,32 +479,15 @@ CREATE TABLE journal_entries (
   title VARCHAR(200) NULL,
   body TEXT NULL,
   mood_tag VARCHAR(40) NULL,
-  media_url VARCHAR(500) NULL COMMENT 'First attachment URL (legacy / convenience)',
+  media_url VARCHAR(500) NULL COMMENT 'First media block URL (legacy / convenience)',
   is_pinned TINYINT(1) NOT NULL DEFAULT 0,
   is_locked TINYINT(1) NOT NULL DEFAULT 0,
-  entry_date DATE NOT NULL,
+  entry_date DATETIME NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_journal_user_prompt (user_id, prompt_id),
   CONSTRAINT fk_journal_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_journal_prompt FOREIGN KEY (prompt_id) REFERENCES journal_prompts(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE journal_media (
-  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  entry_id BIGINT UNSIGNED NULL,
-  user_id BIGINT UNSIGNED NOT NULL,
-  media_type ENUM('audio','image','video','file') NOT NULL,
-  title VARCHAR(200) NULL,
-  url VARCHAR(500) NULL,
-  file_mime VARCHAR(80) NULL,
-  file_data LONGBLOB NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_journal_media_entry (entry_id, sort_order),
-  INDEX idx_journal_media_user (user_id, id),
-  CONSTRAINT fk_journal_media_entry FOREIGN KEY (entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE,
-  CONSTRAINT fk_journal_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE assessments (
@@ -645,8 +629,28 @@ CREATE TABLE media_recordings (
   duration_seconds INT NULL,
   file_mime VARCHAR(80) NULL,
   file_data LONGBLOB NULL,
+  file_path VARCHAR(500) NULL,
+  thumbnail_path VARCHAR(500) NULL,
+  thumbnail_url VARCHAR(500) NULL,
+  purpose ENUM('recording','journal') NOT NULL DEFAULT 'recording',
+  journal_entry_id BIGINT UNSIGNED NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_media_purpose_user (purpose, user_id, id),
+  INDEX idx_media_journal_entry (journal_entry_id),
   CONSTRAINT fk_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE journal_blocks (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  journal_entry_id BIGINT UNSIGNED NOT NULL,
+  type ENUM('text','audio','image','video') NOT NULL,
+  sort_order INT NOT NULL,
+  text TEXT NULL,
+  media_id BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_journal_blocks_entry (journal_entry_id, sort_order),
+  CONSTRAINT fk_journal_blocks_entry FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE,
+  CONSTRAINT fk_journal_blocks_media FOREIGN KEY (media_id) REFERENCES media_recordings(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE data_export_requests (

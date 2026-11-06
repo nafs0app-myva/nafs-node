@@ -6,6 +6,7 @@ const { warmPushFromDb } = require('./services/pushService');
 const { warmAgoraFromDb } = require('./services/agoraService');
 const { warmStripeFromDb } = require('./services/stripeService');
 const { scheduleLicenseExpiryReminders } = require('./jobs/licenseExpiry');
+const { scheduleJournalMediaCleanup } = require('./jobs/journalMediaCleanup');
 
 async function start() {
   // Fail fast if DB is unreachable
@@ -30,6 +31,7 @@ async function start() {
   }
 
   scheduleLicenseExpiryReminders();
+  scheduleJournalMediaCleanup();
 
   app.listen(env.port, '0.0.0.0', () => {
     console.log(`Nafs API listening on http://127.0.0.1:${env.port}`);

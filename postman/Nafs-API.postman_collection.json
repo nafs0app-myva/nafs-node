@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "name": "Nafs API \u2014 All Endpoints",
-    "description": "Complete Nafs therapist + client API collection.\nBase: {{baseUrl}} (Hostinger: https://myva.ae/api/v1).\nLogin saves {{token}} automatically.\n\nSynced from src/routes/index.js.\nIncludes Stripe Checkout payments, My Plan CRUD, FCM test-push, admin push/agora/stripe-config, journal prompts.",
+    "name": "Nafs API — All Endpoints",
+    "description": "Complete Nafs therapist + client API collection.\nBase: {{baseUrl}} (Hostinger: https://myva.ae/api/v1).\nLogin saves {{token}} automatically.\n\nSynced from src/routes/index.js.\nIncludes Stripe Checkout, journal ordered blocks[], privacy media upload (disk/Range/purpose/thumbnail), My Plan, FCM, admin config.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -3683,14 +3683,14 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_type\": \"mixed\",\n  \"title\": \"Prompt answer\",\n  \"body\": \"Today I felt grateful.\",\n  \"mood_tag\": \"grateful\",\n  \"entry_date\": \"2026-11-06\",\n  \"prompt_id\": 1,\n  \"media\": [\n    { \"type\": \"audio\", \"url\": \"https://example.com/note.m4a\", \"title\": \"Voice note\" },\n    { \"type\": \"image\", \"url\": \"https://example.com/photo.jpg\", \"title\": \"Mood photo\" },\n    { \"type\": \"video\", \"url\": \"https://example.com/clip.mp4\", \"title\": \"Short clip\" }\n  ]\n}",
+              "raw": "{\n  \"title\": \"My day\",\n  \"mood_tag\": \"grateful\",\n  \"entry_type\": \"mixed\",\n  \"entry_date\": \"2026-11-06T10:00:00Z\",\n  \"is_pinned\": false,\n  \"prompt_id\": null,\n  \"blocks\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"Morning walk...\"\n    },\n    {\n      \"type\": \"video\",\n      \"media_id\": 123\n    },\n    {\n      \"type\": \"video\",\n      \"media_id\": 124\n    },\n    {\n      \"type\": \"text\",\n      \"text\": \"Then lunch...\"\n    },\n    {\n      \"type\": \"audio\",\n      \"media_id\": 125\n    },\n    {\n      \"type\": \"image\",\n      \"media_id\": 126\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "description": "Create a journal entry with multiple media attachments. Prefer uploading files first via POST /journals/media/upload, then pass media_ids. Or pass media[{type,url}] for external URLs. Legacy media_url still works for a single file.",
+            "description": "Create a journal entry as an ordered blocks[] list (1–50). Upload media first via POST /privacy/media/upload with purpose=journal, then pass media_id. Legacy body/media_url/notes/media still accepted when blocks is omitted.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -3705,17 +3705,17 @@
           "response": []
         },
         {
-          "name": "POST /journals/media/upload",
+          "name": "POST /privacy/media/upload (journal purpose)",
           "request": {
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/journals/media/upload",
+              "raw": "{{baseUrl}}/privacy/media/upload",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "journals",
+                "privacy",
                 "media",
                 "upload"
               ]
@@ -3724,31 +3724,42 @@
               "mode": "formdata",
               "formdata": [
                 {
-                  "key": "files",
+                  "key": "file",
                   "type": "file",
                   "src": [],
-                  "description": "One or more files (repeat this key). Also accepts single field name \"file\"."
+                  "description": "Required media file"
+                },
+                {
+                  "key": "thumbnail",
+                  "type": "file",
+                  "src": [],
+                  "description": "Optional image thumbnail for video"
                 },
                 {
                   "key": "media_type",
-                  "value": "audio",
+                  "value": "video",
                   "type": "text",
-                  "description": "Optional hint: audio | image | video"
+                  "description": "audio | photo | video"
+                },
+                {
+                  "key": "purpose",
+                  "value": "journal",
+                  "type": "text",
+                  "description": "recording (default) | journal"
                 },
                 {
                   "key": "title",
-                  "value": "My recording",
+                  "value": "clip.mp4",
                   "type": "text"
                 },
                 {
-                  "key": "entry_id",
-                  "value": "",
-                  "type": "text",
-                  "description": "Optional — attach uploads to an existing journal entry immediately"
+                  "key": "duration_seconds",
+                  "value": "42",
+                  "type": "text"
                 }
               ]
             },
-            "description": "Upload multiple audio/image/video files. Returns media[] and media_ids to pass into POST /journals.",
+            "description": "Upload journal media. Limits: photo 10MB, audio 25MB, video 100MB. Journal-purpose items are excluded from GET /privacy/media. Returns thumbnail_url when thumbnail is sent.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -3791,7 +3802,8 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "description": "List entries (pinned first, newest). Each item includes block_count and preview_block (not full blocks[]). q also searches text blocks."
           },
           "response": []
         },
@@ -3853,7 +3865,8 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "description": "Full entry with ordered blocks[]. Legacy body (first text) and media_url (first media) are included for older clients."
           },
           "response": []
         },
@@ -3879,7 +3892,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n}\n",
+              "raw": "{\n  \"title\": \"My day (edited)\",\n  \"mood_tag\": \"calm\",\n  \"is_pinned\": true,\n  \"prompt_id\": 1,\n  \"blocks\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"Updated morning note\"\n    },\n    {\n      \"type\": \"image\",\n      \"media_id\": 126\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3895,7 +3908,8 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "description": "Update entry. When blocks[] is present, all blocks are replaced in array order. Omitting blocks leaves existing blocks unchanged. prompt_id is accepted."
           },
           "response": []
         },
@@ -3923,7 +3937,8 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "description": "Deletes the entry and attached journal media files."
           },
           "response": []
         },
@@ -3975,7 +3990,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"text_en\": \"What are you grateful for today?\",\n  \"text_ar\": \"\u0645\u0627 \u0627\u0644\u0630\u064a \u062a\u0634\u0639\u0631 \u0628\u0627\u0644\u0627\u0645\u062a\u0646\u0627\u0646 \u0644\u0647 \u0627\u0644\u064a\u0648\u0645\u061f\",\n  \"sort_order\": 1,\n  \"is_active\": true\n}",
+              "raw": "{\n  \"text_en\": \"What are you grateful for today?\",\n  \"text_ar\": \"ما الذي تشعر بالامتنان له اليوم؟\",\n  \"sort_order\": 1,\n  \"is_active\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5044,7 +5059,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"kind\": \"audio\",\n  \"file_name\": \"note.m4a\"\n}",
+              "raw": "{\n  \"media_type\": \"audio\",\n  \"title\": \"Voice note\",\n  \"url\": \"https://example.com/note.m4a\",\n  \"duration_seconds\": 30,\n  \"purpose\": \"recording\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5068,12 +5083,7 @@
           "name": "POST /privacy/media/upload",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/privacy/media/upload",
               "host": [
@@ -5086,13 +5096,43 @@
               ]
             },
             "body": {
-              "mode": "raw",
-              "raw": "{\n}\n",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Required media file"
+                },
+                {
+                  "key": "thumbnail",
+                  "type": "file",
+                  "src": [],
+                  "description": "Optional image thumbnail for video"
+                },
+                {
+                  "key": "media_type",
+                  "value": "photo",
+                  "type": "text",
+                  "description": "audio | photo | video"
+                },
+                {
+                  "key": "purpose",
+                  "value": "recording",
+                  "type": "text",
+                  "description": "recording (default) | journal"
+                },
+                {
+                  "key": "title",
+                  "value": "selfie.jpg",
+                  "type": "text"
+                },
+                {
+                  "key": "duration_seconds",
+                  "value": "",
+                  "type": "text"
                 }
-              }
+              ]
             },
             "auth": {
               "type": "bearer",
@@ -5103,7 +5143,8 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "description": "Multipart upload to disk. Size limits: photo 10MB / audio 25MB / video 100MB. Photos for purpose=recording still require facial_emotion_cache consent."
           },
           "response": []
         },
@@ -5134,6 +5175,37 @@
                 }
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /privacy/media/{{id}}/thumbnail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/privacy/media/{{id}}/thumbnail",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "media",
+                "{{id}}",
+                "thumbnail"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Owner-only thumbnail stream (same auth as /file)."
           },
           "response": []
         },

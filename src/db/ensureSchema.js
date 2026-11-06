@@ -440,7 +440,7 @@ async function ensureSchema() {
       }
     }
 
-    // Journal multi-media: widen entry_type + child table for audio/video/image attachments.
+    // Journal ordered blocks + media_recordings upgrades for journal uploads.
     try {
       await conn.query(
         `ALTER TABLE journal_entries
@@ -450,6 +450,69 @@ async function ensureSchema() {
     } catch (err) {
       if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
     }
+    try {
+      await conn.query(`ALTER TABLE journal_entries MODIFY COLUMN entry_date DATETIME NOT NULL`);
+    } catch (err) {
+      if (err.code !== 'ER_NO_SUCH_TABLE' && err.code !== 'ER_BAD_FIELD_ERROR') throw err;
+    }
+
+    for (const [col, def] of [
+      ['purpose', `ENUM('recording','journal') NOT NULL DEFAULT 'recording'`],
+      ['file_path', 'VARCHAR(500) NULL'],
+      ['thumbnail_path', 'VARCHAR(500) NULL'],
+      ['thumbnail_url', 'VARCHAR(500) NULL'],
+      ['journal_entry_id', 'BIGINT UNSIGNED NULL'],
+    ]) {
+      try {
+        await conn.query(`ALTER TABLE media_recordings ADD COLUMN ${col} ${def}`);
+      } catch (err) {
+        if (err.code !== 'ER_DUP_FIELDNAME' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
+      }
+    }
+    try {
+      await conn.query(
+        `ALTER TABLE media_recordings ADD INDEX idx_media_purpose_user (purpose, user_id, id)`
+      );
+    } catch (err) {
+      if (err.code !== 'ER_DUP_KEYNAME' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+    try {
+      await conn.query(
+        `ALTER TABLE media_recordings ADD INDEX idx_media_journal_entry (journal_entry_id)`
+      );
+    } catch (err) {
+      if (err.code !== 'ER_DUP_KEYNAME' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+
+    try {
+      await conn.query(`
+        CREATE TABLE IF NOT EXISTS journal_blocks (
+          id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+          journal_entry_id BIGINT UNSIGNED NOT NULL,
+          type ENUM('text','audio','image','video') NOT NULL,
+          sort_order INT NOT NULL,
+          text TEXT NULL,
+          media_id BIGINT UNSIGNED NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_journal_blocks_entry (journal_entry_id, sort_order),
+          CONSTRAINT fk_journal_blocks_entry FOREIGN KEY (journal_entry_id)
+            REFERENCES journal_entries(id) ON DELETE CASCADE,
+          CONSTRAINT fk_journal_blocks_media FOREIGN KEY (media_id)
+            REFERENCES media_recordings(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+    } catch (err) {
+      if (
+        err.code !== 'ER_NO_SUCH_TABLE' &&
+        err.code !== 'ER_TABLE_EXISTS_ERROR' &&
+        err.code !== 'ER_CANNOT_ADD_FOREIGN' &&
+        !String(err.message || '').match(/already exists|errno: 121/i)
+      ) {
+        throw err;
+      }
+    }
+
+    // Legacy journal_media (short-lived) — keep if present; blocks is the source of truth going forward.
     try {
       await conn.query(`
         CREATE TABLE IF NOT EXISTS journal_media (
@@ -464,20 +527,55 @@ async function ensureSchema() {
           sort_order INT NOT NULL DEFAULT 0,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           INDEX idx_journal_media_entry (entry_id, sort_order),
-          INDEX idx_journal_media_user (user_id, id),
-          CONSTRAINT fk_journal_media_entry FOREIGN KEY (entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE,
-          CONSTRAINT fk_journal_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          INDEX idx_journal_media_user (user_id, id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
     } catch (err) {
-      if (
-        err.code !== 'ER_NO_SUCH_TABLE' &&
-        err.code !== 'ER_TABLE_EXISTS_ERROR' &&
-        err.code !== 'ER_CANNOT_ADD_FOREIGN' &&
-        !String(err.message || '').match(/already exists|errno: 121/i)
-      ) {
-        throw err;
+      if (err.code !== 'ER_NO_SUCH_TABLE' && err.code !== 'ER_TABLE_EXISTS_ERROR') throw err;
+    }
+
+    // Convert legacy body/media_url rows into journal_blocks once.
+    try {
+      const [legacy] = await conn.query(`
+        SELECT e.id, e.user_id, e.entry_type, e.body, e.media_url
+        FROM journal_entries e
+        LEFT JOIN journal_blocks b ON b.journal_entry_id = e.id
+        WHERE b.id IS NULL
+          AND (
+            (e.body IS NOT NULL AND TRIM(e.body) <> '')
+            OR (e.media_url IS NOT NULL AND TRIM(e.media_url) <> '')
+          )
+      `);
+      for (const row of legacy) {
+        let order = 1;
+        if (row.body && String(row.body).trim()) {
+          await conn.query(
+            `INSERT INTO journal_blocks (journal_entry_id, type, sort_order, text)
+             VALUES (?, 'text', ?, ?)`,
+            [row.id, order, row.body]
+          );
+          order += 1;
+        }
+        if (row.media_url && String(row.media_url).trim()) {
+          const mediaType =
+            row.entry_type === 'audio' ? 'audio' : row.entry_type === 'video' ? 'video' : 'photo';
+          const blockType =
+            row.entry_type === 'audio' ? 'audio' : row.entry_type === 'video' ? 'video' : 'image';
+          const [ins] = await conn.query(
+            `INSERT INTO media_recordings
+              (user_id, media_type, title, url, purpose, journal_entry_id)
+             VALUES (?, ?, ?, ?, 'journal', ?)`,
+            [row.user_id, mediaType, 'Migrated media', row.media_url, row.id]
+          );
+          await conn.query(
+            `INSERT INTO journal_blocks (journal_entry_id, type, sort_order, media_id)
+             VALUES (?, ?, ?, ?)`,
+            [row.id, blockType, order, ins.insertId]
+          );
+        }
       }
+    } catch (err) {
+      if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
     }
 
     // Backfill client profiles / onboarding rows for existing users

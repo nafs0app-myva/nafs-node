@@ -142,12 +142,13 @@ module.exports = {
     '/mood/detector': { post: { summary: 'Save mood detector result', responses: { 201: { description: 'Created' } } } },
     '/journals': {
       get: {
-        summary: 'List journal entries (each includes media[] of audio/video/image attachments)',
+        summary:
+          'List journal entries (block_count + preview_block; search q also matches text blocks)',
         responses: { 200: { description: 'OK' } },
       },
       post: {
         summary:
-          'Create journal entry with optional multiple media (media[] URLs and/or media_ids from upload)',
+          'Create journal entry with ordered blocks[] (text|audio|image|video). Upload media via POST /privacy/media/upload with purpose=journal first. Legacy body/media_url/notes/media still accepted.',
         responses: { 201: { description: 'Created' } },
       },
     },
@@ -157,18 +158,20 @@ module.exports = {
         responses: { 200: { description: 'OK' } },
       },
     },
-    '/journals/media/upload': {
-      post: {
-        summary:
-          'Upload one or more journal files (multipart field "file" or "files[]"; types: audio/image/video)',
-        responses: { 201: { description: 'Uploaded — returns media[] + media_ids' } },
+    '/journals/{id}': {
+      get: {
+        summary: 'Get journal entry with ordered blocks[] (legacy body + media_url kept)',
+        responses: { 200: { description: 'OK' } },
       },
-    },
-    '/journals/media/{id}/file': {
-      get: { summary: 'Download an uploaded journal media file (owner only)', responses: { 200: { description: 'Binary' } } },
-    },
-    '/journals/media/{id}': {
-      delete: { summary: 'Delete one journal media attachment', responses: { 200: { description: 'OK' } } },
+      put: {
+        summary:
+          'Update journal entry. If blocks[] is sent, replaces all blocks; omitted blocks leave existing ones unchanged. Accepts prompt_id.',
+        responses: { 200: { description: 'OK' } },
+      },
+      delete: {
+        summary: 'Delete journal entry and attached journal media files',
+        responses: { 200: { description: 'OK' } },
+      },
     },
     '/journal-prompts': {
       get: { summary: 'Admin: list journal prompts', responses: { 200: { description: 'OK' } } },
@@ -245,7 +248,41 @@ module.exports = {
       get: { summary: 'List privacy consents', responses: { 200: { description: 'OK' } } },
       put: { summary: 'Update privacy consents', responses: { 200: { description: 'OK' } } },
     },
-    '/privacy/export': { post: { summary: 'Request data export', responses: { 201: { description: 'Created' } } } },
+    '/privacy/media': {
+      get: {
+        summary: 'List Voice & Photo recordings (excludes purpose=journal)',
+        responses: { 200: { description: 'OK' } },
+      },
+      post: {
+        summary: 'Add a media recording by URL',
+        responses: { 201: { description: 'Created' } },
+      },
+    },
+    '/privacy/media/upload': {
+      post: {
+        summary:
+          'Upload audio/photo/video (multipart file + optional thumbnail). purpose=recording|journal. Limits: photo 10MB, audio 25MB, video 100MB. Disk-backed.',
+        responses: { 201: { description: 'Saved' } },
+      },
+    },
+    '/privacy/media/{id}/file': {
+      get: {
+        summary: 'Stream media file (owner only; supports HTTP Range / 206)',
+        responses: { 200: { description: 'Binary' }, 206: { description: 'Partial Content' } },
+      },
+    },
+    '/privacy/media/{id}/thumbnail': {
+      get: {
+        summary: 'Stream media thumbnail (owner only)',
+        responses: { 200: { description: 'Binary' } },
+      },
+    },
+    '/privacy/media/{id}': {
+      delete: { summary: 'Delete a media recording and its files', responses: { 200: { description: 'OK' } } },
+    },
+    '/privacy/export': {
+      post: { summary: 'Request data export (journal includes blocks)', responses: { 201: { description: 'Created' } } },
+    },
     '/privacy/retention': { get: { summary: 'Retention policy', responses: { 200: { description: 'OK' } } } },
     '/faqs': { get: { security: [], summary: 'FAQ list', responses: { 200: { description: 'OK' } } } },
   },

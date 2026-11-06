@@ -116,13 +116,15 @@ async function main() {
   const journal = await req('POST', '/journals', {
     token: clientToken,
     body: {
-      entry_type: 'text',
       title: 'API test entry',
-      body: 'Hello from smoke test',
-      entry_date: new Date().toISOString().slice(0, 10),
+      entry_date: new Date().toISOString(),
       is_pinned: false,
+      blocks: [
+        { type: 'text', text: 'Hello from smoke test' },
+        { type: 'text', text: 'Second note' },
+      ],
     },
-    label: 'POST /journals',
+    label: 'POST /journals (blocks)',
   });
   const journalId = journal.json?.data?.entry?.id;
   await req('GET', '/journals', { token: clientToken, label: 'GET /journals' });
@@ -131,12 +133,10 @@ async function main() {
     await req('PUT', `/journals/${journalId}`, {
       token: clientToken,
       body: {
-        entry_type: 'text',
         title: 'Updated',
-        body: 'Updated body',
-        entry_date: new Date().toISOString().slice(0, 10),
+        blocks: [{ type: 'text', text: 'Updated body' }],
       },
-      label: 'PUT /journals/:id',
+      label: 'PUT /journals/:id (blocks)',
     });
   }
 

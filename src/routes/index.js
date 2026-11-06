@@ -337,11 +337,8 @@ router.get('/mood/checkins', authenticate, mood.listCheckins);
 router.post('/mood/detector', authenticate, validate(mood.detectorSchema), mood.saveDetector);
 router.post('/journals', authenticate, validate(journal.entrySchema), journal.create);
 router.get('/journals', authenticate, journal.list);
-// Must be registered before /journals/:id so "prompt"/"media" are not treated as ids.
+// Must be registered before /journals/:id so "prompt" is not treated as an id.
 router.get('/journals/prompt', authenticate, journal.getPrompt);
-router.post('/journals/media/upload', authenticate, journal.uploadMedia);
-router.get('/journals/media/:id/file', authenticate, journal.getMediaFile);
-router.delete('/journals/media/:id', authenticate, journal.removeMedia);
 router.get('/journals/:id', authenticate, journal.getOne);
 router.put('/journals/:id', authenticate, validate(journal.entrySchema), journal.update);
 router.delete('/journals/:id', authenticate, journal.remove);
@@ -428,6 +425,7 @@ router.get('/privacy/media', authenticate, privacy.listMedia);
 router.post('/privacy/media', authenticate, validate(privacy.mediaSchema), privacy.addMedia);
 router.post('/privacy/media/upload', authenticate, privacy.uploadMedia);
 router.get('/privacy/media/:id/file', authenticate, privacy.getMediaFile);
+router.get('/privacy/media/:id/thumbnail', authenticate, privacy.getMediaThumbnail);
 router.delete('/privacy/media/:id', authenticate, privacy.deleteMedia);
 router.post('/privacy/export', authenticate, validate(privacy.exportSchema), privacy.requestExport);
 router.get('/privacy/exports', authenticate, privacy.listExports);

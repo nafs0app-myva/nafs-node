@@ -126,9 +126,9 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | --- | --- | --- |
 | POST/GET | `/mood/checkins` | Ongoing mood |
 | POST | `/mood/detector` | |
-| GET/POST | `/journals` | optional `prompt_id` on create |
+| GET/POST | `/journals` | Ordered `blocks[]` (1–50: text\|audio\|image\|video). Upload media first via `POST /privacy/media/upload` with `purpose=journal`. Legacy `body`/`media_url`/`notes`/`media` still accepted. List returns `block_count` + `preview_block` (not full blocks). `q` also searches text blocks. |
 | GET | `/journals/prompt` | next unanswered rotating prompt |
-| GET/PUT/DELETE | `/journals/:id` | |
+| GET/PUT/DELETE | `/journals/:id` | Detail includes ordered `blocks[]` plus legacy `body`/`media_url`. PUT replaces blocks only when `blocks[]` is sent. DELETE also removes attached media files. |
 | GET/POST | `/journal-prompts` | admin prompt pool |
 | PATCH | `/journal-prompts/:id` | admin |
 | POST | `/assessments` | Optional quizzes (not the primary onboarding gate) |
@@ -166,7 +166,45 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | GET | `/admin/push-status` | Setup-key: FCM configured? OAuth OK? device count |
 | POST | `/admin/push-config` | Setup-key: save FCM service account into `app_secrets` |
 | GET/PUT | `/privacy/consents` |
-| GET/POST | `/privacy/media` |
+| GET/POST | `/privacy/media` | List is `purpose=recording` only (journal uploads excluded) |
+| POST | `/privacy/media/upload` | Multipart `file` (+ optional `thumbnail`); `media_type` audio\|photo\|video; `purpose` recording\|journal. Limits: photo 10 MB, audio 25 MB, video 100 MB. Disk storage + Range/206 on file GET. Returns `thumbnail_url` when a thumb is provided. |
+| GET | `/privacy/media/:id/file` | Owner-only; supports `Range` / `206 Partial Content` |
+| GET | `/privacy/media/:id/thumbnail` | Owner-only video/image thumbnail |
 | DELETE | `/privacy/media/:id` |
-| POST/GET | `/privacy/export(s)` |
+| POST/GET | `/privacy/export(s)` | Journal export includes `blocks[]` + media refs |
 | GET | `/privacy/retention` |
+
+### Journal `blocks[]` (create / update)
+
+```json
+{
+  "title": "My day",
+  "mood_tag": "grateful",
+  "entry_type": "mixed",
+  "entry_date": "2026-11-06T10:00:00Z",
+  "is_pinned": false,
+  "prompt_id": null,
+  "blocks": [
+    { "type": "text", "text": "Morning walk..." },
+    { "type": "video", "media_id": 123 },
+    { "type": "text", "text": "Then lunch..." },
+    { "type": "audio", "media_id": 125 },
+    { "type": "image", "media_id": 126 }
+  ]
+}
+```
+
+- `sort_order` is assigned server-side from array index (do not send it).
+- `entry_type` is inferred from block kinds (`mixed` when more than one kind; `gratitude` kept when sent).
+- `entry_date` is `DATETIME` (ISO timestamps preserve time of day).
+- Unattached `purpose=journal` media older than 24h is cleaned up automatically.
+
+### Media storage decisions
+
+| Question | Decision |
+| --- | --- |
+| Disk or S3? | Local disk under `storage/media/{userId}/` (Hostinger-friendly). S3/presigned upload can come later. |
+| Size limits | photo **10 MB**, audio **25 MB**, video **100 MB** (422 when exceeded) |
+| Thumbnails | App may send optional multipart `thumbnail`; no ffmpeg dependency on the server |
+| Therapist access | File/thumbnail URLs stay **owner-only** (unchanged) |
+| `entry_date` | **DATETIME** so the app keeps time of day (`h:mm a`) |
