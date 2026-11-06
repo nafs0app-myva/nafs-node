@@ -20,6 +20,12 @@ const {
   rtcTokenFor,
   agoraConfigured,
 } = require('../services/agoraService');
+const {
+  stripeStatus,
+  saveStripeAccount,
+  warmStripeFromDb,
+  stripeConfigured,
+} = require('../services/stripeService');
 
 const EMPTY_DB_BOOTSTRAP_KEY = 'nafs_setup_myva_7kR9pL2mX4qW8nV1';
 
@@ -208,6 +214,55 @@ async function agoraConfigAdmin(req, res) {
   }
 }
 
+/**
+ * GET /admin/stripe-status
+ * Shows whether Stripe payments are configured (never returns the secret key).
+ */
+async function stripeStatusAdmin(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  await warmStripeFromDb();
+  return ok(res, { stripe: stripeStatus() });
+}
+
+/**
+ * POST /admin/stripe-config
+ * Body: { publishable_key, secret_key, webhook_secret? }
+ * Stores Stripe credentials in app_secrets so production checkout charges cards.
+ */
+async function stripeConfigAdmin(req, res) {
+  if (!(await assertSetupKey(req, res))) return;
+  await ensureSchema();
+  const publishableKey = req.body?.publishable_key || req.body?.STRIPE_PUBLISHABLE_KEY || '';
+  const secretKey = req.body?.secret_key || req.body?.STRIPE_SECRET_KEY || '';
+  const webhookSecret = req.body?.webhook_secret || req.body?.STRIPE_WEBHOOK_SECRET || '';
+  try {
+    const status = await saveStripeAccount({ publishableKey, secretKey, webhookSecret });
+    // Smoke-create is skipped — live mode should not create dummy sessions.
+    // Instead, hit Stripe /v1/balance to prove the secret key works.
+    let probe = null;
+    try {
+      const creds = require('../services/stripeService').activeCreds();
+      const r = await fetch('https://api.stripe.com/v1/balance', {
+        headers: { Authorization: `Bearer ${creds.secretKey}` },
+      });
+      const json = await r.json().catch(() => ({}));
+      probe = r.ok
+        ? { ok: true, livemode: json.livemode === true }
+        : { ok: false, error: json?.error?.message || `HTTP ${r.status}` };
+    } catch (err) {
+      probe = { ok: false, error: err.message };
+    }
+    return ok(
+      res,
+      { stripe: status, probe, configured: stripeConfigured() },
+      'Stripe credentials saved — POST /bookings/:id/pay will open Checkout'
+    );
+  } catch (err) {
+    return fail(res, err.message || 'Invalid Stripe credentials', 400);
+  }
+}
+
 module.exports = {
   dbSetup,
   emailStatus,
@@ -216,4 +271,6 @@ module.exports = {
   pushConfigAdmin,
   agoraStatusAdmin,
   agoraConfigAdmin,
+  stripeStatusAdmin,
+  stripeConfigAdmin,
 };

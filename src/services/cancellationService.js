@@ -3,6 +3,7 @@ const { netAmount, LATE_CANCEL_HOURS, COMPENSATION_PERCENT } = require('../confi
 const { notify } = require('../utils/notify');
 const { wallClock } = require('../utils/time');
 const moyasar = require('./moyasarService');
+const stripe = require('./stripeService');
 
 /** Hours from now until the booking starts (booking date/time are in the therapist's timezone). */
 async function hoursUntil(booking) {
@@ -52,10 +53,15 @@ async function cancelBooking(booking, who) {
   // A booking paid by card is refunded to the card; if that fails the money goes
   // to the client's in-app wallet instead so it is never lost.
   let refundedToCard = false;
-  if (preview.refund > 0 && booking.payment_id && moyasar.moyasarConfigured()) {
+  if (preview.refund > 0 && booking.payment_id) {
     try {
-      await moyasar.refundPayment(booking.payment_id, preview.refund);
-      refundedToCard = true;
+      if (stripe.isStripePaymentId(booking.payment_id) && stripe.stripeConfigured()) {
+        await stripe.refundPayment(booking.payment_id, preview.refund);
+        refundedToCard = true;
+      } else if (moyasar.moyasarConfigured()) {
+        await moyasar.refundPayment(booking.payment_id, preview.refund);
+        refundedToCard = true;
+      }
     } catch (err) {
       console.error(`[refund] card refund failed for booking ${booking.id}: ${err.message}`);
     }

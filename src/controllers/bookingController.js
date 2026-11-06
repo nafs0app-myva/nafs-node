@@ -5,6 +5,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { previewCancellation, cancelBooking: settleCancellation } = require('../services/cancellationService');
 const { bookableTimes } = require('../services/availabilityService');
 const moyasar = require('../services/moyasarService');
+const stripe = require('../services/stripeService');
 const fees = require('../config/fees');
 const { confirmPaidBooking } = require('../services/bookingPaymentService');
 const payment = require('./paymentController');
@@ -178,27 +179,49 @@ const checkout = asyncHandler(async (req, res) => {
   }
   if (booking.status !== 'pending_payment') return fail(res, `This booking is already ${booking.status}`, 409);
 
-  // With payments on, confirm only after Moyasar reports the invoice paid in full (incl. service fee).
+  // With payments on, confirm only after Stripe/Moyasar reports paid in full (incl. service fee).
   let paymentId = null;
   const expected = fees.checkoutBreakdown(booking.amount, booking.currency);
-  if (moyasar.moyasarConfigured() && expected.total > 0) {
+  const paymentsOn = (stripe.stripeConfigured() || moyasar.moyasarConfigured()) && expected.total > 0;
+  if (paymentsOn) {
     if (!booking.payment_invoice_id) return fail(res, 'Pay for this booking before confirming it.', 402);
-    let invoice;
-    try {
-      invoice = await moyasar.getInvoice(booking.payment_invoice_id);
-    } catch (err) {
-      return fail(res, `Could not verify the payment: ${err.message}`, 502);
+
+    if (stripe.isStripeSessionId(booking.payment_invoice_id) && stripe.stripeConfigured()) {
+      let session;
+      try {
+        session = await stripe.getCheckoutSession(booking.payment_invoice_id);
+      } catch (err) {
+        return fail(res, `Could not verify the payment: ${err.message}`, 502);
+      }
+      if (
+        session.payment_status !== 'paid' ||
+        Number(session.amount_total) !== stripe.toMinor(expected.total) ||
+        String(session.currency || '').toLowerCase() !== String(expected.currency || '').toLowerCase()
+      ) {
+        return fail(res, 'Payment not completed yet.', 402);
+      }
+      paymentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id || null;
+    } else if (moyasar.moyasarConfigured()) {
+      let invoice;
+      try {
+        invoice = await moyasar.getInvoice(booking.payment_invoice_id);
+      } catch (err) {
+        return fail(res, `Could not verify the payment: ${err.message}`, 502);
+      }
+      const paid = (invoice.payments || []).find((p) => p.status === 'paid');
+      if (
+        invoice.status !== 'paid' ||
+        !paid ||
+        Number(invoice.amount) !== moyasar.toMinor(expected.total) ||
+        invoice.currency !== expected.currency
+      ) {
+        return fail(res, 'Payment not completed yet.', 402);
+      }
+      paymentId = paid.id;
     }
-    const paid = (invoice.payments || []).find((p) => p.status === 'paid');
-    if (
-      invoice.status !== 'paid' ||
-      !paid ||
-      Number(invoice.amount) !== moyasar.toMinor(expected.total) ||
-      invoice.currency !== expected.currency
-    ) {
-      return fail(res, 'Payment not completed yet.', 402);
-    }
-    paymentId = paid.id;
   }
 
   const result = await confirmPaidBooking(booking, {

@@ -78,6 +78,26 @@ curl -X POST https://myva.ae/api/v1/admin/agora-config \
 
 Without both values, join still succeeds but `rtc_token` is `null` (Agora secured mode cannot connect).
 
+### Stripe payments
+
+`POST /bookings/:id/pay` opens a **Stripe Checkout** page when credentials are set
+(card / Apple Pay / Google Pay when enabled in the Stripe Dashboard). Refunds on
+cancel go back to the card via the PaymentIntent.
+
+- Hostinger env: `STRIPE_PUBLISHABLE_KEY` + `STRIPE_SECRET_KEY`, or
+- Store in DB (survives redeploys):
+
+```bash
+curl -X POST https://myva.ae/api/v1/admin/stripe-config \
+  -H "Content-Type: application/json" \
+  -H "X-Setup-Key: $SETUP_KEY" \
+  -d '{"publishable_key":"pk_live_…","secret_key":"sk_live_…"}'
+```
+
+Optional webhook (auto-confirm after pay): point Stripe to  
+`https://myva.ae/api/v1/payments/stripe/webhook` for `checkout.session.completed`.  
+Without Stripe keys, checkout confirms without charging (dev mode). Moyasar remains a fallback if only `MOYASAR_SECRET_KEY` is set.
+
 ### Admin panel
 
 Web UI at `/admin/` for platform admins (`role=admin`):

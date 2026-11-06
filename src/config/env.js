@@ -38,8 +38,14 @@ const env = {
     authToken: process.env.TWILIO_AUTH_TOKEN || '',
     from: process.env.TWILIO_FROM || '',
   },
-  // Card payments / refunds through Moyasar. Without a secret key payments are
-  // off and checkout just confirms the booking (development mode).
+  // Card payments / refunds. Stripe is preferred when configured; Moyasar is the
+  // fallback. Without either secret key, checkout confirms without charging (dev).
+  stripe: {
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    // Optional endpoint secret for POST /payments/stripe/webhook.
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  },
   moyasar: {
     secretKey: process.env.MOYASAR_SECRET_KEY || '',
     // Optional shared secret for POST /payments/webhook (X-Moyasar-Token header).

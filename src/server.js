@@ -4,6 +4,7 @@ const { pool } = require('./config/db');
 const { ensureSchema } = require('./db/ensureSchema');
 const { warmPushFromDb } = require('./services/pushService');
 const { warmAgoraFromDb } = require('./services/agoraService');
+const { warmStripeFromDb } = require('./services/stripeService');
 const { scheduleLicenseExpiryReminders } = require('./jobs/licenseExpiry');
 
 async function start() {
@@ -17,6 +18,8 @@ async function start() {
   console.log(`[push] FCM configured: ${pushReady ? 'yes' : 'no'}`);
   const agoraReady = await warmAgoraFromDb().catch(() => false);
   console.log(`[agora] RTC tokens configured: ${agoraReady ? 'yes' : 'no'}`);
+  const stripeReady = await warmStripeFromDb().catch(() => false);
+  console.log(`[stripe] payments configured: ${stripeReady ? 'yes' : 'no'}`);
 
   scheduleLicenseExpiryReminders();
 

@@ -61,6 +61,8 @@ router.get('/admin/push-status', admin.pushStatusAdmin);
 router.post('/admin/push-config', admin.pushConfigAdmin);
 router.get('/admin/agora-status', admin.agoraStatusAdmin);
 router.post('/admin/agora-config', admin.agoraConfigAdmin);
+router.get('/admin/stripe-status', admin.stripeStatusAdmin);
+router.post('/admin/stripe-config', admin.stripeConfigAdmin);
 
 // JWT admin panel (role=admin) — used by https://myva.ae/admin/
 router.get('/admin/panel/overview', authenticate, requireRole('admin'), adminPanel.overview);
@@ -268,6 +270,7 @@ router.get('/billing-history', authenticate, wallet.billingHistory);
 router.get('/payments/options', authenticate, payments.paymentOptions);
 router.get('/payments/return', payments.paymentReturn);
 router.post('/payments/webhook', payments.moyasarWebhook);
+router.post('/payments/stripe/webhook', payments.stripeWebhook);
 router.get('/payments/:bookingId/status', authenticate, payments.paymentStatus);
 
 // Chat
