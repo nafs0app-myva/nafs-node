@@ -6,9 +6,12 @@ module.exports = {
     title: 'Nafs API',
     version: '2.2.0',
     description:
-      'REST APIs for the Nafs mobile therapist + client platform. Includes email OTP verification, shared onboarding, role-aware profiles, and dashboard summaries.',
+      'REST APIs for the Nafs mobile therapist + client platform. Includes email OTP verification, shared onboarding, role-aware profiles, dashboard summaries, and Stripe Checkout payments.',
   },
-  servers: [{ url: `${env.app.url}/api/v1`, description: 'Local' }],
+  servers: [
+    { url: 'https://myva.ae/api/v1', description: 'Production (myva.ae)' },
+    { url: `${env.app.url}/api/v1`, description: 'Current host' },
+  ],
   components: {
     securitySchemes: {
       bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
@@ -76,9 +79,53 @@ module.exports = {
       delete: { summary: 'Remove payment method', responses: { 200: { description: 'OK' } } },
     },
     '/billing-history': { get: { summary: 'Billing history (Figma)', responses: { 200: { description: 'OK' } } } },
-    '/payments/options': { get: { summary: 'Checkout payment rails (Apple/Google/Card)', responses: { 200: { description: 'OK' } } } },
-    '/payments/{bookingId}/status': { get: { summary: 'Poll booking payment status', responses: { 200: { description: 'OK' } } } },
-    '/payments/webhook': { post: { security: [], summary: 'Moyasar payment webhook', responses: { 200: { description: 'OK' } } } },
+    '/payments/options': {
+      get: {
+        summary: 'Checkout payment rails + Stripe publishable key (provider: stripe when configured)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/payments/return': {
+      get: {
+        security: [],
+        summary: 'Stripe Checkout redirect target for the app webview',
+        responses: { 200: { description: 'HTML return page' } },
+      },
+    },
+    '/payments/{bookingId}/status': {
+      get: {
+        summary: 'Poll booking payment status (auto-confirms when Stripe session is paid)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/payments/stripe/webhook': {
+      post: {
+        security: [],
+        summary: 'Stripe webhook (checkout.session.completed) — confirms booking after pay',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/payments/webhook': {
+      post: {
+        security: [],
+        summary: 'Legacy Moyasar webhook (fallback when Stripe is off)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/admin/stripe-status': {
+      get: {
+        security: [],
+        summary: 'Stripe configured / live_mode status (requires X-Setup-Key)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/admin/stripe-config': {
+      post: {
+        security: [],
+        summary: 'Save Stripe publishable + secret keys to app_secrets (requires X-Setup-Key)',
+        responses: { 200: { description: 'OK' } },
+      },
+    },
     '/payouts': {
       get: { summary: 'List payout requests', responses: { 200: { description: 'OK' } } },
       post: { summary: 'Request payout', responses: { 201: { description: 'Created' } } },
@@ -161,9 +208,14 @@ module.exports = {
       get: { summary: 'Figma Checkout screen payload (summary + methods + price)', responses: { 200: { description: 'OK' } } },
     },
     '/bookings/{id}/pay': {
-      post: { summary: 'Confirm & Pay (start Moyasar invoice or confirm in dev)', responses: { 200: { description: 'OK' } } },
+      post: {
+        summary: 'Confirm & Pay — opens Stripe Checkout (returns pay_url) or confirms free in dev',
+        responses: { 200: { description: 'OK — includes pay_url when Stripe is on' } },
+      },
     },
-    '/bookings/{id}/checkout': { post: { summary: 'Confirm booking after payment', responses: { 200: { description: 'OK' } } } },
+    '/bookings/{id}/checkout': {
+      post: { summary: 'Confirm booking after Stripe/Moyasar payment is verified', responses: { 200: { description: 'OK' } } },
+    },
     '/devices': {
       get: { summary: 'List devices', responses: { 200: { description: 'OK' } } },
       post: { summary: 'Register device', responses: { 201: { description: 'Created' } } },
