@@ -182,6 +182,9 @@ const getCheckoutSession = (id) =>
 
 const getPaymentIntent = (id) => stripeCall('GET', `/payment_intents/${encodeURIComponent(id)}`);
 
+const listCheckoutSessions = (limit = 100) =>
+  stripeCall('GET', `/checkout/sessions?limit=${Math.min(Number(limit) || 100, 100)}`);
+
 /** Refund `amount` (major units) of a PaymentIntent. */
 async function refundPayment(paymentIntentId, amount) {
   const params = flattenParams({
@@ -199,6 +202,45 @@ function isStripePaymentId(id) {
   return typeof id === 'string' && (id.startsWith('pi_') || id.startsWith('ch_'));
 }
 
+/**
+ * Repair bookings whose payment_invoice_id was truncated by VARCHAR(64).
+ * Matches truncated prefixes against recent Stripe Checkout sessions.
+ * Returns the number of rows fixed.
+ */
+async function repairTruncatedCheckoutIds() {
+  if (!stripeConfigured()) return 0;
+  const rows = await query(
+    `SELECT id, payment_invoice_id FROM bookings
+     WHERE (payment_invoice_id LIKE 'cs\\_test\\_%' OR payment_invoice_id LIKE 'cs\\_live\\_%')
+       AND CHAR_LENGTH(payment_invoice_id) <= 64
+       AND status IN ('pending_payment', 'confirmed')`
+  ).catch(() => []);
+  if (!rows.length) return 0;
+
+  let sessions = [];
+  try {
+    const listed = await listCheckoutSessions(100);
+    sessions = listed.data || [];
+  } catch (err) {
+    console.warn('[stripe] repairTruncatedCheckoutIds list failed:', err.message);
+    return 0;
+  }
+
+  let fixed = 0;
+  for (const row of rows) {
+    const truncated = String(row.payment_invoice_id || '');
+    const match = sessions.find((s) => typeof s.id === 'string' && s.id.startsWith(truncated) && s.id.length > truncated.length);
+    if (!match) continue;
+    await query(`UPDATE bookings SET payment_invoice_id = :full WHERE id = :id`, {
+      full: match.id,
+      id: row.id,
+    });
+    fixed += 1;
+    console.log(`[stripe] repaired booking ${row.id} payment_invoice_id → ${match.id.length} chars`);
+  }
+  return fixed;
+}
+
 module.exports = {
   stripeConfigured,
   stripeStatus,
@@ -207,9 +249,11 @@ module.exports = {
   createCheckoutSession,
   getCheckoutSession,
   getPaymentIntent,
+  listCheckoutSessions,
   refundPayment,
   toMinor,
   isStripeSessionId,
   isStripePaymentId,
+  repairTruncatedCheckoutIds,
   activeCreds,
 };

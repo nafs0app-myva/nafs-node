@@ -18,8 +18,16 @@ async function start() {
   console.log(`[push] FCM configured: ${pushReady ? 'yes' : 'no'}`);
   const agoraReady = await warmAgoraFromDb().catch(() => false);
   console.log(`[agora] RTC tokens configured: ${agoraReady ? 'yes' : 'no'}`);
+  const { repairTruncatedCheckoutIds } = require('./services/stripeService');
   const stripeReady = await warmStripeFromDb().catch(() => false);
   console.log(`[stripe] payments configured: ${stripeReady ? 'yes' : 'no'}`);
+  if (stripeReady) {
+    const repaired = await repairTruncatedCheckoutIds().catch((err) => {
+      console.warn('[stripe] truncated-id repair skipped:', err.message);
+      return 0;
+    });
+    if (repaired) console.log(`[stripe] repaired ${repaired} truncated checkout session id(s)`);
+  }
 
   scheduleLicenseExpiryReminders();
 

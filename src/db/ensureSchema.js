@@ -281,14 +281,23 @@ async function ensureSchema() {
     }
 
     try {
-      await conn.query(`ALTER TABLE bookings ADD COLUMN payment_invoice_id VARCHAR(64) NULL`);
+      await conn.query(`ALTER TABLE bookings ADD COLUMN payment_invoice_id VARCHAR(255) NULL`);
     } catch (err) {
       if (err.code !== 'ER_DUP_FIELDNAME') throw err;
     }
     try {
-      await conn.query(`ALTER TABLE bookings ADD COLUMN payment_id VARCHAR(64) NULL, ADD UNIQUE KEY uq_booking_payment (payment_id)`);
+      await conn.query(`ALTER TABLE bookings ADD COLUMN payment_id VARCHAR(255) NULL, ADD UNIQUE KEY uq_booking_payment (payment_id)`);
     } catch (err) {
       if (err.code !== 'ER_DUP_FIELDNAME' && err.code !== 'ER_DUP_KEYNAME') throw err;
+    }
+    // Stripe Checkout session ids (cs_test_/cs_live_) regularly exceed 64 chars.
+    // Widen existing Hostinger columns that were created as VARCHAR(64).
+    for (const col of ['payment_invoice_id', 'payment_id']) {
+      try {
+        await conn.query(`ALTER TABLE bookings MODIFY COLUMN ${col} VARCHAR(255) NULL`);
+      } catch (err) {
+        if (err.code !== 'ER_BAD_FIELD_ERROR' && err.code !== 'ER_NO_SUCH_TABLE') throw err;
+      }
     }
     // Figma Checkout price summary: session fee + client service fee = total.
     for (const [col, def] of [

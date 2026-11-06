@@ -534,8 +534,8 @@ CREATE TABLE bookings (
   payment_method VARCHAR(40) NULL,
   status ENUM('pending_payment','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending_payment',
   cancelled_by_vacation_id BIGINT UNSIGNED NULL,
-  payment_invoice_id VARCHAR(64) NULL,
-  payment_id VARCHAR(64) NULL UNIQUE,
+  payment_invoice_id VARCHAR(255) NULL,
+  payment_id VARCHAR(255) NULL UNIQUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_book_client FOREIGN KEY (client_user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_book_therapist FOREIGN KEY (therapist_id) REFERENCES users(id) ON DELETE CASCADE
