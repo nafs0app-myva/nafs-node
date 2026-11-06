@@ -440,6 +440,46 @@ async function ensureSchema() {
       }
     }
 
+    // Journal multi-media: widen entry_type + child table for audio/video/image attachments.
+    try {
+      await conn.query(
+        `ALTER TABLE journal_entries
+         MODIFY COLUMN entry_type ENUM('text','audio','image','video','gratitude','mixed')
+         NOT NULL DEFAULT 'text'`
+      );
+    } catch (err) {
+      if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+    try {
+      await conn.query(`
+        CREATE TABLE IF NOT EXISTS journal_media (
+          id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+          entry_id BIGINT UNSIGNED NULL,
+          user_id BIGINT UNSIGNED NOT NULL,
+          media_type ENUM('audio','image','video','file') NOT NULL,
+          title VARCHAR(200) NULL,
+          url VARCHAR(500) NULL,
+          file_mime VARCHAR(80) NULL,
+          file_data LONGBLOB NULL,
+          sort_order INT NOT NULL DEFAULT 0,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_journal_media_entry (entry_id, sort_order),
+          INDEX idx_journal_media_user (user_id, id),
+          CONSTRAINT fk_journal_media_entry FOREIGN KEY (entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE,
+          CONSTRAINT fk_journal_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+    } catch (err) {
+      if (
+        err.code !== 'ER_NO_SUCH_TABLE' &&
+        err.code !== 'ER_TABLE_EXISTS_ERROR' &&
+        err.code !== 'ER_CANNOT_ADD_FOREIGN' &&
+        !String(err.message || '').match(/already exists|errno: 121/i)
+      ) {
+        throw err;
+      }
+    }
+
     // Backfill client profiles / onboarding rows for existing users
     await conn.query(`
       INSERT IGNORE INTO client_profiles (user_id, preferred_language)

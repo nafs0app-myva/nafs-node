@@ -3683,13 +3683,72 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_type\": \"text\",\n  \"title\": \"Prompt answer\",\n  \"body\": \"Today I felt grateful.\",\n  \"mood_tag\": \"grateful\",\n  \"entry_date\": \"2026-11-05\",\n  \"prompt_id\": 1\n}",
+              "raw": "{\n  \"entry_type\": \"mixed\",\n  \"title\": \"Prompt answer\",\n  \"body\": \"Today I felt grateful.\",\n  \"mood_tag\": \"grateful\",\n  \"entry_date\": \"2026-11-06\",\n  \"prompt_id\": 1,\n  \"media\": [\n    { \"type\": \"audio\", \"url\": \"https://example.com/note.m4a\", \"title\": \"Voice note\" },\n    { \"type\": \"image\", \"url\": \"https://example.com/photo.jpg\", \"title\": \"Mood photo\" },\n    { \"type\": \"video\", \"url\": \"https://example.com/clip.mp4\", \"title\": \"Short clip\" }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
+            "description": "Create a journal entry with multiple media attachments. Prefer uploading files first via POST /journals/media/upload, then pass media_ids. Or pass media[{type,url}] for external URLs. Legacy media_url still works for a single file.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /journals/media/upload",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/media/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "journals",
+                "media",
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [],
+                  "description": "One or more files (repeat this key). Also accepts single field name \"file\"."
+                },
+                {
+                  "key": "media_type",
+                  "value": "audio",
+                  "type": "text",
+                  "description": "Optional hint: audio | image | video"
+                },
+                {
+                  "key": "title",
+                  "value": "My recording",
+                  "type": "text"
+                },
+                {
+                  "key": "entry_id",
+                  "value": "",
+                  "type": "text",
+                  "description": "Optional — attach uploads to an existing journal entry immediately"
+                }
+              ]
+            },
+            "description": "Upload multiple audio/image/video files. Returns media[] and media_ids to pass into POST /journals.",
             "auth": {
               "type": "bearer",
               "bearer": [

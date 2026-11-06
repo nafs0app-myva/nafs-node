@@ -51,6 +51,7 @@ DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS device_tokens;
 DROP TABLE IF EXISTS mood_checkins;
 DROP TABLE IF EXISTS mood_detector_results;
+DROP TABLE IF EXISTS journal_media;
 DROP TABLE IF EXISTS journal_entries;
 DROP TABLE IF EXISTS journal_prompts;
 DROP TABLE IF EXISTS assessment_answers;
@@ -473,11 +474,11 @@ CREATE TABLE journal_entries (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
   prompt_id BIGINT UNSIGNED NULL,
-  entry_type ENUM('text','audio','image','gratitude') NOT NULL DEFAULT 'text',
+  entry_type ENUM('text','audio','image','video','gratitude','mixed') NOT NULL DEFAULT 'text',
   title VARCHAR(200) NULL,
   body TEXT NULL,
   mood_tag VARCHAR(40) NULL,
-  media_url VARCHAR(500) NULL,
+  media_url VARCHAR(500) NULL COMMENT 'First attachment URL (legacy / convenience)',
   is_pinned TINYINT(1) NOT NULL DEFAULT 0,
   is_locked TINYINT(1) NOT NULL DEFAULT 0,
   entry_date DATE NOT NULL,
@@ -486,6 +487,23 @@ CREATE TABLE journal_entries (
   INDEX idx_journal_user_prompt (user_id, prompt_id),
   CONSTRAINT fk_journal_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_journal_prompt FOREIGN KEY (prompt_id) REFERENCES journal_prompts(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE journal_media (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  entry_id BIGINT UNSIGNED NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  media_type ENUM('audio','image','video','file') NOT NULL,
+  title VARCHAR(200) NULL,
+  url VARCHAR(500) NULL,
+  file_mime VARCHAR(80) NULL,
+  file_data LONGBLOB NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_journal_media_entry (entry_id, sort_order),
+  INDEX idx_journal_media_user (user_id, id),
+  CONSTRAINT fk_journal_media_entry FOREIGN KEY (entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE,
+  CONSTRAINT fk_journal_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE assessments (

@@ -141,9 +141,13 @@ module.exports = {
     },
     '/mood/detector': { post: { summary: 'Save mood detector result', responses: { 201: { description: 'Created' } } } },
     '/journals': {
-      get: { summary: 'List journal entries', responses: { 200: { description: 'OK' } } },
+      get: {
+        summary: 'List journal entries (each includes media[] of audio/video/image attachments)',
+        responses: { 200: { description: 'OK' } },
+      },
       post: {
-        summary: 'Create journal entry (optional prompt_id marks prompt answered)',
+        summary:
+          'Create journal entry with optional multiple media (media[] URLs and/or media_ids from upload)',
         responses: { 201: { description: 'Created' } },
       },
     },
@@ -152,6 +156,19 @@ module.exports = {
         summary: 'Next unanswered rotating journal prompt for this user',
         responses: { 200: { description: 'OK' } },
       },
+    },
+    '/journals/media/upload': {
+      post: {
+        summary:
+          'Upload one or more journal files (multipart field "file" or "files[]"; types: audio/image/video)',
+        responses: { 201: { description: 'Uploaded — returns media[] + media_ids' } },
+      },
+    },
+    '/journals/media/{id}/file': {
+      get: { summary: 'Download an uploaded journal media file (owner only)', responses: { 200: { description: 'Binary' } } },
+    },
+    '/journals/media/{id}': {
+      delete: { summary: 'Delete one journal media attachment', responses: { 200: { description: 'OK' } } },
     },
     '/journal-prompts': {
       get: { summary: 'Admin: list journal prompts', responses: { 200: { description: 'OK' } } },
