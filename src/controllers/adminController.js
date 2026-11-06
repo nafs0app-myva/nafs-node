@@ -69,7 +69,11 @@ async function dbSetup(req, res) {
   if (!(await assertSetupKey(req, res))) return;
 
   const migrateOnly = Boolean(req.body?.migrate_only);
-  const migrated = await runMigrate();
+  const seedOnly = Boolean(req.body?.seed_only);
+  let migrated = null;
+  if (!seedOnly) {
+    migrated = await runMigrate();
+  }
   let seeded = null;
   if (!migrateOnly) {
     seeded = await runSeed();
@@ -78,11 +82,12 @@ async function dbSetup(req, res) {
   return ok(
     res,
     {
-      database: migrated.database,
+      database: migrated?.database || undefined,
       seeded: Boolean(seeded),
       accounts: seeded || undefined,
+      seed_only: seedOnly || undefined,
     },
-    'Database migrate/seed complete'
+    seedOnly ? 'Demo accounts re-seeded' : 'Database migrate/seed complete'
   );
 }
 

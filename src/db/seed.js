@@ -5,9 +5,15 @@ async function runSeed() {
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
   await query(
-    `INSERT INTO users (email, phone, password_hash, full_name, role, locale, is_verified)
-     VALUES (:email, :phone, :password_hash, :full_name, 'therapist', 'en', 1)
-     ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), role = 'therapist'`,
+    `INSERT INTO users (email, phone, password_hash, full_name, role, locale, is_verified, is_active)
+     VALUES (:email, :phone, :password_hash, :full_name, 'therapist', 'en', 1, 1)
+     ON DUPLICATE KEY UPDATE
+       full_name = VALUES(full_name),
+       role = 'therapist',
+       password_hash = VALUES(password_hash),
+       password_changed_at = NOW(),
+       is_verified = 1,
+       is_active = 1`,
     {
       email: 'demo@nafs.app',
       phone: '+966500000000',
@@ -232,11 +238,19 @@ async function runSeed() {
     );
   }
 
-  // Demo client (patient) for mood / journal / booking flows
+  // Demo client (patient) for mood / journal / booking flows.
+  // Always force role=client + known password so polluted test accounts can be repaired.
   await query(
-    `INSERT INTO users (email, phone, password_hash, full_name, role, locale, is_verified)
-     VALUES (:email, :phone, :password_hash, :full_name, 'client', 'en', 1)
-     ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), role = 'client'`,
+    `INSERT INTO users (email, phone, password_hash, full_name, role, locale, is_verified, is_active)
+     VALUES (:email, :phone, :password_hash, :full_name, 'client', 'en', 1, 1)
+     ON DUPLICATE KEY UPDATE
+       full_name = VALUES(full_name),
+       role = 'client',
+       phone = VALUES(phone),
+       password_hash = VALUES(password_hash),
+       password_changed_at = NOW(),
+       is_verified = 1,
+       is_active = 1`,
     {
       email: 'client@nafs.app',
       phone: '+966504444444',
@@ -249,20 +263,40 @@ async function runSeed() {
   });
   const clientUserId = clientUsers[0].id;
 
+  // Strip therapist leftovers if this account was flipped to therapist during testing.
+  await query(`DELETE FROM therapist_specializations WHERE therapist_id = :uid`, { uid: clientUserId }).catch(
+    () => {}
+  );
+  await query(`DELETE FROM therapist_licenses WHERE therapist_id = :uid`, { uid: clientUserId }).catch(() => {});
+  await query(`DELETE FROM therapist_degrees WHERE therapist_id = :uid`, { uid: clientUserId }).catch(() => {});
+  await query(`DELETE FROM therapist_applications WHERE user_id = :uid`, { uid: clientUserId }).catch(() => {});
+  await query(`DELETE FROM therapist_profiles WHERE user_id = :uid`, { uid: clientUserId }).catch(() => {});
+
   await query(
     `INSERT INTO client_profiles
       (user_id, gender, city, country, preferred_language, preferred_therapist_gender, concerns, about, onboarding_completed)
      VALUES
       (:uid, 'female', 'Riyadh', 'Saudi Arabia', 'en', 'any', :concerns, 'Demo client account', 1)
      ON DUPLICATE KEY UPDATE
+       gender = VALUES(gender),
        city = VALUES(city),
+       country = VALUES(country),
+       preferred_language = VALUES(preferred_language),
+       preferred_therapist_gender = VALUES(preferred_therapist_gender),
+       concerns = VALUES(concerns),
+       about = VALUES(about),
        onboarding_completed = 1`,
     { uid: clientUserId, concerns: JSON.stringify(['anxiety', 'sleep']) }
   );
   await query(
     `INSERT INTO user_onboarding (user_id, role, step, completed, completed_at, payload)
      VALUES (:uid, 'client', 'done', 1, NOW(), :payload)
-     ON DUPLICATE KEY UPDATE completed = 1, step = 'done'`,
+     ON DUPLICATE KEY UPDATE
+       role = 'client',
+       completed = 1,
+       step = 'done',
+       completed_at = NOW(),
+       payload = VALUES(payload)`,
     {
       uid: clientUserId,
       payload: JSON.stringify({ goals: ['Sleep better', 'Reduce anxiety'], completed: true }),
