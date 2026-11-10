@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Nafs API — All Endpoints",
-    "description": "Complete Nafs therapist + client API collection.\nBase: {{baseUrl}} (Hostinger: https://myva.ae/api/v1).\nLogin saves {{token}} automatically.\n\nSynced from src/routes/index.js.\nIncludes Stripe Checkout, journal ordered blocks[], privacy media upload (disk/Range/purpose/thumbnail), My Plan, FCM, admin config.",
+    "description": "Complete Nafs therapist + client API collection.\nBase: {{baseUrl}} (Hostinger: https://myva.ae/api/v1).\nLogin saves {{token}} automatically.\n\nSynced from src/routes/index.js.\nIncludes Stripe Checkout, journal ordered blocks[], privacy media upload (disk/Range/purpose/thumbnail), My Plan, FCM, admin config.\nIncludes Progress tab /progress/summary + insight cache.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -4431,6 +4431,129 @@
                 }
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /progress/summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/summary?period=weekly&tz_offset=240",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "weekly",
+                  "description": "weekly | monthly"
+                },
+                {
+                  "key": "tz_offset",
+                  "value": "240",
+                  "description": "Minutes east of UTC (Dubai 240, Riyadh 180)"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Progress tab cards + ai_input aggregates. has_enough_data is false with fewer than 3 scored check-ins."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /progress/insight",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/insight?period=weekly&tz_offset=240",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "insight"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "weekly"
+                },
+                {
+                  "key": "tz_offset",
+                  "value": "240"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Cached AI insight for the current period window, or insight: null."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /progress/insight",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/progress/insight",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "insight"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period\": \"weekly\",\n  \"period_start\": \"2026-11-03\",\n  \"summary\": \"Your week held steady overall, with calmer evenings after breathwork.\",\n  \"direction\": \"Slight upward drift versus last week.\",\n  \"stability\": \"Mood varied moderately; Work was the main trigger.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Upsert app-generated Progress insight text for this period_start."
           },
           "response": []
         }

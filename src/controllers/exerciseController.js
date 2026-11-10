@@ -439,6 +439,17 @@ const completePlanExercise = asyncHandler(async (req, res) => {
     { uid: req.user.id, exercise_id: exerciseId }
   );
 
+  // Append-only completion log (Progress tab weekly/monthly stats).
+  try {
+    await query(
+      `INSERT INTO exercise_completions (user_id, exercise_id, completed_at)
+       VALUES (:uid, :exercise_id, NOW())`,
+      { uid: req.user.id, exercise_id: exerciseId }
+    );
+  } catch (err) {
+    if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
+  }
+
   const row = await planRowForUser(req.user.id, exerciseId);
   const exercises = await buildUserPlanExercises(req.user.id, { todayOnly: true });
   return ok(
@@ -462,5 +473,6 @@ module.exports = {
   addToPlanSchema,
   buildUserPlanExercises,
   planProgress,
+  findExercise,
   EXERCISE_IDS,
 };

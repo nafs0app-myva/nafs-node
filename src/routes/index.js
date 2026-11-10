@@ -27,6 +27,7 @@ const admin = require('../controllers/adminController');
 const adminPanel = require('../controllers/adminPanelController');
 const onboarding = require('../controllers/onboardingController');
 const exercises = require('../controllers/exerciseController');
+const progress = require('../controllers/progressController');
 const payments = require('../controllers/paymentController');
 
 const rateLimit = require('express-rate-limit');
@@ -384,6 +385,16 @@ router.post(
   '/plan/exercises/:exercise_id/complete',
   authenticate,
   exercises.completePlanExercise
+);
+
+// Client: Progress tab (weekly / monthly summary + cached AI insight)
+router.get('/progress/summary', authenticate, progress.getSummary);
+router.get('/progress/insight', authenticate, progress.getInsight);
+router.put(
+  '/progress/insight',
+  authenticate,
+  validate(progress.insightSchema),
+  progress.putInsight
 );
 
 // Client: specialists & booking

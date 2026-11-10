@@ -309,15 +309,72 @@ async function runSeed() {
     { uid: therapistId }
   );
 
+  // Progress tab sample: ~7 days of check-ins (causes + symptoms in tags) + exercise completions.
   const moodCount = await query(`SELECT COUNT(*) AS c FROM mood_checkins WHERE user_id = :uid`, {
     uid: clientUserId,
   });
-  if (!moodCount[0].c) {
+  if (Number(moodCount[0].c) < 5) {
+    const progressMoods = [
+      { daysAgo: 6, mood: 'nervous', tags: ['Work', 'Racing Thoughts'] },
+      { daysAgo: 5, mood: 'tired', tags: ['Studies', 'Fatigue'] },
+      { daysAgo: 4, mood: 'calm', tags: ['Family'] },
+      { daysAgo: 3, mood: 'happy', tags: ['Sleep'] },
+      { daysAgo: 2, mood: 'sad', tags: ['Loneliness', 'Want to Cry'] },
+      { daysAgo: 1, mood: 'balanced', tags: ['Work', 'Health'] },
+      { daysAgo: 0, mood: 'calm', tags: ['Work'] },
+    ];
+    for (const row of progressMoods) {
+      await query(
+        `INSERT INTO mood_checkins (user_id, mood, intensity, note, tags, checked_in_at)
+         VALUES (:uid, :mood, :intensity, :note, :tags, DATE_SUB(UTC_TIMESTAMP(), INTERVAL :days DAY))`,
+        {
+          uid: clientUserId,
+          mood: row.mood,
+          intensity: 6,
+          note: 'Progress seed check-in',
+          tags: JSON.stringify(row.tags),
+          days: row.daysAgo,
+        }
+      );
+    }
+  }
+
+  // Ensure My Plan items + completion history for Progress cards.
+  for (const exerciseId of ['box_breathing', 'evening_wind_down', 'understand_yourself']) {
     await query(
-      `INSERT INTO mood_checkins (user_id, mood, intensity, note, tags)
-       VALUES (:uid, 'calm', 7, 'Feeling steady after walk', :tags)`,
-      { uid: clientUserId, tags: JSON.stringify(['walk', 'morning']) }
+      `INSERT INTO user_exercise_plan (user_id, exercise_id, scheduled_for, added_at)
+       VALUES (:uid, :exercise_id, NULL, DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 DAY))
+       ON DUPLICATE KEY UPDATE exercise_id = VALUES(exercise_id)`,
+      { uid: clientUserId, exercise_id: exerciseId }
     );
+  }
+  const completionCount = await query(
+    `SELECT COUNT(*) AS c FROM exercise_completions WHERE user_id = :uid`,
+    { uid: clientUserId }
+  ).catch(() => [{ c: 0 }]);
+  if (Number(completionCount[0]?.c || 0) < 5) {
+    const completions = [
+      { daysAgo: 6, exercise_id: 'box_breathing' },
+      { daysAgo: 5, exercise_id: 'box_breathing' },
+      { daysAgo: 4, exercise_id: 'evening_wind_down' },
+      { daysAgo: 3, exercise_id: 'box_breathing' },
+      { daysAgo: 2, exercise_id: 'understand_yourself' },
+      { daysAgo: 1, exercise_id: 'box_breathing' },
+      { daysAgo: 0, exercise_id: 'box_breathing' },
+      { daysAgo: 0, exercise_id: 'evening_wind_down' },
+    ];
+    for (const row of completions) {
+      await query(
+        `INSERT INTO exercise_completions (user_id, exercise_id, completed_at)
+         VALUES (:uid, :exercise_id, DATE_SUB(UTC_TIMESTAMP(), INTERVAL :days DAY))`,
+        { uid: clientUserId, exercise_id: row.exercise_id, days: row.daysAgo }
+      );
+      await query(
+        `UPDATE user_exercise_plan SET completed_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL :days DAY)
+         WHERE user_id = :uid AND exercise_id = :exercise_id`,
+        { uid: clientUserId, exercise_id: row.exercise_id, days: row.daysAgo }
+      );
+    }
   }
 
   const journalCount = await query(`SELECT COUNT(*) AS c FROM journal_entries WHERE user_id = :uid`, {
@@ -329,6 +386,24 @@ async function runSeed() {
        VALUES (:uid, 'gratitude', 'Three good things', 'Family call, tea, finished work early.', 'grateful', 1, CURDATE())`,
       { uid: clientUserId }
     );
+  }
+  // A few more journal rows so Progress ai_input.journal_entries is non-trivial.
+  const journalExtra = await query(`SELECT COUNT(*) AS c FROM journal_entries WHERE user_id = :uid`, {
+    uid: clientUserId,
+  });
+  if (Number(journalExtra[0].c) < 4) {
+    for (let i = 1; i <= 3; i += 1) {
+      await query(
+        `INSERT INTO journal_entries (user_id, entry_type, title, body, mood_tag, is_pinned, entry_date)
+         VALUES (:uid, 'text', :title, :body, 'calm', 0, DATE_SUB(CURDATE(), INTERVAL :days DAY))`,
+        {
+          uid: clientUserId,
+          title: `Progress note ${i}`,
+          body: `Seed journal entry ${i}`,
+          days: i,
+        }
+      );
+    }
   }
 
   // Rotating journal prompts (idempotent seed for the backend-managed pool)
@@ -372,7 +447,10 @@ async function runSeed() {
 
   await query(
     `INSERT INTO user_consents (user_id, consent_key, enabled)
-     VALUES (:uid, 'mood_detector', 1), (:uid, 'session_recording', 0)
+     VALUES
+       (:uid, 'mood_detector', 1),
+       (:uid, 'session_recording', 0),
+       (:uid, 'ai_insights', 1)
      ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)`,
     { uid: clientUserId }
   );

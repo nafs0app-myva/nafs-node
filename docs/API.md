@@ -140,7 +140,10 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | GET | `/plan/exercises` | This user's My Plan (empty until adds) |
 | POST | `/plan/exercises` | Add `{ exercise_id }` (idempotent; rejects unknown ids) |
 | DELETE | `/plan/exercises/:exercise_id` | Remove from plan |
-| POST | `/plan/exercises/:exercise_id/complete` | Set `completed_at` (today `done`) |
+| POST | `/plan/exercises/:exercise_id/complete` | Set `completed_at` (today `done`) and append `exercise_completions` row |
+| GET | `/progress/summary` | Progress tab cards. Query: `period=weekly\|monthly`, `tz_offset` minutes east of UTC (e.g. `180` Riyadh). Returns averages, best/difficult day, plan %, most-used exercise, frequent trigger (causes only), `has_enough_data`, `ai_insights_enabled`, and aggregate `ai_input`. Null when no data. |
+| GET | `/progress/insight` | Cached AI insight for the current period window (`period`, `tz_offset`). `data.insight` is null when none. |
+| PUT | `/progress/insight` | Upsert cached insight `{ period, period_start, summary, direction, stability }` (app-generated GPT text). |
 
 ## Client specialists / booking
 | Method | Path |

@@ -394,6 +394,49 @@ async function ensureSchema() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // Progress tab: append-only completion events + cached AI insight text
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS exercise_completions (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        exercise_id VARCHAR(64) NOT NULL,
+        completed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_ec_user_time (user_id, completed_at),
+        INDEX idx_ec_user_ex (user_id, exercise_id),
+        CONSTRAINT fk_ec_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS progress_insights (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        period ENUM('weekly','monthly') NOT NULL,
+        period_start DATE NOT NULL,
+        summary TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        stability TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_pi (user_id, period, period_start),
+        CONSTRAINT fk_pi_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    // One-time backfill from existing plan completed_at rows.
+    try {
+      await conn.query(`
+        INSERT INTO exercise_completions (user_id, exercise_id, completed_at)
+        SELECT p.user_id, p.exercise_id, p.completed_at
+        FROM user_exercise_plan p
+        LEFT JOIN exercise_completions c
+          ON c.user_id = p.user_id
+         AND c.exercise_id = p.exercise_id
+         AND c.completed_at = p.completed_at
+        WHERE p.completed_at IS NOT NULL
+          AND c.id IS NULL
+      `);
+    } catch (err) {
+      if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+
     // Journal prompts (rotate-once-answered pool managed from backend)
     await conn.query(`
       CREATE TABLE IF NOT EXISTS journal_prompts (

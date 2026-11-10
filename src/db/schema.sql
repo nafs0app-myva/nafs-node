@@ -49,6 +49,9 @@ DROP TABLE IF EXISTS faqs;
 DROP TABLE IF EXISTS policies;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS device_tokens;
+DROP TABLE IF EXISTS progress_insights;
+DROP TABLE IF EXISTS exercise_completions;
+DROP TABLE IF EXISTS user_exercise_plan;
 DROP TABLE IF EXISTS mood_checkins;
 DROP TABLE IF EXISTS mood_detector_results;
 DROP TABLE IF EXISTS journal_blocks;
@@ -696,6 +699,31 @@ CREATE TABLE user_exercise_plan (
   UNIQUE KEY uq_user_exercise_plan (user_id, exercise_id),
   INDEX idx_user_exercise_plan_day (user_id, scheduled_for),
   CONSTRAINT fk_user_exercise_plan_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Append-only exercise completion log (Progress weekly/monthly stats)
+CREATE TABLE exercise_completions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  exercise_id VARCHAR(64) NOT NULL,
+  completed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_ec_user_time (user_id, completed_at),
+  INDEX idx_ec_user_ex (user_id, exercise_id),
+  CONSTRAINT fk_ec_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cached Progress AI insight text (app-generated; shared across devices)
+CREATE TABLE progress_insights (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  period ENUM('weekly','monthly') NOT NULL,
+  period_start DATE NOT NULL,
+  summary TEXT NOT NULL,
+  direction TEXT NOT NULL,
+  stability TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_pi (user_id, period, period_start),
+  CONSTRAINT fk_pi_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
