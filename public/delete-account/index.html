@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Delete your Nafs account · myva.ae</title>
+    <meta
+      name="description"
+      content="Request deletion of your Nafs account and associated data on myva.ae. This page meets Google Play account deletion requirements."
+    />
+    <meta property="og:title" content="Delete your Nafs account" />
+    <meta
+      property="og:description"
+      content="Request deletion of your Nafs account and the personal data linked to it."
+    />
+    <meta property="og:url" content="https://myva.ae/delete-account/" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f2e28'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-size='34' font-family='Georgia,serif' fill='%23f0c27a'%3EN%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-deep: #061411;
+        --bg: #0b1f1c;
+        --ink: #eef7f3;
+        --muted: #a7c4bb;
+        --accent: #f0c27a;
+        --accent-ink: #13201c;
+        --line: rgba(238, 247, 243, 0.14);
+        --panel: rgba(232, 245, 240, 0.06);
+        --good: #86efac;
+        --bad: #fca5a5;
+        --max: 760px;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "Source Sans 3", sans-serif;
+        background:
+          radial-gradient(circle at 12% 0%, rgba(240, 194, 122, 0.12), transparent 40%),
+          linear-gradient(180deg, #0b1f1c 0%, #061411 55%, #04100e 100%);
+        min-height: 100vh;
+        line-height: 1.55;
+      }
+      a { color: inherit; text-decoration: none; }
+      a:hover { color: var(--accent); }
+      button, input, textarea, select { font: inherit; color: inherit; }
+      button { cursor: pointer; }
+
+      .wrap {
+        width: min(var(--max), calc(100% - 2.5rem));
+        margin-inline: auto;
+      }
+
+      .nav {
+        padding: 1.15rem 0 0;
+      }
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .nav-brand {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+      }
+      .nav-links {
+        display: flex;
+        gap: 1rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      main { padding: 2.5rem 0 4.5rem; }
+
+      .kicker {
+        color: var(--accent);
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin: 0 0 0.65rem;
+        font-weight: 600;
+      }
+      h1 {
+        font-family: Fraunces, Georgia, serif;
+        font-size: clamp(2rem, 5vw, 2.85rem);
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin: 0 0 0.85rem;
+      }
+      .lead {
+        color: var(--muted);
+        margin: 0 0 2rem;
+        font-size: 1.05rem;
+        max-width: 42rem;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 1.35rem 1.4rem;
+        margin-bottom: 1.25rem;
+      }
+      .panel h2 {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.25rem;
+        margin: 0 0 0.75rem;
+        letter-spacing: -0.02em;
+      }
+      .panel p, .panel li { color: var(--muted); }
+      .panel ul, .panel ol {
+        margin: 0;
+        padding-left: 1.15rem;
+        display: grid;
+        gap: 0.45rem;
+      }
+      .panel strong { color: var(--ink); font-weight: 600; }
+
+      form {
+        display: grid;
+        gap: 0.9rem;
+      }
+      label {
+        display: grid;
+        gap: 0.35rem;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+      input, textarea, select {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.22);
+        border-radius: 12px;
+        padding: 0.8rem 0.95rem;
+        outline: none;
+      }
+      input:focus, textarea:focus, select:focus {
+        border-color: rgba(240, 194, 122, 0.55);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 999px;
+        padding: 0.85rem 1.25rem;
+        font-weight: 600;
+        background: var(--accent);
+        color: var(--accent-ink);
+        width: fit-content;
+        transition: transform 0.18s ease;
+      }
+      .btn:hover { transform: translateY(-1px); }
+      .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+      .form-note {
+        margin: 0;
+        min-height: 1.25rem;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      .form-note.ok { color: var(--good); }
+      .form-note.err { color: var(--bad); }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 1.25rem 0 2rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .footer-links { display: flex; flex-wrap: wrap; gap: 1rem; }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav-inner">
+        <a class="nav-brand" href="/">Nafs</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="mailto:support@myva.ae">support@myva.ae</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <p class="kicker">Account &amp; data</p>
+        <h1>Delete your Nafs account</h1>
+        <p class="lead">
+          Use this page to request permanent deletion of your Nafs account and the personal data
+          linked to it. You do not need to open the mobile app. Requests are handled by the Nafs
+          support team on myva.ae.
+        </p>
+
+        <section class="panel">
+          <h2>How to request deletion</h2>
+          <ol>
+            <li>Fill in the form below with the <strong>email address registered on your Nafs account</strong>.</li>
+            <li>Submit the request. You will receive a confirmation email with a reference number.</li>
+            <li>We verify ownership of the account (we may ask you to confirm from that email).</li>
+            <li>
+              After verification, we delete the account and associated personal data within
+              <strong>30 days</strong> (usually sooner). You will get a confirmation when it is done.
+            </li>
+          </ol>
+          <p style="margin: 1rem 0 0;">
+            Prefer email? Write to
+            <a href="mailto:support@myva.ae?subject=Account%20deletion%20request"><strong>support@myva.ae</strong></a>
+            with the subject “Account deletion request”.
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>What is deleted</h2>
+          <ul>
+            <li>Account profile (name, email, phone, preferences, onboarding)</li>
+            <li>Mood check-ins, journals, goals, assessments, and My Plan history</li>
+            <li>Voice / photo / video recordings and other privacy media you uploaded</li>
+            <li>Chat messages, devices, notification preferences, and consents</li>
+            <li>Client bookings and related session notes tied only to your account</li>
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h2>What may be retained, and for how long</h2>
+          <ul>
+            <li>
+              <strong>Legal / financial records</strong> (e.g. invoices, payout records, fraud or
+              dispute logs) may be kept up to <strong>24 months</strong> where required by law or
+              accounting rules, then deleted or anonymized.
+            </li>
+            <li>
+              <strong>Security logs</strong> (IP / access events) may be kept up to
+              <strong>90 days</strong>, then deleted.
+            </li>
+            <li>
+              Data that is already anonymized (no longer linked to you) may remain for product
+              analytics.
+            </li>
+          </ul>
+          <p style="margin: 1rem 0 0;">
+            Deletion is permanent. You will need to create a new account if you return to Nafs later.
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>Request account deletion</h2>
+          <form id="delete-form" novalidate>
+            <label>
+              Full name
+              <input name="name" autocomplete="name" required maxlength="120" placeholder="Name on your Nafs account" />
+            </label>
+            <label>
+              Account email
+              <input
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                maxlength="190"
+                placeholder="The email you use to sign in"
+              />
+            </label>
+            <label>
+              Account type
+              <select name="account_type" required>
+                <option value="client">Client</option>
+                <option value="therapist">Consultant / therapist</option>
+              </select>
+            </label>
+            <label>
+              Additional details (optional)
+              <textarea
+                name="details"
+                rows="4"
+                maxlength="3500"
+                placeholder="Anything that helps us find your account (e.g. phone number on the profile)."
+              ></textarea>
+            </label>
+            <label style="grid-template-columns: auto 1fr; align-items: start; gap: 0.65rem;">
+              <input type="checkbox" name="confirm" required style="width: auto; margin-top: 0.2rem;" />
+              <span>
+                I understand this permanently deletes my Nafs account and personal data as described
+                above.
+              </span>
+            </label>
+            <button class="btn" type="submit" id="delete-btn">Submit deletion request</button>
+            <p class="form-note" id="delete-note" aria-live="polite"></p>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div class="wrap footer-inner">
+        <div>© <span id="year"></span> Nafs · myva.ae</div>
+        <div class="footer-links">
+          <a href="/">Home</a>
+          <a href="mailto:support@myva.ae">Support</a>
+          <a href="/api/v1/privacy/retention">Retention API</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      const form = document.getElementById('delete-form');
+      const note = document.getElementById('delete-note');
+      const btn = document.getElementById('delete-btn');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        note.textContent = '';
+        note.className = 'form-note';
+        btn.disabled = true;
+
+        const data = Object.fromEntries(new FormData(form).entries());
+        if (!data.confirm) {
+          note.textContent = 'Please confirm you want to delete the account.';
+          note.classList.add('err');
+          btn.disabled = false;
+          return;
+        }
+
+        const message = [
+          'Please delete my Nafs account and associated personal data.',
+          `Account type: ${data.account_type}`,
+          data.details ? `Details: ${data.details}` : null,
+          'Submitted via https://myva.ae/delete-account/',
+        ]
+          .filter(Boolean)
+          .join('\n');
+
+        try {
+          const res = await fetch('/api/v1/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: data.name,
+              email: data.email,
+              subject: 'Account deletion request',
+              message,
+            }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || json.success === false) {
+            throw new Error(json.message || 'Could not submit request');
+          }
+          const ref = json.data?.reference ? ` Reference: ${json.data.reference}.` : '';
+          note.textContent =
+            `Request received.${ref} We will verify your account and complete deletion within 30 days.`;
+          note.classList.add('ok');
+          form.reset();
+        } catch (err) {
+          note.textContent =
+            err.message || 'Something went wrong. Email support@myva.ae with subject “Account deletion request”.';
+          note.classList.add('err');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
