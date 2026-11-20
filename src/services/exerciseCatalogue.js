@@ -470,14 +470,20 @@ async function saveExerciseMedia(exerciseId, kind, file) {
   return findExercise(exerciseId);
 }
 
-async function createExercise(payload) {
-  const id = String(payload.id || '')
+function slugifyId(value) {
+  return String(value || '')
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, '_')
-    .replace(/^_|_$/g, '');
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 64);
+}
+
+async function createExercise(payload) {
+  let id = slugifyId(payload.id);
+  if (!id) id = slugifyId(payload.title);
   if (!id) {
-    const err = new Error('id is required (letters, numbers, underscore)');
+    const err = new Error('Could not build id from title (need letters or numbers)');
     err.status = 422;
     throw err;
   }

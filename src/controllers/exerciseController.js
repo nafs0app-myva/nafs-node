@@ -136,7 +136,8 @@ const updateExerciseSchema = Joi.object({
 }).min(1);
 
 const createExerciseSchema = Joi.object({
-  id: Joi.string().trim().min(2).max(64).required(),
+  // Optional — server builds id from title when omitted
+  id: Joi.string().trim().min(2).max(64).allow('', null),
   title: Joi.string().trim().min(2).max(160).required(),
   type: Joi.string().valid('audio', 'video').default('video'),
   subtitle: Joi.string().trim().max(255).allow('', null),
