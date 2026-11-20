@@ -12,6 +12,7 @@ Live: `https://myva.ae/api/v1` (OpenAPI `2.2.0+`)
 | --- | --- | --- |
 | POST | `/auth/register` | Sends real email OTP |
 | POST | `/auth/login` | |
+| POST | `/auth/social` | Google/Apple: `{ provider, id_token, role, full_name?, locale? }` → NAFS JWT + `is_new_user`. Verifies Firebase ID token; finds/links/creates user. Requires `FCM_SERVICE_ACCOUNT` (same Firebase project). |
 | POST | `/auth/verify-email` | `{ email, code }` — code from email, not `123456` |
 | POST | `/auth/resend-verification` | `{ email }` |
 | POST | `/auth/forgot-password` | Sends real email OTP |

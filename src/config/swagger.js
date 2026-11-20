@@ -22,6 +22,17 @@ module.exports = {
     '/health': { get: { security: [], summary: 'Health', responses: { 200: { description: 'OK' } } } },
     '/app/bootstrap': { get: { security: [], summary: 'App bootstrap / language', responses: { 200: { description: 'OK' } } } },
     '/auth/login': { post: { security: [], summary: 'Login', responses: { 200: { description: 'OK' } } } },
+    '/auth/social': {
+      post: {
+        security: [],
+        summary:
+          'Google/Apple sign-in: verify Firebase ID token, find-or-create NAFS user, return JWT + is_new_user',
+        responses: {
+          200: { description: 'Signed in (existing)' },
+          201: { description: 'Signed in (new user created)' },
+        },
+      },
+    },
     '/auth/register': {
       post: {
         security: [],

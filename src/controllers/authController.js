@@ -10,6 +10,7 @@ const { notify } = require('../utils/notify');
 const { maskIban } = require('../utils/iban');
 const { hashToken, invalidateUser } = require('../middleware/auth');
 const { normalisePhone, nationalDigits } = require('../utils/phone');
+const firebaseAuth = require('../services/firebaseAuth');
 
 // A valid bcrypt hash of a random string, compared against when the account doesn't exist.
 const DUMMY_HASH = bcrypt.hashSync('nafs-dummy-password', 10);
@@ -53,6 +54,14 @@ const changePasswordSchema = Joi.object({
 
 const resendVerificationSchema = Joi.object({
   email: Joi.string().email().required(),
+});
+
+const socialLoginSchema = Joi.object({
+  provider: Joi.string().valid('google', 'apple').required(),
+  id_token: Joi.string().min(20).required(),
+  role: Joi.string().valid('client', 'therapist').required(),
+  full_name: Joi.string().trim().min(1).max(120).allow('', null),
+  locale: Joi.string().valid('en', 'ar').default('en'),
 });
 
 function signToken(user) {
@@ -207,10 +216,156 @@ const login = asyncHandler(async (req, res) => {
     }
   }
   // Always run a bcrypt compare, so an unknown account takes as long as a wrong password.
+  // Social-only accounts have a null password_hash — treat them like a wrong password.
   const match = await bcrypt.compare(password, user?.password_hash || DUMMY_HASH);
-  if (!user || !match) return fail(res, email ? 'Invalid email or password' : 'Invalid phone number or password', 401);
+  if (!user || !user.password_hash || !match) {
+    return fail(res, email ? 'Invalid email or password' : 'Invalid phone number or password', 401);
+  }
   if (!user.is_active) return fail(res, 'Account disabled', 403);
   return ok(res, { user: publicUser(user), token: signToken(user) }, 'Logged in');
+});
+
+async function linkSocialIdentity(conn, { userId, provider, providerUid, email }) {
+  await conn.execute(
+    `INSERT INTO social_identities (user_id, provider, provider_uid, email)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE email = VALUES(email)`,
+    [userId, provider, providerUid, email]
+  );
+}
+
+async function createSocialUser(conn, { email, fullName, avatarUrl, role, locale }) {
+  const [insert] = await conn.execute(
+    `INSERT INTO users (email, phone, password_hash, full_name, avatar_url, role, locale, is_verified, is_active)
+     VALUES (?, NULL, NULL, ?, ?, ?, ?, 1, 1)`,
+    [email, fullName, avatarUrl || null, role, locale]
+  );
+  const userId = insert.insertId;
+  if (role === 'therapist') {
+    await conn.execute(`INSERT INTO therapist_profiles (user_id) VALUES (?)`, [userId]);
+    await conn.execute(`INSERT INTO therapist_applications (user_id) VALUES (?)`, [userId]);
+    await conn.execute(`INSERT INTO wallets (user_id, balance, currency) VALUES (?, 0, 'SAR')`, [userId]);
+  } else {
+    await conn.execute(`INSERT INTO client_profiles (user_id, preferred_language) VALUES (?, ?)`, [
+      userId,
+      locale,
+    ]);
+  }
+  await conn.execute(`INSERT INTO user_onboarding (user_id, role) VALUES (?, ?)`, [userId, role]);
+  await conn.execute(
+    `INSERT INTO notification_preferences (user_id) VALUES (?)
+     ON DUPLICATE KEY UPDATE user_id = user_id`,
+    [userId]
+  );
+  const [users] = await conn.execute(`SELECT * FROM users WHERE id = ?`, [userId]);
+  return users[0];
+}
+
+/**
+ * POST /auth/social — exchange a Firebase ID token (Google/Apple) for a NAFS JWT.
+ */
+const socialLogin = asyncHandler(async (req, res) => {
+  const { provider: requestedProvider, id_token: idToken, role, full_name: bodyName, locale } =
+    req.body;
+
+  let verified;
+  try {
+    verified = await firebaseAuth.verifyIdToken(idToken);
+  } catch (err) {
+    if (err.status === 503) return fail(res, err.message, 503);
+    return fail(res, 'Invalid or expired token', 401);
+  }
+
+  const mapped = firebaseAuth.mapProvider(verified.signInProvider);
+  const provider = mapped || requestedProvider;
+  if (!['google', 'apple'].includes(provider)) {
+    return fail(res, 'Unsupported sign-in provider', 400);
+  }
+  // Prefer the verified token's provider; reject when both are present and disagree.
+  if (mapped && mapped !== requestedProvider) {
+    return fail(res, 'Provider mismatch', 400);
+  }
+
+  if (!verified.email) {
+    return fail(res, 'Email not available from provider', 400);
+  }
+  const email = String(verified.email).trim().toLowerCase();
+  const providerUid = verified.uid;
+  const tokenName = (verified.name || '').trim();
+  const fullName =
+    tokenName ||
+    (bodyName && String(bodyName).trim()) ||
+    email.split('@')[0] ||
+    'Nafs User';
+  const avatarUrl = verified.picture || null;
+  const userLocale = locale || 'en';
+
+  // 1) Existing linked identity
+  const linked = await query(
+    `SELECT u.* FROM social_identities si
+     INNER JOIN users u ON u.id = si.user_id
+     WHERE si.provider = :provider AND si.provider_uid = :provider_uid
+     LIMIT 1`,
+    { provider, provider_uid: providerUid }
+  );
+  if (linked.length) {
+    const user = linked[0];
+    if (!user.is_active) return fail(res, 'Account is deactivated', 403);
+    return ok(
+      res,
+      { token: signToken(user), is_new_user: false, user: publicUser(user) },
+      'Signed in'
+    );
+  }
+
+  // 2) Match by email → link (only when provider email is verified)
+  const byEmail = await query(`SELECT * FROM users WHERE email = :email LIMIT 1`, { email });
+  if (byEmail.length) {
+    if (!verified.emailVerified) {
+      return fail(res, 'Email already registered. Sign in with your password.', 409);
+    }
+    const user = byEmail[0];
+    if (!user.is_active) return fail(res, 'Account is deactivated', 403);
+    await withTransaction(async (conn) => {
+      await linkSocialIdentity(conn, {
+        userId: user.id,
+        provider,
+        providerUid,
+        email,
+      });
+    });
+    // Do not change role / profile for an existing account.
+    return ok(
+      res,
+      { token: signToken(user), is_new_user: false, user: publicUser(user) },
+      'Signed in'
+    );
+  }
+
+  // 3) Create new user + role rows (same shape as /auth/register)
+  const created = await withTransaction(async (conn) => {
+    const user = await createSocialUser(conn, {
+      email,
+      fullName,
+      avatarUrl,
+      role,
+      locale: userLocale,
+    });
+    await linkSocialIdentity(conn, {
+      userId: user.id,
+      provider,
+      providerUid,
+      email,
+    });
+    return user;
+  });
+
+  return ok(
+    res,
+    { token: signToken(created), is_new_user: true, user: publicUser(created) },
+    'Signed in',
+    201
+  );
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
@@ -311,6 +466,9 @@ const resetPassword = asyncHandler(async (req, res) => {
 const changePassword = asyncHandler(async (req, res) => {
   const rows = await query(`SELECT * FROM users WHERE id = :id`, { id: req.user.id });
   if (!rows.length) return fail(res, 'User not found', 404);
+  if (!rows[0].password_hash) {
+    return fail(res, 'No password set. Use forgot password to create one.', 400);
+  }
   const okPw = await bcrypt.compare(req.body.current_password, rows[0].password_hash);
   if (!okPw) return fail(res, 'Current password is incorrect', 400);
   if (req.body.new_password === req.body.current_password) {
@@ -421,10 +579,12 @@ module.exports = {
   strongPassword,
   registerSchema,
   loginSchema,
+  socialLoginSchema,
   changePasswordSchema,
   resendVerificationSchema,
   register,
   login,
+  socialLogin,
   verifyEmail,
   resendVerification,
   forgotPassword,

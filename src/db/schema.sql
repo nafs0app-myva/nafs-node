@@ -70,13 +70,14 @@ DROP TABLE IF EXISTS media_recordings;
 DROP TABLE IF EXISTS data_export_requests;
 DROP TABLE IF EXISTS notification_preferences;
 DROP TABLE IF EXISTS otp_codes;
+DROP TABLE IF EXISTS social_identities;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(190) NOT NULL UNIQUE,
   phone VARCHAR(32) NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL,
   full_name VARCHAR(120) NOT NULL,
   avatar_url VARCHAR(500) NULL,
   role ENUM('therapist','client','admin') NOT NULL DEFAULT 'therapist',
@@ -99,6 +100,18 @@ CREATE TABLE otp_codes (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_otp_email_purpose (email, purpose),
   CONSTRAINT fk_otp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE social_identities (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  provider VARCHAR(20) NOT NULL,
+  provider_uid VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_provider_uid (provider, provider_uid),
+  KEY idx_social_user (user_id),
+  CONSTRAINT fk_social_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE therapist_profiles (

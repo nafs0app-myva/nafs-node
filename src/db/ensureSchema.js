@@ -196,6 +196,27 @@ async function ensureSchema() {
       if (err.code !== 'ER_DUP_FIELDNAME') throw err;
     }
 
+    // Social sign-in (Google / Apple via Firebase) — password_hash may be NULL
+    try {
+      await conn.query(`ALTER TABLE users MODIFY password_hash VARCHAR(255) NULL`);
+    } catch (err) {
+      if (err.code !== 'ER_NO_SUCH_TABLE') throw err;
+    }
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS social_identities (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        provider VARCHAR(20) NOT NULL,
+        provider_uid VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_provider_uid (provider, provider_uid),
+        KEY idx_social_user (user_id),
+        CONSTRAINT fk_social_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     // Specialization icons + the therapeutic modalities catalogue
     try {
       await conn.query(`ALTER TABLE specializations ADD COLUMN icon VARCHAR(40) NULL AFTER name_ar`);

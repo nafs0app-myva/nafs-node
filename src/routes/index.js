@@ -140,13 +140,17 @@ const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 8,
   skipSuccessfulRequests: true,
-  keyGenerator: (req) => `login:${String(req.body?.email || req.body?.phone || '').toLowerCase()}:${req.ip}`,
+  keyGenerator: (req) => {
+    const account = String(req.body?.email || req.body?.phone || req.body?.provider || '').toLowerCase();
+    return `login:${account}:${req.ip}`;
+  },
   standardHeaders: true,
   legacyHeaders: false,
   validate: { keyGeneratorIpFallback: false },
   handler: (_req, res) => res.status(429).json({ success: false, message: 'Too many failed sign-in attempts. Try again in 15 minutes.', errors: null }),
 });
 router.post('/auth/login', loginLimiter, validate(auth.loginSchema), auth.login);
+router.post('/auth/social', loginLimiter, validate(auth.socialLoginSchema), auth.socialLogin);
 router.post(
   '/auth/verify-email',
   validate(Joi.object({ email: Joi.string().email().required(), code: Joi.string().length(6).required() })),
