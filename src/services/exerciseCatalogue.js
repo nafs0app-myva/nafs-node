@@ -5,9 +5,9 @@ const env = require('../config/env');
 
 const AUDIO_BASE =
   process.env.MEDIA_AUDIO_BASE_URL || 'https://www.soundhelix.com/examples/mp3';
-const VIDEO_BASE =
-  process.env.MEDIA_VIDEO_BASE_URL ||
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample';
+// Optional CDN base for seed videos. Do NOT default to Google's gtv-videos-bucket —
+// that bucket now returns 403 for anonymous callers.
+const VIDEO_BASE = (process.env.MEDIA_VIDEO_BASE_URL || '').replace(/\/$/, '');
 const THUMB_BASE =
   process.env.MEDIA_THUMB_BASE_URL || `${env.app.url.replace(/\/$/, '')}/media/exercises`;
 
@@ -25,12 +25,14 @@ function audioMedia(file, thumb) {
 }
 
 function videoMedia(file, thumb) {
-  const video_url = `${VIDEO_BASE}/${file}`;
+  // Without MEDIA_VIDEO_BASE_URL (or an admin upload), leave URLs empty so the app
+  // does not open a broken Google Storage link.
+  const video_url = VIDEO_BASE && file ? `${VIDEO_BASE}/${file}` : null;
   return {
     audio_url: null,
     video_url,
     media_url: video_url,
-    media_mime: 'video/mp4',
+    media_mime: video_url ? 'video/mp4' : null,
     thumbnail_url: `${THUMB_BASE}/${thumb}`,
   };
 }
@@ -304,6 +306,17 @@ async function seedExercisesTable() {
       }
     );
   }
+
+  // Clear dead Google sample placeholders already stored in production DBs.
+  // Admin-uploaded media (myva.ae /media/exercises/uploads/...) is left untouched.
+  await query(
+    `UPDATE exercises
+     SET video_url = NULL,
+         media_url = CASE WHEN type = 'video' THEN NULL ELSE media_url END,
+         media_mime = CASE WHEN type = 'video' THEN NULL ELSE media_mime END
+     WHERE video_url LIKE '%gtv-videos-bucket%'
+        OR media_url LIKE '%gtv-videos-bucket%'`
+  );
 }
 
 async function loadFromDb({ includeInactive = false } = {}) {
