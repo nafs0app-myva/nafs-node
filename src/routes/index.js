@@ -92,6 +92,27 @@ router.post(
   adminPanel.createConsultant
 );
 router.get('/admin/panel/applications', authenticate, requireRole('admin'), adminPanel.listApplications);
+router.get('/admin/panel/exercises', authenticate, requireRole('admin'), exercises.adminListExercises);
+router.post(
+  '/admin/panel/exercises',
+  authenticate,
+  requireRole('admin'),
+  validate(exercises.createExerciseSchema),
+  exercises.adminCreateExercise
+);
+router.patch(
+  '/admin/panel/exercises/:id',
+  authenticate,
+  requireRole('admin'),
+  validate(exercises.updateExerciseSchema),
+  exercises.adminUpdateExercise
+);
+router.post(
+  '/admin/panel/exercises/:id/media',
+  authenticate,
+  requireRole('admin'),
+  exercises.adminUploadMedia
+);
 router.post(
   '/admin/panel/applications/:id/approve',
   authenticate,

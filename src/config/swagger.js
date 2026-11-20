@@ -187,8 +187,21 @@ module.exports = {
     },
     '/exercises': {
       get: {
-        summary: 'Exercise library (includes audio_url / video_url / media_url)',
+        summary: 'Exercise library (DB catalogue; includes audio_url / video_url / media_url)',
         responses: { 200: { description: 'OK' } },
+      },
+    },
+    '/admin/panel/exercises': {
+      get: { summary: 'Admin: list exercises (incl. inactive)', responses: { 200: { description: 'OK' } } },
+      post: { summary: 'Admin: create exercise', responses: { 201: { description: 'Created' } } },
+    },
+    '/admin/panel/exercises/{id}': {
+      patch: { summary: 'Admin: update exercise metadata', responses: { 200: { description: 'OK' } } },
+    },
+    '/admin/panel/exercises/{id}/media': {
+      post: {
+        summary: 'Admin: upload video/audio/thumbnail (multipart file + kind)',
+        responses: { 200: { description: 'Uploaded' } },
       },
     },
     '/exercises/{id}': {

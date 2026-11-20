@@ -379,6 +379,45 @@ async function ensureSchema() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // Exercise catalogue (admin-editable; media uploaded via admin panel)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS exercises (
+        id VARCHAR(64) NOT NULL PRIMARY KEY,
+        type ENUM('audio','video') NOT NULL DEFAULT 'audio',
+        category VARCHAR(80) NULL,
+        icon VARCHAR(40) NULL,
+        title VARCHAR(160) NOT NULL,
+        subtitle VARCHAR(255) NULL,
+        accent VARCHAR(20) NULL,
+        card_background VARCHAR(20) NULL,
+        duration_minutes INT NULL,
+        difficulty VARCHAR(40) NULL,
+        tags JSON NULL,
+        benefit_label VARCHAR(80) NULL,
+        description TEXT NULL,
+        action_label VARCHAR(80) NULL,
+        action_icon VARCHAR(40) NULL,
+        audio_url VARCHAR(500) NULL,
+        video_url VARCHAR(500) NULL,
+        media_url VARCHAR(500) NULL,
+        media_mime VARCHAR(80) NULL,
+        thumbnail_url VARCHAR(500) NULL,
+        instructions JSON NULL,
+        sequence JSON NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_exercises_active_sort (is_active, sort_order, id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    try {
+      const { seedExercisesTable } = require('../services/exerciseCatalogue');
+      await seedExercisesTable();
+    } catch (err) {
+      console.warn('[ensureSchema] exercise catalogue seed skipped:', err.message);
+    }
+
     // My Plan: per-user saved exercises (catalogue string ids) + schedule/completion
     await conn.query(`
       CREATE TABLE IF NOT EXISTS user_exercise_plan (

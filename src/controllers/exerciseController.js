@@ -1,233 +1,29 @@
+const path = require('path');
+const fs = require('fs');
 const Joi = require('joi');
+const multer = require('multer');
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
-const env = require('../config/env');
+const catalogue = require('../services/exerciseCatalogue');
 
 /**
- * Static exercise catalogue (same for every user). Kept in code rather than a
- * table — it is small, read-only and has no per-user state.
+ * Exercise library + My Plan.
+ * Catalogue is DB-backed (seeded from built-in defaults); admins can upload media.
  *
- * Per-user "My Plan" lives in `user_exercise_plan` (exercise_id references
- * catalogue string ids). Catalogue routes stay read-only; plan is mutable.
- *
- *  GET    /exercises                         → library list
- *  GET    /exercises/:id                     → one exercise (+ on_plan / done)
- *  GET    /plan/exercises                    → this user's plan items
- *  POST   /plan/exercises                    → add { exercise_id } (idempotent)
- *  DELETE /plan/exercises/:exercise_id       → remove from plan
- *  POST   /plan/exercises/:exercise_id/complete → set completed_at (today done)
+ *  GET    /exercises
+ *  GET    /exercises/:id
+ *  GET    /plan/exercises
+ *  POST   /plan/exercises
+ *  DELETE /plan/exercises/:exercise_id
+ *  POST   /plan/exercises/:exercise_id/complete
+ *  Admin:
+ *  GET/POST /admin/panel/exercises
+ *  PATCH    /admin/panel/exercises/:id
+ *  POST     /admin/panel/exercises/:id/media
  */
 
-const AUDIO_BASE =
-  process.env.MEDIA_AUDIO_BASE_URL ||
-  'https://www.soundhelix.com/examples/mp3';
-const VIDEO_BASE =
-  process.env.MEDIA_VIDEO_BASE_URL ||
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample';
-const THUMB_BASE =
-  process.env.MEDIA_THUMB_BASE_URL || `${env.app.url.replace(/\/$/, '')}/media/exercises`;
-
-function audioMedia(file, thumb) {
-  const audio_url = `${AUDIO_BASE}/${file}`;
-  return {
-    audio_url,
-    video_url: null,
-    media_url: audio_url,
-    media_mime: 'audio/mpeg',
-    thumbnail_url: `${THUMB_BASE}/${thumb}`,
-  };
-}
-
-function videoMedia(file, thumb) {
-  const video_url = `${VIDEO_BASE}/${file}`;
-  return {
-    audio_url: null,
-    video_url,
-    media_url: video_url,
-    media_mime: 'video/mp4',
-    thumbnail_url: `${THUMB_BASE}/${thumb}`,
-  };
-}
-
-const EXERCISES = [
-  {
-    id: 'understand_yourself',
-    type: 'audio',
-    category: 'Mindset',
-    icon: 'location',
-    title: 'Understand Yourself',
-    subtitle: 'Try to understand yourself more deeply',
-    accent: '#E2654A',
-    card_background: '#FCE4DE',
-    duration_minutes: 5,
-    difficulty: 'beginner',
-    tags: ['Anxiety'],
-    benefit_label: 'Self Awareness',
-    description:
-      'A short guided reflection that helps you check in with your own thoughts and feelings, ' +
-      'building the self-awareness that underlies most other mental wellness practices.',
-    ...audioMedia('SoundHelix-Song-1.mp3', 'understand_yourself.jpg'),
-    instructions: [
-      { title: 'Pause', body: 'Find a quiet moment and sit comfortably.' },
-      { title: 'Reflect', body: 'Ask yourself how you are really feeling right now, without judgment.' },
-      { title: 'Name It', body: 'Put a word or two to what comes up — just naming it helps.' },
-    ],
-  },
-  {
-    id: 'box_breathing',
-    type: 'audio',
-    category: 'Breathwork',
-    icon: 'air',
-    title: 'Box Breathing',
-    subtitle: '4-4-4-4 rhythm to center your nervous system',
-    accent: '#1E9D5C',
-    card_background: '#DCF3E6',
-    duration_minutes: 3,
-    difficulty: 'beginner',
-    tags: ['Anxiety', 'Stress'],
-    benefit_label: 'Anxiety Relief',
-    description:
-      'A powerful, yet simple, relaxation technique that aims to return breathing to its normal ' +
-      'rhythm. It helps clear the mind, relax the body, and improve focus.',
-    ...audioMedia('SoundHelix-Song-2.mp3', 'box_breathing.jpg'),
-    instructions: [
-      {
-        title: 'Breathe In',
-        body: 'Slowly inhale through your nose while counting to four in your head. Feel the air fill your lungs.',
-      },
-      { title: 'Hold', body: 'Hold your breath for a count of four. Try not to clamp your mouth or nose shut.' },
-      { title: 'Breathe Out', body: 'Slowly exhale through your mouth for a count of four. Gently push the air out.' },
-      { title: 'Hold', body: 'Hold your breath for a count of four before beginning the cycle again.' },
-    ],
-  },
-  {
-    id: 'mindful_reset_video',
-    type: 'video',
-    category: 'Grounding',
-    icon: 'video',
-    title: 'Mindful Reset Video',
-    subtitle: 'Gentle visual grounding exercise',
-    accent: '#5D4FD6',
-    card_background: '#E5E3F9',
-    duration_minutes: 7,
-    difficulty: 'beginner',
-    tags: ['Stress'],
-    benefit_label: 'Grounding',
-    description:
-      'A short guided video that walks your senses back to the present moment — useful whenever ' +
-      'your thoughts are racing or you feel disconnected from your surroundings.',
-    action_label: 'Watch Now',
-    action_icon: 'play',
-    ...videoMedia('ForBiggerBlazes.mp4', 'mindful_reset_video.jpg'),
-    instructions: [
-      { title: 'Settle In', body: 'Find a comfortable spot and press play.' },
-      { title: 'Follow Along', body: 'Let the video guide your attention through sight, sound and touch.' },
-      { title: 'Notice', body: 'Notice how your body feels once the video ends.' },
-    ],
-    sequence: [
-      { title: 'Mountain Pose Grounding', tag: 'Centering', duration_label: '0:15', start_seconds: 0, icon: 'self_improvement', accent: '#5D4FD6' },
-      { title: 'Gentle Side Reach', tag: 'Lateral Release', duration_label: '0:20', start_seconds: 15, icon: 'accessibility_new', accent: '#5B9BE8' },
-      { title: 'Standing Rotations (Left)', tag: 'Spine Release', duration_label: '0:20', start_seconds: 35, icon: 'person', accent: '#5D4FD6' },
-      { title: 'Standing Rotations (Right)', tag: 'Bilateral Alignment', duration_label: '0:20', start_seconds: 55, icon: 'compare_arrows', accent: '#5B9BE8' },
-      { title: 'Ribcage Lateral Expansion', tag: 'Intercostal Breath', duration_label: '0:30', start_seconds: 75, icon: 'height', accent: '#5D4FD6' },
-      { title: 'Gentle Torso Unwinding', tag: 'Somatic Reset', duration_label: '0:25', start_seconds: 105, icon: 'accessibility_new', accent: '#1E9D5C' },
-      { title: 'Grounded Stillness & Integration', tag: 'Vagal Recovery', duration_label: '0:30', start_seconds: 130, icon: 'spa', accent: '#2F63E0' },
-      { title: 'Closing Breath & Release', tag: 'Integration', duration_label: '0:20', start_seconds: 160, icon: 'air', accent: '#1E9D5C' },
-    ],
-  },
-  {
-    id: 'midday_desk_mobility',
-    type: 'video',
-    category: 'Mobility',
-    icon: 'fitness',
-    title: 'Midday Desk Mobility',
-    subtitle: 'Release neck and shoulder tension',
-    accent: '#E2932A',
-    card_background: '#FCEFCE',
-    duration_minutes: 5,
-    difficulty: 'beginner',
-    tags: ['Stress'],
-    benefit_label: 'Tension Relief',
-    description:
-      'A quick set of seated stretches to release the neck and shoulder tension that builds up ' +
-      'during long stretches at a desk.',
-    action_label: 'Watch Now',
-    action_icon: 'play',
-    ...videoMedia('ForBiggerEscapes.mp4', 'midday_desk_mobility.jpg'),
-    instructions: [
-      { title: 'Roll', body: 'Slowly roll your shoulders back five times.' },
-      { title: 'Tilt', body: 'Gently tilt your head toward each shoulder, holding for a few seconds.' },
-      { title: 'Reach', body: 'Reach both arms overhead and stretch upward.' },
-    ],
-    sequence: [
-      { title: 'Shoulder Rolls', tag: 'Warm-Up', duration_label: '0:20', start_seconds: 0, icon: 'autorenew', accent: '#E2932A' },
-      { title: 'Neck Tilts (Left)', tag: 'Lateral Release', duration_label: '0:20', start_seconds: 20, icon: 'accessibility_new', accent: '#E2932A' },
-      { title: 'Neck Tilts (Right)', tag: 'Lateral Release', duration_label: '0:20', start_seconds: 40, icon: 'accessibility_new', accent: '#E2932A' },
-      { title: 'Overhead Reach', tag: 'Upper-Body Stretch', duration_label: '0:25', start_seconds: 60, icon: 'height', accent: '#E2932A' },
-    ],
-  },
-  {
-    id: 'evening_wind_down',
-    type: 'audio',
-    category: 'Rest',
-    icon: 'night',
-    title: 'Evening Wind Down',
-    subtitle: 'Prepare your mind for deep, restful sleep',
-    accent: '#2F63E0',
-    card_background: '#E0ECFB',
-    duration_minutes: 10,
-    difficulty: 'beginner',
-    tags: ['Stress', 'Anxiety'],
-    benefit_label: 'Better Sleep',
-    description:
-      'A calming wind-down routine that eases your mind and body out of the day and toward deep, ' +
-      'restful sleep.',
-    ...audioMedia('SoundHelix-Song-3.mp3', 'evening_wind_down.jpg'),
-    instructions: [
-      { title: 'Dim the Lights', body: 'Lower the lights and put screens away.' },
-      { title: 'Breathe Slowly', body: 'Take slow, deep breaths, letting each exhale last longer than the inhale.' },
-      { title: 'Rest', body: 'Let your body settle and your mind grow quiet.' },
-    ],
-  },
-];
-
-const EXERCISE_IDS = EXERCISES.map((e) => e.id);
-
-function findExercise(id) {
-  return EXERCISES.find((e) => e.id === id) || null;
-}
-
-function withDefaults(e) {
-  const media =
-    e.type === 'video'
-      ? {
-          audio_url: e.audio_url || null,
-          video_url: e.video_url || null,
-          media_url: e.media_url || e.video_url || null,
-          media_mime: e.media_mime || 'video/mp4',
-          thumbnail_url: e.thumbnail_url || null,
-        }
-      : {
-          audio_url: e.audio_url || null,
-          video_url: e.video_url || null,
-          media_url: e.media_url || e.audio_url || null,
-          media_mime: e.media_mime || 'audio/mpeg',
-          thumbnail_url: e.thumbnail_url || null,
-        };
-  return {
-    action_label: 'Start Now',
-    action_icon: 'arrow_forward',
-    sequence: [],
-    ...e,
-    ...media,
-  };
-}
-
-function summary(e) {
-  const { instructions, sequence, ...rest } = withDefaults(e);
-  return rest;
-}
+const { withDefaults, summary, findExercise, listExercises } = catalogue;
 
 function isCompletedToday(completedAt) {
   if (!completedAt) return false;
@@ -252,8 +48,8 @@ function toDateOnly(value) {
   return Number.isNaN(d.getTime()) ? s.slice(0, 10) : d.toISOString().slice(0, 10);
 }
 
-function planItemFromRow(row) {
-  const catalog = findExercise(row.exercise_id);
+async function planItemFromRow(row) {
+  const catalog = await findExercise(row.exercise_id);
   if (!catalog) return null;
   const done = isCompletedToday(row.completed_at);
   return {
@@ -267,11 +63,6 @@ function planItemFromRow(row) {
   };
 }
 
-/**
- * User's My Plan items joined to catalogue summaries.
- * @param {number} userId
- * @param {{ todayOnly?: boolean }} [opts] todayOnly → scheduled_for is null or today
- */
 async function buildUserPlanExercises(userId, { todayOnly = false } = {}) {
   let sql = `
     SELECT id, exercise_id, scheduled_for, completed_at, added_at
@@ -290,7 +81,12 @@ async function buildUserPlanExercises(userId, { todayOnly = false } = {}) {
     throw err;
   }
 
-  return rows.map(planItemFromRow).filter(Boolean);
+  const out = [];
+  for (const row of rows) {
+    const item = await planItemFromRow(row);
+    if (item) out.push(item);
+  }
+  return out;
 }
 
 function planProgress(exercises) {
@@ -316,21 +112,53 @@ async function planRowForUser(userId, exerciseId) {
 }
 
 const addToPlanSchema = Joi.object({
-  exercise_id: Joi.string()
-    .valid(...EXERCISE_IDS)
-    .required(),
+  exercise_id: Joi.string().trim().min(1).max(64).required(),
   scheduled_for: Joi.date().iso().allow(null).optional(),
+});
+
+const updateExerciseSchema = Joi.object({
+  title: Joi.string().trim().min(2).max(160),
+  subtitle: Joi.string().trim().max(255).allow('', null),
+  description: Joi.string().trim().max(4000).allow('', null),
+  category: Joi.string().trim().max(80).allow('', null),
+  type: Joi.string().valid('audio', 'video'),
+  duration_minutes: Joi.number().integer().min(1).max(180).allow(null),
+  difficulty: Joi.string().trim().max(40).allow('', null),
+  benefit_label: Joi.string().trim().max(80).allow('', null),
+  accent: Joi.string().trim().max(20).allow('', null),
+  card_background: Joi.string().trim().max(20).allow('', null),
+  icon: Joi.string().trim().max(40).allow('', null),
+  action_label: Joi.string().trim().max(80).allow('', null),
+  action_icon: Joi.string().trim().max(40).allow('', null),
+  sort_order: Joi.number().integer().min(0).max(9999),
+  is_active: Joi.boolean(),
+  tags: Joi.array().items(Joi.string().trim().max(40)).max(20),
+}).min(1);
+
+const createExerciseSchema = Joi.object({
+  id: Joi.string().trim().min(2).max(64).required(),
+  title: Joi.string().trim().min(2).max(160).required(),
+  type: Joi.string().valid('audio', 'video').default('video'),
+  subtitle: Joi.string().trim().max(255).allow('', null),
+  description: Joi.string().trim().max(4000).allow('', null),
+  category: Joi.string().trim().max(80).allow('', null),
+  duration_minutes: Joi.number().integer().min(1).max(180).allow(null),
+  difficulty: Joi.string().trim().max(40).allow('', null),
+  benefit_label: Joi.string().trim().max(80).allow('', null),
+  tags: Joi.array().items(Joi.string().trim().max(40)).max(20),
+  sort_order: Joi.number().integer().min(0).max(9999),
 });
 
 const list = asyncHandler(async (req, res) => {
   const tag = (req.query.tag || '').trim().toLowerCase();
-  const rows = EXERCISES.filter((e) => !tag || e.tags.some((t) => t.toLowerCase() === tag));
-  return ok(res, { exercises: rows.map(summary) });
+  const rows = await listExercises({ includeInactive: false });
+  const filtered = rows.filter((e) => !tag || (e.tags || []).some((t) => String(t).toLowerCase() === tag));
+  return ok(res, { exercises: filtered.map(summary) });
 });
 
 const getOne = asyncHandler(async (req, res) => {
-  const found = findExercise(req.params.id);
-  if (!found) return fail(res, 'Exercise not found', 404);
+  const found = await findExercise(req.params.id);
+  if (!found || found.is_active === false) return fail(res, 'Exercise not found', 404);
 
   let onPlan = false;
   let done = false;
@@ -361,9 +189,6 @@ const getOne = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * GET /plan/exercises — this user's saved plan (not the full catalogue).
- */
 const listPlan = asyncHandler(async (req, res) => {
   const todayOnly = String(req.query.today || '').toLowerCase() === 'true';
   const exercises = await buildUserPlanExercises(req.user.id, { todayOnly });
@@ -378,13 +203,12 @@ const listPlan = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * POST /plan/exercises — add one catalogue exercise to the user's plan (idempotent).
- */
 const addToPlan = asyncHandler(async (req, res) => {
   const exerciseId = req.body.exercise_id;
-  const catalog = findExercise(exerciseId);
-  if (!catalog) return fail(res, 'Exercise not found in catalogue', 404);
+  const catalogItem = await findExercise(exerciseId);
+  if (!catalogItem || catalogItem.is_active === false) {
+    return fail(res, 'Exercise not found in catalogue', 404);
+  }
 
   const scheduledFor =
     req.body.scheduled_for != null
@@ -402,17 +226,14 @@ const addToPlan = asyncHandler(async (req, res) => {
 
   const row = await planRowForUser(req.user.id, exerciseId);
   if (before) {
-    return ok(res, { exercise: planItemFromRow(row), created: false }, 'Already on plan');
+    return ok(res, { exercise: await planItemFromRow(row), created: false }, 'Already on plan');
   }
-  return ok(res, { exercise: planItemFromRow(row), created: true }, 'Added to My Plan', 201);
+  return ok(res, { exercise: await planItemFromRow(row), created: true }, 'Added to My Plan', 201);
 });
 
-/**
- * DELETE /plan/exercises/:exercise_id
- */
 const removeFromPlan = asyncHandler(async (req, res) => {
   const exerciseId = req.params.exercise_id || req.params.id;
-  if (!findExercise(exerciseId)) return fail(res, 'Exercise not found in catalogue', 404);
+  if (!(await findExercise(exerciseId))) return fail(res, 'Exercise not found in catalogue', 404);
 
   const result = await query(
     `DELETE FROM user_exercise_plan WHERE user_id = :uid AND exercise_id = :exercise_id`,
@@ -422,12 +243,9 @@ const removeFromPlan = asyncHandler(async (req, res) => {
   return ok(res, { exercise_id: exerciseId }, 'Removed from My Plan');
 });
 
-/**
- * POST /plan/exercises/:exercise_id/complete — mark plan item completed today.
- */
 const completePlanExercise = asyncHandler(async (req, res) => {
   const exerciseId = req.params.exercise_id || req.params.id;
-  if (!findExercise(exerciseId)) return fail(res, 'Exercise not found in catalogue', 404);
+  if (!(await findExercise(exerciseId))) return fail(res, 'Exercise not found in catalogue', 404);
 
   const existing = await planRowForUser(req.user.id, exerciseId);
   if (!existing) return fail(res, 'Exercise is not on your plan — add it first', 404);
@@ -439,7 +257,6 @@ const completePlanExercise = asyncHandler(async (req, res) => {
     { uid: req.user.id, exercise_id: exerciseId }
   );
 
-  // Append-only completion log (Progress tab weekly/monthly stats).
   try {
     await query(
       `INSERT INTO exercise_completions (user_id, exercise_id, completed_at)
@@ -455,13 +272,106 @@ const completePlanExercise = asyncHandler(async (req, res) => {
   return ok(
     res,
     {
-      exercise: planItemFromRow(row),
+      exercise: await planItemFromRow(row),
       today_exercises: exercises,
       progress: planProgress(exercises),
     },
     'Exercise marked complete for today'
   );
 });
+
+// —— Admin catalogue management ——
+
+const adminListExercises = asyncHandler(async (_req, res) => {
+  const exercises = await listExercises({ includeInactive: true });
+  return ok(res, { exercises: exercises.map(withDefaults) });
+});
+
+const adminCreateExercise = asyncHandler(async (req, res) => {
+  try {
+    const exercise = await catalogue.createExercise(req.body);
+    return ok(res, { exercise }, 'Exercise created', 201);
+  } catch (err) {
+    return fail(res, err.message || 'Could not create exercise', err.status || 400);
+  }
+});
+
+const adminUpdateExercise = asyncHandler(async (req, res) => {
+  try {
+    const exercise = await catalogue.updateExercise(req.params.id, req.body);
+    return ok(res, { exercise }, 'Exercise updated');
+  } catch (err) {
+    return fail(res, err.message || 'Could not update exercise', err.status || 400);
+  }
+});
+
+const mediaUpload = multer({
+  storage: multer.diskStorage({
+    destination: async (_req, _file, cb) => {
+      try {
+        await fs.promises.mkdir(catalogue.UPLOAD_ROOT, { recursive: true });
+        cb(null, catalogue.UPLOAD_ROOT);
+      } catch (err) {
+        cb(err);
+      }
+    },
+    filename: (_req, file, cb) => {
+      const safe = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${path.extname(file.originalname || '')}`;
+      cb(null, `tmp-${safe}`);
+    },
+  }),
+  limits: { fileSize: 200 * 1024 * 1024, files: 1 },
+});
+
+const adminUploadMedia = (req, res, next) =>
+  mediaUpload.single('file')(req, res, async (err) => {
+    const cleanup = async () => {
+      if (req.file?.path) await fs.promises.unlink(req.file.path).catch(() => {});
+    };
+    if (err) {
+      await cleanup();
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return fail(res, 'File exceeds 200 MB limit', 422);
+      }
+      return next(err);
+    }
+    try {
+      const kind = String(req.body.kind || req.query.kind || '').toLowerCase();
+      if (!['video', 'audio', 'thumbnail'].includes(kind)) {
+        await cleanup();
+        return fail(res, 'kind must be video, audio or thumbnail', 422);
+      }
+      if (!req.file) {
+        await cleanup();
+        return fail(res, 'Attach the media as the "file" field', 422);
+      }
+      if (kind === 'video' && !/^video\//.test(req.file.mimetype || '')) {
+        await cleanup();
+        return fail(res, 'File must be a video', 422);
+      }
+      if (kind === 'audio' && !/^audio\//.test(req.file.mimetype || '')) {
+        await cleanup();
+        return fail(res, 'File must be an audio file', 422);
+      }
+      if (kind === 'thumbnail' && !/^image\//.test(req.file.mimetype || '')) {
+        await cleanup();
+        return fail(res, 'Thumbnail must be an image', 422);
+      }
+      const limits = { video: 200 * 1024 * 1024, audio: 50 * 1024 * 1024, thumbnail: 5 * 1024 * 1024 };
+      if (req.file.size > limits[kind]) {
+        await cleanup();
+        const mb = Math.round(limits[kind] / (1024 * 1024));
+        return fail(res, `${kind} must be ${mb} MB or smaller`, 422);
+      }
+
+      const exercise = await catalogue.saveExerciseMedia(req.params.id, kind, req.file);
+      return ok(res, { exercise, kind }, 'Media uploaded');
+    } catch (e) {
+      await cleanup();
+      if (e.status) return fail(res, e.message, e.status);
+      return next(e);
+    }
+  });
 
 module.exports = {
   list,
@@ -471,8 +381,13 @@ module.exports = {
   removeFromPlan,
   completePlanExercise,
   addToPlanSchema,
+  updateExerciseSchema,
+  createExerciseSchema,
   buildUserPlanExercises,
   planProgress,
   findExercise,
-  EXERCISE_IDS,
+  adminListExercises,
+  adminCreateExercise,
+  adminUpdateExercise,
+  adminUploadMedia,
 };

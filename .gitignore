@@ -3,6 +3,9 @@ node_modules/
 .env.local
 uploads/
 storage/
+public/media/exercises/uploads/**
+!public/media/exercises/uploads/.gitkeep
+!public/media/exercises/uploads/README.md
 *.log
 .DS_Store
 coverage/

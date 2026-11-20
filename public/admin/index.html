@@ -320,13 +320,41 @@
       }
 
       .table-wrap { overflow-x: auto; }
+      .ex-thumb {
+        width: 56px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 0.45rem;
+        background: rgba(0,0,0,0.25);
+        border: 1px solid var(--line);
+      }
+      .ex-media-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 0.55rem;
+      }
+      .ex-media-row input[type="file"] {
+        flex: 1 1 180px;
+        padding: 0.45rem;
+        font-size: 0.85rem;
+      }
+      .ex-detail {
+        background: rgba(0,0,0,0.18);
+        border: 1px solid var(--line);
+        border-radius: 0.85rem;
+        padding: 0.85rem;
+        margin-top: 0.55rem;
+      }
+      .ex-links a { word-break: break-all; font-size: 0.82rem; }
     </style>
   </head>
   <body>
     <div id="login-view">
       <form class="login-card" id="login-form">
         <h1 class="brand">Nafs</h1>
-        <p class="sub">Admin panel for myva.ae — manage consultants, users, and daily activity.</p>
+        <p class="sub">Admin panel for myva.ae — users, consultants, and plan exercise media.</p>
         <div id="login-error" class="error hidden"></div>
         <div class="field">
           <label for="email">Email</label>
@@ -351,6 +379,7 @@
           <button type="button" data-page="users">Users</button>
           <button type="button" data-page="consultants">Add consultant</button>
           <button type="button" data-page="applications">Applications</button>
+          <button type="button" data-page="exercises">Exercises</button>
         </nav>
         <div class="footer">
           <div class="who" id="who"></div>
@@ -364,6 +393,7 @@
         <section id="page-users" class="page hidden"></section>
         <section id="page-consultants" class="page hidden"></section>
         <section id="page-applications" class="page hidden"></section>
+        <section id="page-exercises" class="page hidden"></section>
       </main>
     </div>
 
@@ -407,6 +437,22 @@
         return json;
       }
 
+      /** Multipart upload (do not set Content-Type — browser sets boundary). */
+      async function apiForm(path, formData) {
+        const headers = {};
+        if (state.token) headers.Authorization = `Bearer ${state.token}`;
+        const res = await fetch(`${API}${path}`, { method: 'POST', headers, body: formData });
+        const json = await res.json().catch(() => ({}));
+        if (res.status === 401 || res.status === 403) {
+          logout(false);
+          throw new Error(json.message || 'Session expired — sign in again');
+        }
+        if (!res.ok || json.success === false) {
+          throw new Error(json.message || `Upload failed (${res.status})`);
+        }
+        return json;
+      }
+
       function showLogin() {
         $('#login-view').classList.remove('hidden');
         $('#app-view').classList.add('hidden');
@@ -439,6 +485,7 @@
         if (page === 'users') loadUsers();
         if (page === 'consultants') renderConsultantForm();
         if (page === 'applications') loadApplications();
+        if (page === 'exercises') loadExercises();
       }
 
       function escapeHtml(s) {
@@ -881,6 +928,220 @@
           });
         } catch (err) {
           $('#apps-table').innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      async function loadExercises() {
+        const root = $('#page-exercises');
+        root.innerHTML = `
+          <div class="page-head">
+            <div>
+              <h1>Exercises</h1>
+              <p>Upload plan videos / audio / thumbnails for the client My Plan catalogue</p>
+            </div>
+            <button type="button" class="btn ghost sm" id="ex-refresh">Refresh</button>
+          </div>
+          <div class="panel">
+            <h2>Add exercise</h2>
+            <form class="form-grid" id="ex-create">
+              <div>
+                <label>Id (slug)</label>
+                <input name="id" required placeholder="morning_stretch" pattern="[A-Za-z0-9_\\-]+" />
+              </div>
+              <div>
+                <label>Title</label>
+                <input name="title" required placeholder="Morning Stretch" />
+              </div>
+              <div>
+                <label>Type</label>
+                <select name="type">
+                  <option value="video">Video</option>
+                  <option value="audio">Audio</option>
+                </select>
+              </div>
+              <div>
+                <label>Category</label>
+                <input name="category" placeholder="Mobility" />
+              </div>
+              <div>
+                <label>Duration (minutes)</label>
+                <input name="duration_minutes" type="number" min="1" max="180" placeholder="5" />
+              </div>
+              <div class="full">
+                <label>Description</label>
+                <textarea name="description" rows="2" placeholder="Short description for the app"></textarea>
+              </div>
+              <div class="full">
+                <button class="btn" type="submit">Create exercise</button>
+              </div>
+            </form>
+          </div>
+          <div class="panel">
+            <h2>Catalogue</h2>
+            <div id="ex-table"><div class="empty">Loading…</div></div>
+          </div>`;
+
+        $('#ex-refresh').onclick = () => loadExercises();
+        $('#ex-create').onsubmit = async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const body = Object.fromEntries(fd.entries());
+          if (body.duration_minutes) body.duration_minutes = Number(body.duration_minutes);
+          else delete body.duration_minutes;
+          try {
+            await api('/admin/panel/exercises', { method: 'POST', body: JSON.stringify(body) });
+            toast('Exercise created');
+            loadExercises();
+          } catch (err) {
+            toast(err.message, true);
+          }
+        };
+
+        try {
+          const { data } = await api('/admin/panel/exercises');
+          const list = data.exercises || [];
+          $('#ex-table').innerHTML = list.length
+            ? `<div class="table-wrap"><table>
+                <thead><tr>
+                  <th></th><th>Title</th><th>Type</th><th>Duration</th><th>Status</th><th></th>
+                </tr></thead>
+                <tbody>
+                  ${list.map((ex) => `
+                    <tr data-id="${escapeHtml(ex.id)}">
+                      <td>${ex.thumbnail_url
+                        ? `<img class="ex-thumb" src="${escapeHtml(ex.thumbnail_url)}" alt="" />`
+                        : `<div class="ex-thumb"></div>`}</td>
+                      <td>
+                        <strong>${escapeHtml(ex.title)}</strong><br />
+                        <span class="muted">${escapeHtml(ex.id)}</span>
+                      </td>
+                      <td><span class="badge">${escapeHtml(ex.type)}</span></td>
+                      <td>${ex.duration_minutes != null ? `${ex.duration_minutes}m` : '—'}</td>
+                      <td><span class="badge ${ex.is_active ? 'ok' : 'off'}">${ex.is_active ? 'Active' : 'Hidden'}</span></td>
+                      <td><button type="button" class="btn ghost sm" data-open="${escapeHtml(ex.id)}">Manage media</button></td>
+                    </tr>
+                    <tr class="hidden" id="ex-detail-${escapeHtml(ex.id)}">
+                      <td colspan="6">
+                        <div class="ex-detail">
+                          <div class="form-grid">
+                            <div>
+                              <label>Title</label>
+                              <input data-field="title" data-ex="${escapeHtml(ex.id)}" value="${escapeHtml(ex.title || '')}" />
+                            </div>
+                            <div>
+                              <label>Subtitle</label>
+                              <input data-field="subtitle" data-ex="${escapeHtml(ex.id)}" value="${escapeHtml(ex.subtitle || '')}" />
+                            </div>
+                            <div>
+                              <label>Type</label>
+                              <select data-field="type" data-ex="${escapeHtml(ex.id)}">
+                                <option value="audio" ${ex.type === 'audio' ? 'selected' : ''}>Audio</option>
+                                <option value="video" ${ex.type === 'video' ? 'selected' : ''}>Video</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label>Active</label>
+                              <select data-field="is_active" data-ex="${escapeHtml(ex.id)}">
+                                <option value="1" ${ex.is_active ? 'selected' : ''}>Yes</option>
+                                <option value="0" ${!ex.is_active ? 'selected' : ''}>No</option>
+                              </select>
+                            </div>
+                            <div class="full">
+                              <label>Description</label>
+                              <textarea data-field="description" data-ex="${escapeHtml(ex.id)}" rows="2">${escapeHtml(ex.description || '')}</textarea>
+                            </div>
+                          </div>
+                          <div class="ex-media-row" style="margin-top:0.85rem">
+                            <button type="button" class="btn sm" data-save="${escapeHtml(ex.id)}">Save details</button>
+                          </div>
+                          <div class="ex-links muted" style="margin-top:0.75rem">
+                            <div>Video: ${ex.video_url ? `<a href="${escapeHtml(ex.video_url)}" target="_blank" rel="noopener">open</a>` : '—'}</div>
+                            <div>Audio: ${ex.audio_url ? `<a href="${escapeHtml(ex.audio_url)}" target="_blank" rel="noopener">open</a>` : '—'}</div>
+                            <div>Thumb: ${ex.thumbnail_url ? `<a href="${escapeHtml(ex.thumbnail_url)}" target="_blank" rel="noopener">open</a>` : '—'}</div>
+                          </div>
+                          <div class="ex-media-row">
+                            <label class="muted">Upload video</label>
+                            <input type="file" accept="video/*" data-upload="video" data-ex="${escapeHtml(ex.id)}" />
+                            <button type="button" class="btn sm" data-kind="video" data-ex="${escapeHtml(ex.id)}">Upload video</button>
+                          </div>
+                          <div class="ex-media-row">
+                            <label class="muted">Upload audio</label>
+                            <input type="file" accept="audio/*" data-upload="audio" data-ex="${escapeHtml(ex.id)}" />
+                            <button type="button" class="btn sm" data-kind="audio" data-ex="${escapeHtml(ex.id)}">Upload audio</button>
+                          </div>
+                          <div class="ex-media-row">
+                            <label class="muted">Upload thumbnail</label>
+                            <input type="file" accept="image/*" data-upload="thumbnail" data-ex="${escapeHtml(ex.id)}" />
+                            <button type="button" class="btn sm" data-kind="thumbnail" data-ex="${escapeHtml(ex.id)}">Upload thumb</button>
+                          </div>
+                          <p class="muted" style="margin:0.75rem 0 0;font-size:0.85rem">
+                            Limits: video 200&nbsp;MB · audio 50&nbsp;MB · thumbnail 5&nbsp;MB. Files are served from
+                            <code>/media/exercises/uploads/</code>.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>`).join('')}
+                </tbody>
+              </table></div>`
+            : `<p class="muted">No exercises yet.</p>`;
+
+          $$('[data-open]').forEach((btn) => {
+            btn.onclick = () => {
+              const row = $(`#ex-detail-${btn.dataset.open}`);
+              if (row) row.classList.toggle('hidden');
+            };
+          });
+
+          $$('[data-save]').forEach((btn) => {
+            btn.onclick = async () => {
+              const id = btn.dataset.save;
+              const body = {};
+              $$(`[data-ex="${id}"][data-field]`).forEach((el) => {
+                const key = el.dataset.field;
+                let val = el.value;
+                if (key === 'is_active') val = val === '1';
+                body[key] = val;
+              });
+              try {
+                await api(`/admin/panel/exercises/${encodeURIComponent(id)}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify(body),
+                });
+                toast('Saved');
+                loadExercises();
+              } catch (err) {
+                toast(err.message, true);
+              }
+            };
+          });
+
+          $$('button[data-kind]').forEach((btn) => {
+            btn.onclick = async () => {
+              const id = btn.dataset.ex;
+              const kind = btn.dataset.kind;
+              const input = $(`input[data-upload="${kind}"][data-ex="${id}"]`);
+              const file = input?.files?.[0];
+              if (!file) {
+                toast(`Choose a ${kind} file first`, true);
+                return;
+              }
+              const fd = new FormData();
+              fd.append('file', file);
+              fd.append('kind', kind);
+              btn.disabled = true;
+              try {
+                await apiForm(`/admin/panel/exercises/${encodeURIComponent(id)}/media`, fd);
+                toast(`${kind} uploaded`);
+                loadExercises();
+              } catch (err) {
+                toast(err.message, true);
+              } finally {
+                btn.disabled = false;
+              }
+            };
+          });
+        } catch (err) {
+          $('#ex-table').innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
         }
       }
 

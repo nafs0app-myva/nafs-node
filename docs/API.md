@@ -135,7 +135,7 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | POST | `/assessments/:id/answers` | |
 | GET | `/assessments` | |
 | GET/PUT | `/goals` | Goals list (also settable via `PUT /onboarding`) |
-| GET | `/exercises` | Read-only catalogue |
+| GET | `/exercises` | Catalogue (DB-backed; admins upload media via `/admin`) |
 | GET | `/exercises/:id` | Detail + `on_plan` / `done` |
 | GET | `/plan/exercises` | This user's My Plan (empty until adds) |
 | POST | `/plan/exercises` | Add `{ exercise_id }` (idempotent; rejects unknown ids) |
@@ -168,6 +168,10 @@ Address/video fields are optional. Weekly schedule can also be saved with `PUT /
 | DELETE | `/devices/:id` |
 | GET | `/admin/push-status` | Setup-key: FCM configured? OAuth OK? device count |
 | POST | `/admin/push-config` | Setup-key: save FCM service account into `app_secrets` |
+| GET | `/admin/panel/exercises` | Admin: list catalogue (incl. inactive) |
+| POST | `/admin/panel/exercises` | Admin: create exercise `{ id, title, type, … }` |
+| PATCH | `/admin/panel/exercises/:id` | Admin: update metadata / active flag |
+| POST | `/admin/panel/exercises/:id/media` | Admin: multipart `file` + `kind=video\|audio\|thumbnail` (video ≤200 MB) |
 | GET/PUT | `/privacy/consents` |
 | GET/POST | `/privacy/media` | List is `purpose=recording` only (journal uploads excluded) |
 | POST | `/privacy/media/upload` | Multipart `file` (+ optional `thumbnail`); `media_type` audio\|photo\|video; `purpose` recording\|journal. Limits: photo 10 MB, audio 25 MB, video 100 MB. Disk storage + Range/206 on file GET. Returns `thumbnail_url` when a thumb is provided. |

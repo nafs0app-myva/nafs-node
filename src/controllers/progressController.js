@@ -270,7 +270,7 @@ function computePlanCompletion(planRows, completions, range, tzOffsetMinutes) {
   };
 }
 
-function computeMostUsed(completions, range, tzOffsetMinutes) {
+async function computeMostUsed(completions, range, tzOffsetMinutes) {
   const stats = new Map();
   for (const row of completions) {
     const at = row.completed_at instanceof Date ? row.completed_at : new Date(row.completed_at);
@@ -290,7 +290,7 @@ function computeMostUsed(completions, range, tzOffsetMinutes) {
   let most_used_exercise = null;
   if (exercise_counts.length) {
     const top = exercise_counts[0];
-    const catalog = findExercise(top.exercise_id);
+    const catalog = await findExercise(top.exercise_id);
     most_used_exercise = {
       exercise_id: top.exercise_id,
       title: catalog?.title || top.exercise_id,
@@ -347,11 +347,11 @@ async function loadProgressInputs(userId) {
   };
 }
 
-function buildPeriodSummary(inputs, range, tzOffsetMinutes) {
+async function buildPeriodSummary(inputs, range, tzOffsetMinutes) {
   const mood = computeMoodStats(inputs.checkins, range, tzOffsetMinutes);
   const tags = computeTriggersAndSymptoms(inputs.checkins, range, tzOffsetMinutes);
   const plan = computePlanCompletion(inputs.planRows, inputs.completions, range, tzOffsetMinutes);
-  const exercises = computeMostUsed(inputs.completions, range, tzOffsetMinutes);
+  const exercises = await computeMostUsed(inputs.completions, range, tzOffsetMinutes);
 
   return {
     average_mood: mood.average_mood,
@@ -386,8 +386,8 @@ const getSummary = asyncHandler(async (req, res) => {
   const range = periodRange(period, tzOffsetMinutes);
   const prev = previousRange(range);
   const inputs = await loadProgressInputs(req.user.id);
-  const current = buildPeriodSummary(inputs, range, tzOffsetMinutes);
-  const previous = buildPeriodSummary(inputs, prev, tzOffsetMinutes);
+  const current = await buildPeriodSummary(inputs, range, tzOffsetMinutes);
+  const previous = await buildPeriodSummary(inputs, prev, tzOffsetMinutes);
 
   const has_enough_data = current.ai_input.checkin_count >= 3;
   const ai_insights_enabled = await consentEnabled(req.user.id, 'ai_insights', true);
