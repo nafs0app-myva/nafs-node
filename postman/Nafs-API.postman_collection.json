@@ -2612,6 +2612,143 @@
       ]
     },
     {
+      "name": "08b AI Conversations (Mira)",
+      "item": [
+        {
+          "name": "GET /ai/conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/conversations",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "conversations"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /ai/conversations",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/ai/conversations",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "conversations"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const j = pm.response.json();",
+                  "  const id = j?.data?.conversation?.id;",
+                  "  if (id) { pm.environment.set('aiConversationId', String(id)); pm.collectionVariables.set('aiConversationId', String(id)); }",
+                  "} catch (e) {}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /ai/conversations/:id/messages",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/ai/conversations/{{aiConversationId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "conversations", "{{aiConversationId}}", "messages"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"I feel anxious\" },\n    { \"role\": \"assistant\", \"content\": \"I'm here with you. What feels heaviest right now?\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /ai/conversations/:id/messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/conversations/{{aiConversationId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "conversations", "{{aiConversationId}}", "messages"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /ai/conversations/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/ai/conversations/{{aiConversationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "conversations", "{{aiConversationId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Feeling anxious about work\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /ai/conversations/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/conversations/{{aiConversationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "conversations", "{{aiConversationId}}"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "09 Profile Credentials",
       "item": [
         {

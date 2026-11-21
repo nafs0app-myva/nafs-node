@@ -217,6 +217,31 @@ async function ensureSchema() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // Mira AI Assistant saved conversations (separate from therapist chat_threads)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS ai_conversations (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        title VARCHAR(120) NULL,
+        last_message_at DATETIME NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_aic_user_last (user_id, last_message_at),
+        CONSTRAINT fk_aic_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS ai_messages (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        conversation_id BIGINT UNSIGNED NOT NULL,
+        role ENUM('user','assistant') NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_aim_conv (conversation_id, id),
+        CONSTRAINT fk_aim_conv FOREIGN KEY (conversation_id) REFERENCES ai_conversations(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     // Specialization icons + the therapeutic modalities catalogue
     try {
       await conn.query(`ALTER TABLE specializations ADD COLUMN icon VARCHAR(40) NULL AFTER name_ar`);

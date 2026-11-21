@@ -334,6 +334,20 @@ async function buildExportBundle(user, flags) {
        WHERE t.therapist_id = :uid OR c.client_user_id = :uid ORDER BY m.id`,
       { uid }
     );
+    // Mira AI Assistant conversations (separate from therapist chats)
+    bundle.ai_conversations = await query(
+      `SELECT id, title, last_message_at, created_at, updated_at
+       FROM ai_conversations WHERE user_id = :uid ORDER BY id`,
+      { uid }
+    );
+    bundle.ai_messages = await query(
+      `SELECT m.id, m.conversation_id, m.role, m.content, m.created_at
+       FROM ai_messages m
+       INNER JOIN ai_conversations c ON c.id = m.conversation_id
+       WHERE c.user_id = :uid
+       ORDER BY m.id`,
+      { uid }
+    );
   }
   if (flags.audio_photo) {
     bundle.recordings = await query(

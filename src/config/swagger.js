@@ -146,6 +146,18 @@ module.exports = {
       post: { summary: 'Create vacation', responses: { 201: { description: 'Created' } } },
     },
     '/chats': { get: { summary: 'Chat threads', responses: { 200: { description: 'OK' } } } },
+    '/ai/conversations': {
+      get: { summary: 'List Mira AI conversations for current user', responses: { 200: { description: 'OK' } } },
+      post: { summary: 'Create empty AI conversation', responses: { 201: { description: 'Created' } } },
+    },
+    '/ai/conversations/{id}': {
+      patch: { summary: 'Rename AI conversation', responses: { 200: { description: 'OK' } } },
+      delete: { summary: 'Delete AI conversation + messages', responses: { 200: { description: 'OK' } } },
+    },
+    '/ai/conversations/{id}/messages': {
+      get: { summary: 'AI conversation message history', responses: { 200: { description: 'OK' } } },
+      post: { summary: 'Append user/assistant messages', responses: { 201: { description: 'Created' } } },
+    },
     '/mood/checkins': {
       get: { summary: 'List mood check-ins', responses: { 200: { description: 'OK' } } },
       post: { summary: 'Create mood check-in', responses: { 201: { description: 'Created' } } },

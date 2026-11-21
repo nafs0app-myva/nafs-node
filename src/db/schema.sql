@@ -19,6 +19,8 @@ DROP TABLE IF EXISTS quran_progress;
 DROP TABLE IF EXISTS reflections;
 DROP TABLE IF EXISTS user_profiles;
 
+DROP TABLE IF EXISTS ai_messages;
+DROP TABLE IF EXISTS ai_conversations;
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS chat_threads;
 DROP TABLE IF EXISTS session_notes;
@@ -112,6 +114,27 @@ CREATE TABLE social_identities (
   UNIQUE KEY uq_provider_uid (provider, provider_uid),
   KEY idx_social_user (user_id),
   CONSTRAINT fk_social_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE ai_conversations (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(120) NULL,
+  last_message_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_aic_user_last (user_id, last_message_at),
+  CONSTRAINT fk_aic_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE ai_messages (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  conversation_id BIGINT UNSIGNED NOT NULL,
+  role ENUM('user','assistant') NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_aim_conv (conversation_id, id),
+  CONSTRAINT fk_aim_conv FOREIGN KEY (conversation_id) REFERENCES ai_conversations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE therapist_profiles (

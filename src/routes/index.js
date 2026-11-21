@@ -29,6 +29,7 @@ const onboarding = require('../controllers/onboardingController');
 const exercises = require('../controllers/exerciseController');
 const progress = require('../controllers/progressController');
 const payments = require('../controllers/paymentController');
+const aiConversations = require('../controllers/aiConversationController');
 
 const rateLimit = require('express-rate-limit');
 
@@ -304,6 +305,29 @@ router.get('/chats', authenticate, chat.listThreads);
 router.post('/chats', authenticate, validate(chat.startSchema), chat.startThread);
 router.get('/chats/:id/messages', authenticate, chat.getMessages);
 router.post('/chats/:id/messages', authenticate, validate(chat.messageSchema), chat.sendMessage);
+
+// Mira AI Assistant — saved conversations (app still calls OpenAI; backend only stores)
+router.get('/ai/conversations', authenticate, aiConversations.listConversations);
+router.post(
+  '/ai/conversations',
+  authenticate,
+  validate(aiConversations.createSchema),
+  aiConversations.createConversation
+);
+router.get('/ai/conversations/:id/messages', authenticate, aiConversations.getMessages);
+router.post(
+  '/ai/conversations/:id/messages',
+  authenticate,
+  validate(aiConversations.appendMessagesSchema),
+  aiConversations.appendMessages
+);
+router.patch(
+  '/ai/conversations/:id',
+  authenticate,
+  validate(aiConversations.patchSchema),
+  aiConversations.patchConversation
+);
+router.delete('/ai/conversations/:id', authenticate, aiConversations.deleteConversation);
 
 // Support / content
 router.get('/faqs', support.faqs);

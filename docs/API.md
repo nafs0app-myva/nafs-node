@@ -20,6 +20,17 @@ Live: `https://myva.ae/api/v1` (OpenAPI `2.2.0+`)
 | POST | `/auth/change-password` | Does not revoke other JWTs |
 | GET | `/auth/me` | Includes role `profile` + `onboarding` (+ `application` for therapists) |
 
+## AI Assistant (Mira) — saved conversations
+App calls OpenAI itself; backend only stores history per user.
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/ai/conversations` | List (skip empty), newest first, preview + message_count |
+| POST | `/ai/conversations` | Create empty `{ title? }` → 201 |
+| GET | `/ai/conversations/:id/messages` | Full history, oldest first |
+| POST | `/ai/conversations/:id/messages` | Append 1–10 `{ role, content }` → `{ saved }` |
+| PATCH | `/ai/conversations/:id` | Set/rename `{ title }` |
+| DELETE | `/ai/conversations/:id` | Cascade-deletes messages |
+
 ## Shared onboarding (client + therapist first-run)
 | Method | Path | Notes |
 | --- | --- | --- |
