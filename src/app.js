@@ -24,6 +24,37 @@ app.use(
   })
 );
 
+// Exercise uploads live under storage/exercises (or EXERCISE_MEDIA_ROOT) so they
+// survive outside public/. Keep the same public URL shape the app already uses.
+app.get('/media/exercises/uploads/:exerciseId/:filename', (req, res, next) => {
+  try {
+    const catalogue = require('./services/exerciseCatalogue');
+    const { sendMediaContent } = require('./services/mediaStorage');
+    const filePath = catalogue.resolveUploadFile(req.params.exerciseId, req.params.filename);
+    if (!filePath) {
+      return res.status(404).json({ success: false, message: 'Media file not found', errors: null });
+    }
+    const ext = path.extname(filePath).toLowerCase();
+    const mime =
+      ext === '.mp4' || ext === '.m4v' || ext === '.mov'
+        ? 'video/mp4'
+        : ext === '.mp3' || ext === '.m4a'
+          ? 'audio/mpeg'
+          : ext === '.wav'
+            ? 'audio/wav'
+            : ext === '.jpg' || ext === '.jpeg'
+              ? 'image/jpeg'
+              : ext === '.png'
+                ? 'image/png'
+                : ext === '.webp'
+                  ? 'image/webp'
+                  : 'application/octet-stream';
+    return sendMediaContent(req, res, { mime, filePath });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 app.get('/api/openapi.json', (_req, res) => res.json(swaggerSpec));

@@ -16,3 +16,7 @@ tmp/
 agent-tools/
 hostinger.local.env
 hostinger.env
+
+!storage/
+!storage/exercises/
+!storage/exercises/.gitkeep

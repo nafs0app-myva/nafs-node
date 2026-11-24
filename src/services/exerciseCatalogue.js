@@ -11,7 +11,22 @@ const VIDEO_BASE = (process.env.MEDIA_VIDEO_BASE_URL || '').replace(/\/$/, '');
 const THUMB_BASE =
   process.env.MEDIA_THUMB_BASE_URL || `${env.app.url.replace(/\/$/, '')}/media/exercises`;
 
-const UPLOAD_ROOT = path.join(__dirname, '..', '..', 'public', 'media', 'exercises', 'uploads');
+// Prefer EXERCISE_MEDIA_ROOT outside the git deploy folder on Hostinger so
+// redeploys do not wipe uploads. Falls back to storage/exercises (gitignored).
+const UPLOAD_ROOT = process.env.EXERCISE_MEDIA_ROOT
+  ? path.resolve(process.env.EXERCISE_MEDIA_ROOT)
+  : path.join(__dirname, '..', '..', 'storage', 'exercises');
+
+/** Legacy path used before storage/exercises — still checked when serving. */
+const LEGACY_UPLOAD_ROOT = path.join(
+  __dirname,
+  '..',
+  '..',
+  'public',
+  'media',
+  'exercises',
+  'uploads'
+);
 
 function audioMedia(file, thumb) {
   const audio_url = `${AUDIO_BASE}/${file}`;
@@ -426,6 +441,25 @@ function publicUploadUrl(exerciseId, filename) {
 }
 
 /**
+ * Resolve an on-disk upload path (new root, then legacy public/ folder).
+ * Rejects path traversal.
+ */
+function resolveUploadFile(exerciseId, filename) {
+  const id = String(exerciseId || '');
+  const name = String(filename || '');
+  if (!id || !name || id.includes('..') || name.includes('..') || name.includes('/') || name.includes('\\')) {
+    return null;
+  }
+  for (const root of [UPLOAD_ROOT, LEGACY_UPLOAD_ROOT]) {
+    const full = path.join(root, id, name);
+    const resolved = path.resolve(full);
+    if (!resolved.startsWith(path.resolve(root) + path.sep)) continue;
+    if (require('fs').existsSync(resolved)) return resolved;
+  }
+  return null;
+}
+
+/**
  * Persist an uploaded media file for an exercise and update URL columns.
  * @param {'video'|'audio'|'thumbnail'} kind
  */
@@ -542,6 +576,7 @@ async function createExercise(payload) {
 module.exports = {
   STATIC_EXERCISES,
   UPLOAD_ROOT,
+  LEGACY_UPLOAD_ROOT,
   withDefaults,
   summary,
   seedExercisesTable,
@@ -553,4 +588,5 @@ module.exports = {
   createExercise,
   invalidateCatalogue,
   refreshCache,
+  resolveUploadFile,
 };
