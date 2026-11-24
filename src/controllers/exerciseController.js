@@ -69,7 +69,8 @@ async function buildUserPlanExercises(userId, { todayOnly = false } = {}) {
     FROM user_exercise_plan
     WHERE user_id = :uid`;
   if (todayOnly) {
-    sql += ` AND (scheduled_for IS NULL OR scheduled_for = CURDATE())`;
+    // NULL = anytime; past dates still show as due today (seed/old schedules).
+    sql += ` AND (scheduled_for IS NULL OR scheduled_for <= CURDATE())`;
   }
   sql += ` ORDER BY added_at ASC, id ASC`;
 

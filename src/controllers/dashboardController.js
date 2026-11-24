@@ -280,6 +280,8 @@ async function clientDashboard(uid, user) {
 
   // User's My Plan items (from user_exercise_plan), not the full catalogue.
   // Kept separate from today_tasks (mood / journal / session synthetics).
+  // my_plan = full saved plan; today_exercises = due today (incl. overdue).
+  const planExercises = await buildUserPlanExercises(uid, { todayOnly: false });
   const todayExercises = await buildUserPlanExercises(uid, { todayOnly: true });
   const exerciseProgress = planProgress(todayExercises);
 
@@ -314,8 +316,8 @@ async function clientDashboard(uid, user) {
     today_exercises: todayExercises,
     my_plan: {
       date: new Date().toISOString().slice(0, 10),
-      exercises: todayExercises,
-      progress: exerciseProgress,
+      exercises: planExercises,
+      progress: planProgress(planExercises),
     },
     stats: {
       mood_streak: streak,
