@@ -8,6 +8,8 @@ const { cancelBooking: settleCancellation } = require('../services/cancellationS
 const { wallClock } = require('../utils/time');
 const { rtcJoinPayload, agoraConfigured } = require('../services/agoraService');
 
+const { joiCurrency, DEFAULT: CURRENCY } = require('../config/currency');
+
 const createSchema = Joi.object({
   client_id: Joi.number().integer().required(),
   title: Joi.string().allow('', null),
@@ -16,7 +18,8 @@ const createSchema = Joi.object({
   ends_at: Joi.date().iso().required(),
   duration_minutes: Joi.number().integer().min(15).default(50),
   fee_amount: Joi.number().min(0).default(0),
-  currency: Joi.string().default('SAR'),
+  // Platform is SAR-only; request currency other than SAR is rejected.
+  currency: joiCurrency(),
   join_url: Joi.string().uri().allow('', null),
 });
 
@@ -177,7 +180,7 @@ const create = asyncHandler(async (req, res) => {
       ends_at: p.ends_at,
       duration_minutes: p.duration_minutes,
       fee_amount: p.fee_amount,
-      currency: p.currency,
+      currency: CURRENCY,
       join_url: p.join_url || null,
     }
   );

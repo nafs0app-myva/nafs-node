@@ -49,7 +49,7 @@ Client completion flag: `onboarding.completed` and `profile.onboarding_completed
 | GET | `/application/status` | |
 | PUT | `/application/identity` | **Identity** — name, gender, age\|DOB, licenses[], degrees[] |
 | PUT | `/application/experience` | **Experience** — specialization_ids, years_experience \| years_in_specialization |
-| PUT | `/application/admin-tech` | **Admin** — session_fee_default + slots[] (weekly schedule) |
+| PUT | `/application/admin-tech` | **Admin** — fees + slots[]. Accepts `session_fee_default` **or** app shape `consultation_fee.individual_session_fee` (+ optional `family_session_fee`). Currency is **SAR only**. |
 | POST | `/application/submit` | After all three steps have payloads |
 
 ### Identity body (aligned to Identity screen)
@@ -78,12 +78,23 @@ Optional: `identity_number`, `date_of_birth`, `bio`, `working_capacity`.
 ```json
 {
   "session_fee_default": 350,
+  "currency": "SAR",
   "slots": [
     { "weekday": 0, "start_time": "09:00", "end_time": "17:00", "is_active": true }
   ]
 }
 ```
-Address/video fields are optional. Weekly schedule can also be saved with `PUT /availability` (same `slots` shape).
+App setup may instead send:
+```json
+{
+  "currency": "SAR",
+  "consultation_fee": { "individual_session_fee": 300, "family_session_fee": 400 },
+  "remote_work": true,
+  "policies_accepted": "true",
+  "slots": []
+}
+```
+`individual_session_fee` is stored as `therapist_profiles.session_fee_default` (used for booking). Non-SAR `currency` is rejected (422). Address/video fields are optional. Weekly schedule can also be saved with `PUT /availability` (same `slots` shape).
 
 ## Home / Calendar / Sessions
 | Method | Path |

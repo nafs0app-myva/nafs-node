@@ -152,6 +152,7 @@ CREATE TABLE therapist_profiles (
   video_provider VARCHAR(40) NOT NULL DEFAULT 'custom',
   video_meeting_url VARCHAR(500) NULL,
   session_fee_default DECIMAL(12,2) NULL,
+  family_session_fee DECIMAL(12,2) NULL,
   session_duration_minutes INT NOT NULL DEFAULT 50,
   bank_name VARCHAR(120) NULL,
   bank_account_holder VARCHAR(120) NULL,

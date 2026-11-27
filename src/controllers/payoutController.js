@@ -5,12 +5,14 @@ const { maskIban } = require('../utils/iban');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
 const { notify } = require('../utils/notify');
+const { joiCurrency, DEFAULT: CURRENCY } = require('../config/currency');
 
 const requestSchema = Joi.object({
   amount: Joi.number().positive().required(),
   bank_name: Joi.string().allow('', null),
   iban: Joi.string().allow('', null),
-  currency: Joi.string().default('SAR'),
+  // Accepted for backward compatibility; payout currency always comes from the wallet (SAR).
+  currency: joiCurrency(),
 });
 
 /** Five working days from today (Sunday-Thursday week), as YYYY-MM-DD. */
@@ -40,10 +42,12 @@ const create = asyncHandler(async (req, res) => {
   if (!bank?.iban) return fail(res, 'Add your bank details before requesting a payout.', 422);
   // One transaction so the balance deduction, ledger row and request stay consistent.
   const payoutId = await withTransaction(async (conn) => {
-    const [[wallet]] = await conn.execute(`SELECT id FROM wallets WHERE user_id = :uid FOR UPDATE`, {
-      uid: req.user.id,
-    });
+    const [[wallet]] = await conn.execute(
+      `SELECT id, currency FROM wallets WHERE user_id = :uid FOR UPDATE`,
+      { uid: req.user.id }
+    );
     if (!wallet) return null;
+    const walletCurrency = wallet.currency || CURRENCY;
     const [upd] = await conn.execute(
       `UPDATE wallets SET balance = balance - :amount WHERE id = :id AND balance >= :amount`,
       { amount: p.amount, id: wallet.id }
@@ -55,7 +59,7 @@ const create = asyncHandler(async (req, res) => {
       {
         uid: req.user.id,
         amount: p.amount,
-        currency: p.currency,
+        currency: walletCurrency,
         bank_name: bank.bank_name || null,
         iban: bank.iban,
       }
@@ -64,7 +68,7 @@ const create = asyncHandler(async (req, res) => {
       `INSERT INTO wallet_transactions
          (wallet_id, user_id, type, amount, currency, status, description, reference_type, reference_id)
        VALUES (:wid, :uid, 'payout', :amount, :currency, 'pending', 'Payout request', 'payout', :pid)`,
-      { wid: wallet.id, uid: req.user.id, amount: p.amount, currency: p.currency, pid: result.insertId }
+      { wid: wallet.id, uid: req.user.id, amount: p.amount, currency: walletCurrency, pid: result.insertId }
     );
     return result.insertId;
   });

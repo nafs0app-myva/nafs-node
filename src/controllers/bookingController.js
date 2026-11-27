@@ -10,6 +10,8 @@ const fees = require('../config/fees');
 const { confirmPaidBooking } = require('../services/bookingPaymentService');
 const payment = require('./paymentController');
 
+const { joiCurrency } = require('../config/currency');
+
 const createSchema = Joi.object({
   therapist_id: Joi.number().integer().required(),
   booking_date: Joi.date().iso().required(),
@@ -18,7 +20,8 @@ const createSchema = Joi.object({
   beneficiary: Joi.string().allow('', null),
   note: Joi.string().allow('', null),
   amount: Joi.number().min(0).default(0),
-  currency: Joi.string().default('SAR'),
+  // Ignored for pricing (always SAR from therapist fee); non-SAR requests are rejected.
+  currency: joiCurrency(),
   payment_method: Joi.string().allow('', null),
 });
 

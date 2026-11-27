@@ -2,6 +2,7 @@ const Joi = require('joi');
 const { query } = require('../config/db');
 const { ok, fail } = require('../utils/response');
 const asyncHandler = require('../utils/asyncHandler');
+const { joiCurrency, DEFAULT: CURRENCY } = require('../config/currency');
 
 /**
  * Screen mapping (app ↔ API):
@@ -11,8 +12,9 @@ const asyncHandler = require('../utils/asyncHandler');
  * - Experience screen → PUT /application/experience
  *     specialization_ids, years_experience and/or years_in_specialization
  * - Admin screen (fees + weekly schedule) → PUT /application/admin-tech
- *     session_fee_default + slots[]  (also writable via PUT /availability)
+ *     session_fee_default (or consultation_fee.individual_session_fee) + slots[]
  *     city/country/address/video_* are optional (other screen / settings)
+ *     Currency is SAR-only (wallet / bookings stay SAR).
  */
 
 const identitySchema = Joi.object({
@@ -68,7 +70,16 @@ const adminTechSchema = Joi.object({
   admin_notes: Joi.string().allow('', null),
   // Admin screen: session fee + weekly availability
   session_fee_default: Joi.number().min(0).allow(null),
-  currency: Joi.string().default('SAR'),
+  // App setup sends consultation_fee; map individual → session_fee_default
+  consultation_fee: Joi.object({
+    individual_session_fee: Joi.number().min(0).allow(null),
+    family_session_fee: Joi.number().min(0).allow(null),
+  }).allow(null),
+  remote_work: Joi.boolean(),
+  // App may send the string "true" from form fields
+  policies_accepted: Joi.alternatives().try(Joi.boolean(), Joi.string().valid('true', 'false', '1', '0')),
+  // Platform is SAR-only for now (Option A)
+  currency: joiCurrency(),
   slots: Joi.array()
     .items(
       Joi.object({
@@ -231,12 +242,33 @@ const saveExperience = asyncHandler(async (req, res) => {
 
 const saveAdminTech = asyncHandler(async (req, res) => {
   const p = req.body;
+  // Prefer explicit session_fee_default; else app's consultation_fee.individual_session_fee
+  const sessionFee =
+    p.session_fee_default != null
+      ? p.session_fee_default
+      : p.consultation_fee?.individual_session_fee != null
+        ? p.consultation_fee.individual_session_fee
+        : null;
+  const familyFee =
+    p.consultation_fee?.family_session_fee != null ? p.consultation_fee.family_session_fee : null;
+
+  // Keep the full validated body (incl. consultation_fee / remote_work) for app prefills.
+  const payload = {
+    ...p,
+    currency: CURRENCY,
+    session_fee_default: sessionFee,
+    consultation_fee: p.consultation_fee || {
+      individual_session_fee: sessionFee,
+      family_session_fee: familyFee,
+    },
+  };
+
   await getOrCreateApp(req.user.id);
   await query(
     `UPDATE therapist_applications
      SET admin_tech_payload = :payload, step = 'admin_tech'
      WHERE user_id = :uid AND status IN ('draft','rejected')`,
-    { payload: JSON.stringify(p), uid: req.user.id }
+    { payload: JSON.stringify(payload), uid: req.user.id }
   );
   await query(
     `UPDATE therapist_profiles
@@ -247,7 +279,8 @@ const saveAdminTech = asyncHandler(async (req, res) => {
          video_provider = COALESCE(:video_provider, video_provider),
          video_meeting_url = COALESCE(:video_meeting_url, video_meeting_url),
          admin_notes = COALESCE(:admin_notes, admin_notes),
-         session_fee_default = COALESCE(:session_fee_default, session_fee_default)
+         session_fee_default = COALESCE(:session_fee_default, session_fee_default),
+         family_session_fee = COALESCE(:family_session_fee, family_session_fee)
      WHERE user_id = :uid`,
     {
       uid: req.user.id,
@@ -258,7 +291,8 @@ const saveAdminTech = asyncHandler(async (req, res) => {
       video_provider: p.video_provider || null,
       video_meeting_url: p.video_meeting_url ?? null,
       admin_notes: p.admin_notes ?? null,
-      session_fee_default: p.session_fee_default ?? null,
+      session_fee_default: sessionFee,
+      family_session_fee: familyFee,
     }
   );
   if (p.phone) {
@@ -286,7 +320,15 @@ const saveAdminTech = asyncHandler(async (req, res) => {
     }
   }
 
-  return ok(res, null, 'Admin/tech step saved');
+  return ok(
+    res,
+    {
+      session_fee_default: sessionFee,
+      family_session_fee: familyFee,
+      currency: CURRENCY,
+    },
+    'Admin/tech step saved'
+  );
 });
 
 const submit = asyncHandler(async (req, res) => {

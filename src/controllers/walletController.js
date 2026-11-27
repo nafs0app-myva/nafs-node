@@ -64,7 +64,7 @@ const feeTerms = asyncHandler(async (_req, res) =>
     min_session_fee: fees.MIN_SESSION_FEE,
     max_session_fee: fees.MAX_SESSION_FEE,
     cancellation_policy: fees.CANCELLATION_POLICY,
-    currency: 'SAR',
+    currency: require('../config/currency').DEFAULT,
   })
 );
 

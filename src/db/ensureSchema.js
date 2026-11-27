@@ -80,6 +80,16 @@ async function ensureSchema() {
       if (err.code !== 'ER_DUP_FIELDNAME') throw err;
     }
 
+    // Optional family session fee from consultant setup (consultation_fee.family_session_fee)
+    try {
+      await conn.query(`
+        ALTER TABLE therapist_profiles
+        ADD COLUMN family_session_fee DECIMAL(12,2) NULL AFTER session_fee_default
+      `);
+    } catch (err) {
+      if (err.code !== 'ER_DUP_FIELDNAME') throw err;
+    }
+
     // Therapist practice scope (age groups / session formats / modalities) as JSON
     try {
       await conn.query(`
